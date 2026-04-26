@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeOn 접속 QR</title>
+<style>
+  body { font-family: sans-serif; background: #0d47a1; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+  .card { background: #fff; border-radius: 20px; padding: 32px 28px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.3); max-width: 340px; width: 90%; }
+  h2 { color: #0d47a1; margin: 0 0 6px; font-size: 20px; }
+  .sub { color: #555; font-size: 13px; margin-bottom: 20px; }
+  #qr { margin: 0 auto 16px; }
+  .url { font-size: 11px; color: #1565c0; word-break: break-all; background: #e3f2fd; border-radius: 8px; padding: 8px 10px; margin-bottom: 16px; }
+  .hint { font-size: 12px; color: #e65100; background: #fff3e0; border-radius: 8px; padding: 8px 10px; }
+  .btn { display: inline-block; margin-top: 16px; padding: 10px 22px; background: #1a73e8; color: #fff; border-radius: 10px; font-size: 14px; text-decoration: none; cursor: pointer; border: none; }
+  .btn:active { background: #0d47a1; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>🛡 SAMHWA SafeOn</h2>
+  <p class="sub">핸드폰으로 QR 코드를 스캔하세요</p>
+  <div id="qr"></div>
+  <div class="url" id="url-text">로딩 중...</div>
+  <div class="hint">⚠️ 이 주소는 PC 재시작 시 변경됩니다<br>북마크 대신 매번 QR 스캔하세요</div>
+  <button class="btn" onclick="window.location.reload()">🔄 새로고침</button>
+</div>
+<script src="js/qrcode.min.js"></script>
+<script>
+(async function() {
+  let url = '';
+  try {
+    const r = await fetch('/cf-url.txt?_=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) url = (await r.text()).trim();
+  } catch(_) {}
+  if (!url) url = location.origin + '/';
+
+  document.getElementById('url-text').textContent = url;
+
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    const count = qr.getModuleCount();
+    const cell = 6, margin = 14;
+    const size = count * cell + margin * 2;
+    let rects = '';
+    for (let r = 0; r < count; r++)
+      for (let c = 0; c < count; c++)
+        if (qr.isDark(r, c))
+          rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#0d47a1"/>`;
+    document.getElementById('qr').innerHTML =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="border-radius:10px;display:block;margin:0 auto">` +
+      `<rect width="${size}" height="${size}" fill="#fff" rx="10"/>${rects}</svg>`;
+  } catch(e) {
+    document.getElementById('qr').textContent = 'QR 생성 실패: ' + e;
+  }
+})();
+</script>
+</body>
+</html>
