@@ -14,7 +14,7 @@
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v34';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v35';                              // 이 값(V) 수정 시 처리됩니다
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -1267,6 +1267,10 @@
       </div>
     </div>
   </div>
+
+  <!-- Firebase SDK (Firestore 클라우드 DB) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <!-- App Scripts (순서 중요) -->
   <script src="js/html2canvas.min.js"></script>
