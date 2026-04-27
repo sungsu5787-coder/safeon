@@ -215,7 +215,7 @@ const QRModal = {
       }
     } catch (_) {}
 
-    const currentUrl = location.origin + '/';
+    const currentUrl = location.href.split('?')[0].split('#')[0].replace(/\/index\.html$/, '/').replace(/([^/])$/, '$1/');
     const isTunnel    = (u) => u && (u.includes('trycloudflare.com') || u.includes('ngrok') || u.includes('tunnel') || u.includes('bore.pub') || u.includes('localhost.run'));
     const isTailscale = (u) => u && /http:\/\/100\.\d+\.\d+\.\d+/.test(u);
     const isLocalIP   = (u) => {

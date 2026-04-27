@@ -2009,7 +2009,7 @@ const App = {
     } catch(e) {}
 
     // fallback
-    if (!stableUrl) stableUrl = location.origin;
+    if (!stableUrl) stableUrl = location.href.split('?')[0].split('#')[0].replace(/\/index\.html$/, '/').replace(/([^/])$/, '$1/');
 
     // DOM 업데이트
     const stableEl = document.getElementById('access-url-stable');
