@@ -2,8 +2,8 @@
   "name": "SAMHWA SafeOn — 삼화 세이프온",
   "short_name": "SafeOn",
   "description": "삼화 세이프온 현장 안전보건 관리 시스템 — TBM, 위험성평가, 작업허가서",
-  "start_url": "/index.html",
-  "scope": "/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0d47a1",
   "theme_color": "#1a73e8",
@@ -40,13 +40,13 @@
     {
       "name": "TBM 작성",
       "short_name": "TBM",
-      "url": "/index.html#tbm",
+      "url": "./index.html#tbm",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "작업허가서",
       "short_name": "PTW",
-      "url": "/index.html#ptw",
+      "url": "./index.html#ptw",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

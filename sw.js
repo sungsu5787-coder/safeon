@@ -1,33 +1,41 @@
-﻿// ============================================================
-//  SAMHWA SafeOn - Service Worker  v30
-//  Stale-While-Revalidate  /api/* 캐시 금지
 // ============================================================
-const CACHE_VER    = 'safeon-v32';
+//  SAMHWA SafeOn - Service Worker  v33
+//  동적 BASE_PATH: localhost / GitHub Pages 모두 지원
+//  /api/* 캐시 금지 (Firebase 직접 통신)
+// ============================================================
+const CACHE_VER    = 'safeon-v33';
 const CACHE_STATIC = CACHE_VER + '-static';
 
-const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/css/style.css',
-  '/js/firebase-config.js',
-  '/js/signature-canvas.js',
-  '/js/html2canvas.min.js',
-  '/js/qrcode.min.js',
-  '/js/qr-modal.js',
-  '/js/app.js',
-  '/js/tbm.js',
-  '/js/risk.js',
-  '/js/checklist.js',
-  '/js/history.js',
-  '/js/workplan.js',
-  '/js/ptw.js',
-  '/js/accident.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-192.svg',
-  '/icons/mascot.png'
+// 서비스워커 위치 기준으로 base 경로 자동 계산
+// localhost:8181/sw.js       → BASE = '/'
+// /safeon/sw.js (GitHub Pages) → BASE = '/safeon/'
+const BASE = self.registration.scope.replace(self.location.origin, '');
+
+const PRECACHE_FILES = [
+  '',
+  'index.html',
+  'manifest.json',
+  'css/style.css',
+  'js/firebase-config.js',
+  'js/signature-canvas.js',
+  'js/html2canvas.min.js',
+  'js/qrcode.min.js',
+  'js/qr-modal.js',
+  'js/app.js',
+  'js/tbm.js',
+  'js/risk.js',
+  'js/checklist.js',
+  'js/history.js',
+  'js/workplan.js',
+  'js/ptw.js',
+  'js/accident.js',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/icon-192.svg',
+  'icons/mascot.png'
 ];
+
+const PRECACHE_URLS = PRECACHE_FILES.map(f => BASE + f);
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -68,14 +76,18 @@ self.addEventListener('fetch', event => {
   const url = new URL(req.url);
   if (req.method !== 'GET') return;
   if (url.hostname !== self.location.hostname) return;
-  // 동적 파일 — 캐시 완전 우회 (CF URL 자동갱신을 위해 필수)
-  if (url.pathname === '/tunnel-url.txt' || url.pathname === '/cf-url.txt' || url.pathname === '/tunnel.log') {
+
+  // 동적 파일 — 캐시 우회
+  const path = url.pathname;
+  if (path.endsWith('/tunnel-url.txt') || path.endsWith('/cf-url.txt') || path.endsWith('/tunnel.log')) {
     event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => new Response('', { status: 200 })));
     return;
   }
-  // API 요청 — 절대 캐시 금지, 항상 서버에서 직접 받음 (저장 후 이력 즉시 반영)
-  if (url.pathname.startsWith('/api/')) return;
-  const isAppFile = /\.(html|js|css|json)$/.test(url.pathname) || url.pathname === '/';
+
+  // API 요청 — 절대 캐시 금지 (Firebase 직접 통신이므로 로컬 /api/ 는 통과)
+  if (path.includes('/api/')) return;
+
+  const isAppFile = /\.(html|js|css|json)$/.test(path) || path === BASE || path === BASE.slice(0, -1);
   if (isAppFile) { event.respondWith(staleWhileRevalidate(req)); return; }
   event.respondWith(cacheFirst(req));
 });
@@ -89,7 +101,7 @@ async function staleWhileRevalidate(req) {
   if (cached) return cached;
   const res = await networkUpdate;
   if (res && res.status < 400) return res;
-  const indexCache = await cache.match('/index.html');
+  const indexCache = await cache.match(BASE + 'index.html') || await cache.match(BASE);
   if (indexCache) return indexCache;
   return new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
 }
@@ -130,7 +142,7 @@ self.addEventListener('message', event => {
       const cache   = await caches.open(CACHE_STATIC);
       const keys    = await cache.keys();
       const cached  = new Set(keys.map(r => new URL(r.url).pathname));
-      const missing = PRECACHE_URLS.filter(u => !cached.has(u));
+      const missing = PRECACHE_URLS.map(u => new URL(u, self.location.origin).pathname).filter(u => !cached.has(u));
       if (event.source) event.source.postMessage({ type: 'CACHE_STATUS', version: CACHE_VER, count: cached.size, total: PRECACHE_URLS.length, missing });
     })();
   }
