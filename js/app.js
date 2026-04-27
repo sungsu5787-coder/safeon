@@ -279,13 +279,14 @@ const App = {
 
   async updateDashboard(from, to) {
     const today = new Date().toISOString().split('T')[0];
-    const dateFrom = from || today;
+    const firstOfMonth = today.substring(0, 8) + '01';
+    const dateFrom = from || firstOfMonth;
     const dateTo   = to   || today;
 
     // 날짜 input 동기화 (초기 로드 시)
     const fromEl = document.getElementById('dash-date-from');
     const toEl   = document.getElementById('dash-date-to');
-    if (fromEl && !fromEl.value) fromEl.value = today;
+    if (fromEl && !fromEl.value) fromEl.value = firstOfMonth;
     if (toEl   && !toEl.value)   toEl.value   = today;
 
     try {
@@ -320,24 +321,27 @@ const App = {
       document.getElementById('dash-date-to').value = from;
       return this.updateDashboardRange();
     }
-    const today = new Date().toISOString().split('T')[0];
+    const today        = new Date().toISOString().split('T')[0];
+    const firstOfMonth = today.substring(0, 8) + '01';
     const title = document.getElementById('dashboard-period-title');
     if (title) {
-      if (from === today && to === today) title.textContent = '오늘의 현황';
-      else if (from === to)              title.textContent = `${from} 현황`;
-      else                               title.textContent = `기간 현황 (${from} ~ ${to})`;
+      if (from === today && to === today)             title.textContent = '오늘의 현황';
+      else if (from === firstOfMonth && to === today) title.textContent = '이번 달 현황';
+      else if (from === to)                           title.textContent = `${from} 현황`;
+      else                                            title.textContent = `기간 현황 (${from} ~ ${to})`;
     }
     this.updateDashboard(from, to);
   },
 
   resetDashboardToToday() {
-    const today = new Date().toISOString().split('T')[0];
+    const today        = new Date().toISOString().split('T')[0];
+    const firstOfMonth = today.substring(0, 8) + '01';
     const fromEl = document.getElementById('dash-date-from');
     const toEl   = document.getElementById('dash-date-to');
-    if (fromEl) fromEl.value = today;
+    if (fromEl) fromEl.value = firstOfMonth;
     if (toEl)   toEl.value   = today;
     const title = document.getElementById('dashboard-period-title');
-    if (title) title.textContent = '오늘의 현황';
+    if (title) title.textContent = '이번 달 현황';
     this.updateDashboard();
   },
 
