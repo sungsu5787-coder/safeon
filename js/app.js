@@ -34,6 +34,7 @@ const App = {
     PTW.init();
     Accident.init();
     if (!this.guestMode) this.loadAccessUrl();
+    Notify.init();
   },
 
   // ── 게스트 모드 초기화 ───────────────────────────────────
@@ -345,11 +346,13 @@ const App = {
     this.updateDashboard();
   },
 
+  _toastTimer: null,
   showToast(message, duration = 2500) {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), duration);
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => toast.classList.add('hidden'), duration);
   },
 
   formatDate(dateStr) {
@@ -609,15 +612,19 @@ const App = {
       };
     } else if (type === 'accident') {
       updates = {
-        date:        v('[data-edit="date"]'),
-        location:    v('[data-edit="location"]'),
-        accidentTime:v('[data-edit="accidentTime"]'),
-        victimName:  v('[data-edit="victimName"]'),
-        victimAge:   v('[data-edit="victimAge"]'),
-        description: v('[data-edit="description"]'),
-        cause:       v('[data-edit="cause"]'),
-        action:      v('[data-edit="action"]'),
-        reporter:    v('[data-edit="reporter"]'),
+        date:           v('[data-edit="date"]'),
+        time:           v('[data-edit="time"]'),
+        location:       v('[data-edit="location"]'),
+        reporter:       v('[data-edit="reporter"]'),
+        department:     v('[data-edit="department"]'),
+        injuredName:    v('[data-edit="injuredName"]'),
+        injuredInfo:    v('[data-edit="injuredInfo"]'),
+        injuredPart:    v('[data-edit="injuredPart"]'),
+        injuredLevel:   v('[data-edit="injuredLevel"]'),
+        content:        v('[data-edit="content"]'),
+        cause:          v('[data-edit="cause"]'),
+        immediateAction:v('[data-edit="immediateAction"]'),
+        preventionPlan: v('[data-edit="preventionPlan"]'),
       };
     } else if (type === 'ptw') {
       updates = {
@@ -917,7 +924,7 @@ const App = {
         </div>
         <div class="detail-section">
           <h3><span class="ds-icon">🕐</span>사고시각</h3>
-          <input class="edit-input" data-edit="accidentTime" type="time" value="${esc(d.accidentTime)}">
+          <input class="edit-input" data-edit="time" type="time" value="${esc(d.time)}">
         </div>
       </div>
       <div class="detail-section ds-location">
@@ -926,29 +933,49 @@ const App = {
       </div>
       <div class="detail-row-2">
         <div class="detail-section">
-          <h3><span class="ds-icon">👤</span>피해자 성명</h3>
-          <input class="edit-input" data-edit="victimName" type="text" value="${esc(d.victimName)}">
+          <h3><span class="ds-icon">👤</span>보고자</h3>
+          <input class="edit-input" data-edit="reporter" type="text" value="${esc(d.reporter)}">
         </div>
         <div class="detail-section">
-          <h3><span class="ds-icon">🎂</span>나이</h3>
-          <input class="edit-input edit-input-sm" data-edit="victimAge" type="number" value="${esc(d.victimAge)}">
+          <h3><span class="ds-icon">🏢</span>소속</h3>
+          <input class="edit-input" data-edit="department" type="text" value="${esc(d.department)}">
+        </div>
+      </div>
+      <div class="detail-row-2">
+        <div class="detail-section">
+          <h3><span class="ds-icon">🤕</span>부상자 성명</h3>
+          <input class="edit-input" data-edit="injuredName" type="text" value="${esc(d.injuredName)}">
+        </div>
+        <div class="detail-section">
+          <h3><span class="ds-icon">ℹ️</span>나이/소속</h3>
+          <input class="edit-input" data-edit="injuredInfo" type="text" value="${esc(d.injuredInfo)}">
+        </div>
+      </div>
+      <div class="detail-row-2">
+        <div class="detail-section">
+          <h3><span class="ds-icon">🩹</span>부상부위</h3>
+          <input class="edit-input" data-edit="injuredPart" type="text" value="${esc(d.injuredPart)}">
+        </div>
+        <div class="detail-section">
+          <h3><span class="ds-icon">📊</span>부상정도</h3>
+          <input class="edit-input" data-edit="injuredLevel" type="text" value="${esc(d.injuredLevel)}">
         </div>
       </div>
       <div class="detail-section ds-hazard">
         <h3><span class="ds-icon">⚠️</span>사고 경위</h3>
-        <textarea class="edit-textarea" data-edit="description" rows="4">${esc(d.description)}</textarea>
+        <textarea class="edit-textarea" data-edit="content" rows="4">${esc(d.content)}</textarea>
       </div>
       <div class="detail-section">
         <h3><span class="ds-icon">🔍</span>사고 원인</h3>
         <textarea class="edit-textarea" data-edit="cause" rows="3">${esc(d.cause)}</textarea>
       </div>
       <div class="detail-section ds-measure">
-        <h3><span class="ds-icon">🛡️</span>조치 사항</h3>
-        <textarea class="edit-textarea" data-edit="action" rows="3">${esc(d.action)}</textarea>
+        <h3><span class="ds-icon">🚨</span>즉시조치</h3>
+        <textarea class="edit-textarea" data-edit="immediateAction" rows="3">${esc(d.immediateAction)}</textarea>
       </div>
       <div class="detail-section">
-        <h3><span class="ds-icon">👔</span>보고자</h3>
-        <input class="edit-input" data-edit="reporter" type="text" value="${esc(d.reporter)}">
+        <h3><span class="ds-icon">🛡️</span>재발방지대책</h3>
+        <textarea class="edit-textarea" data-edit="preventionPlan" rows="3">${esc(d.preventionPlan)}</textarea>
       </div>`;
   },
 
@@ -1106,9 +1133,26 @@ const App = {
           <span style="font-size:12px;color:var(--gray-500);margin-left:4px">빈도(${item.frequency})×강도(${item.severity})</span>`;
       }
 
+      const thumbStyle = 'position:relative;border-radius:6px;overflow:hidden;background:var(--gray-100);cursor:zoom-in';
+      const makePhotosHtml = (photos, label, labelColor) => {
+        if (!photos || !photos.length) return '';
+        const thumbs = photos.map(p =>
+          `<div style="${thumbStyle}" onclick="App._viewPhoto('${p.data.replace(/'/g, "\\'")}')">
+            <div style="padding-top:100%"></div>
+            <img src="${p.data}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover">
+          </div>`
+        ).join('');
+        return `<div style="margin-top:8px">
+          <div style="font-size:11px;font-weight:700;color:${labelColor};margin-bottom:4px">${label}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">${thumbs}</div>
+        </div>`;
+      };
+      const beforePhotosHtml = makePhotosHtml(item.beforePhotos, '📷 개선 전 사진', '#888');
+      const afterPhotosHtml  = makePhotosHtml(item.afterPhotos,  '✅ 개선 후 사진', '#2e7d32');
+
       return `<div style="background:var(--gray-50);padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid ${item.afterRiskLevel && item.afterRiskLevel !== item.riskLevel ? '#66bb6a' : '#e0e0e0'}">
         <p style="font-weight:600;margin-bottom:8px">#${i+1}. ${this.escapeHtml(item.hazard)}</p>
-        ${riskBadge}${afterBadge}
+        ${riskBadge}${beforePhotosHtml}${afterBadge}${afterPhotosHtml}
         <p style="font-size:13px;color:var(--gray-700);margin-top:6px">📌 대책: ${this.escapeHtml(item.countermeasure)}</p>
       </div>`;
     }).join('');
@@ -1345,7 +1389,10 @@ const App = {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:16px';
     overlay.innerHTML = `<img src="${src}" style="max-width:100%;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.5)">`;
-    overlay.addEventListener('click', () => overlay.remove());
+    const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = e => { if (e.key === 'Escape') close(); };
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
     document.body.appendChild(overlay);
   },
 

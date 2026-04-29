@@ -1,6 +1,7 @@
 // ===== Risk Assessment Module — 상중하(上中下) 방법 + AI 위험통제계층 =====
 const Risk = {
   itemCount: 0,
+  _itemPhotos: { before: {}, after: {} },   // { before: { n: [{name,data},...] }, after: {...} }
 
   // ── 위험도 매트릭스 (가능성 × 심각도 → 3×3) ──────────────────
   matrix: {
@@ -384,6 +385,38 @@ const Risk = {
             <div class="slh-result rl-low" id="after-result-${n}">하<br><small>허용 가능</small></div>
           </div>
         </div>
+      </div>
+
+      <!-- ▶ 개선 전/후 사진 첨부 -->
+      <div class="risk-photo-pair">
+        <div class="risk-photo-section">
+          <div class="risk-photo-label">📷 개선 전 사진</div>
+          <input type="file" id="risk-photo-before-${n}" accept="image/*" multiple style="display:none"
+                 onchange="Risk.handleRiskPhoto(${n},'before',this)">
+          <div class="risk-photo-upload" onclick="document.getElementById('risk-photo-before-${n}').click()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>사진 추가</span>
+          </div>
+          <div id="risk-preview-before-${n}" class="risk-photo-preview-grid"></div>
+        </div>
+        <div class="risk-photo-section risk-photo-section-after">
+          <div class="risk-photo-label risk-photo-label-after">✅ 개선 후 사진</div>
+          <input type="file" id="risk-photo-after-${n}" accept="image/*" multiple style="display:none"
+                 onchange="Risk.handleRiskPhoto(${n},'after',this)">
+          <div class="risk-photo-upload risk-photo-upload-after" onclick="document.getElementById('risk-photo-after-${n}').click()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>사진 추가</span>
+          </div>
+          <div id="risk-preview-after-${n}" class="risk-photo-preview-grid"></div>
+        </div>
       </div>`;
 
     this.itemsContainer.appendChild(div);
@@ -392,6 +425,83 @@ const Risk = {
   removeItem(n) {
     const el = document.getElementById(`risk-item-${n}`);
     if (el) el.remove();
+    delete this._itemPhotos.before[n];
+    delete this._itemPhotos.after[n];
+  },
+
+  // ── 개선 전/후 사진 처리 ──────────────────────────────────
+  async handleRiskPhoto(n, type, input) {
+    const files = Array.from(input.files);
+    if (!files.length) return;
+    if (!this._itemPhotos[type][n]) this._itemPhotos[type][n] = [];
+    const arr = this._itemPhotos[type][n];
+    let added = 0;
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) { App.showToast(`${file.name}: 이미지 파일만 가능합니다`); continue; }
+      if (file.size > 10 * 1024 * 1024)   { App.showToast(`${file.name}: 10MB 이하만 첨부 가능합니다`); continue; }
+      if (arr.length >= 5) { App.showToast('사진은 최대 5장까지 첨부 가능합니다'); break; }
+      try {
+        const raw        = await this._fileToDataURL(file);
+        const compressed = await this._compressImage(raw, 1200, 0.75);
+        arr.push({ name: file.name, data: compressed });
+        added++;
+      } catch { App.showToast(`${file.name} 처리 실패`); }
+    }
+    input.value = '';
+    if (added) this._renderRiskPhotoPreview(n, type);
+  },
+
+  _renderRiskPhotoPreview(n, type) {
+    const container = document.getElementById(`risk-preview-${type}-${n}`);
+    if (!container) return;
+    const arr = (this._itemPhotos[type][n] || []);
+    container.innerHTML = arr.map((p, i) => `
+      <div class="risk-photo-thumb">
+        <img src="${p.data}" alt="${App.escapeHtml(p.name)}"
+             data-item="${n}" data-type="${type}" data-idx="${i}" style="cursor:zoom-in">
+        <button type="button" class="risk-photo-remove"
+                onclick="event.stopPropagation();Risk.removeRiskPhoto(${n},'${type}',${i})">&times;</button>
+      </div>`).join('');
+    container.querySelectorAll('img[data-idx]').forEach(img => {
+      img.addEventListener('click', () => {
+        const photos = this._itemPhotos[img.dataset.type][img.dataset.item] || [];
+        const photo  = photos[+img.dataset.idx];
+        if (photo) App._viewPhoto(photo.data);
+      });
+    });
+  },
+
+  removeRiskPhoto(n, type, idx) {
+    (this._itemPhotos[type][n] || []).splice(idx, 1);
+    this._renderRiskPhotoPreview(n, type);
+  },
+
+  _fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload  = ev => resolve(ev.target.result);
+      r.onerror = ()  => reject(new Error('읽기 실패'));
+      r.readAsDataURL(file);
+    });
+  },
+
+  _compressImage(dataUrl, maxSize, quality) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          if (width >= height) { height = Math.round(height * maxSize / width); width = maxSize; }
+          else                 { width  = Math.round(width  * maxSize / height); height = maxSize; }
+        }
+        const c = document.createElement('canvas');
+        c.width = width; c.height = height;
+        c.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
   },
 
   // ── 개선 전 상중하 선택 ────────────────────────────────────
@@ -534,6 +644,9 @@ const Risk = {
       const r           = this.matrix[`${prob}_${sev}`]          || { level:'중' };
       const rAfter      = this.matrix[`${afterProb}_${sev}`]     || { level:'하' };
       const disasterTypes = [...el.querySelectorAll('.risk-disaster-cb:checked')].map(cb => cb.value);
+      const itemN         = el.id.replace('risk-item-', '');
+      const beforePhotos  = (this._itemPhotos.before[itemN] || []).map(p => ({ name: p.name, data: p.data }));
+      const afterPhotos   = (this._itemPhotos.after[itemN]  || []).map(p => ({ name: p.name, data: p.data }));
       if (hazard) items.push({
         hazard,
         disasterTypes,
@@ -542,7 +655,9 @@ const Risk = {
         riskLevel:        r.level,
         countermeasure:   counter,
         afterProbability: afterProb,
-        afterRiskLevel:   rAfter.level
+        afterRiskLevel:   rAfter.level,
+        beforePhotos,
+        afterPhotos
       });
     });
 
@@ -609,6 +724,7 @@ const Risk = {
     this.form.reset();
     this.itemsContainer.innerHTML = '';
     this.itemCount = 0;
+    this._itemPhotos = { before: {}, after: {} };
     this.addItem();
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('risk-date').value = today;

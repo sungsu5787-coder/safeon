@@ -243,9 +243,15 @@ const PTW = {
   renderChecklists() {
     const container = document.getElementById('ptw-checklists');
     container.innerHTML = '';
-    this.checkResults = {};
 
+    // 기존 체크결과 중 현재 선택된 타입에 해당하는 것만 보존
     const selectedTypes = this.getSelectedTypes();
+    const prevResults = this.checkResults || {};
+    this.checkResults = {};
+    Object.entries(prevResults).forEach(([key, val]) => {
+      const keyType = key.split('_')[0];
+      if (selectedTypes.includes(keyType)) this.checkResults[key] = val;
+    });
     const selected = selectedTypes.map(t => ({ value: t }));
     if (selected.length === 0) {
       container.innerHTML = '<p class="empty-state" style="padding:12px 0;font-size:13px">작업유형을 선택하면 체크항목이 표시됩니다</p>';
@@ -276,6 +282,15 @@ const PTW = {
 
       div.innerHTML = html;
       container.appendChild(div);
+    });
+
+    // 보존된 체크결과 버튼 시각 상태 복원
+    Object.entries(this.checkResults).forEach(([key, val]) => {
+      const btns = container.querySelectorAll(`.check-status button[onclick*="'${key}',"]`);
+      btns.forEach(b => b.className = '');
+      const classMap = { pass: 'active-pass', fail: 'active-fail', na: 'active-na' };
+      const target = [...btns].find(b => b.getAttribute('onclick').includes(`'${val}'`));
+      if (target) target.className = classMap[val] || '';
     });
   },
 

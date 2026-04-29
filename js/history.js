@@ -1,9 +1,12 @@
 // ===== History Module =====
 const History = {
   _results: [],   // 현재 조회된 결과 캐시
+  _page: 1,
+  PAGE_SIZE: 10,
 
   init() {
     this.listContainer  = document.getElementById('history-list');
+    this.pagerContainer = document.getElementById('history-pager');
     this.printArea      = document.getElementById('print-area');
     this.countLabel     = document.getElementById('export-count-label');
 
@@ -35,19 +38,20 @@ const History = {
         ? ['tbm', 'risk', 'checklist', 'workplan', 'ptw', 'accident']
         : [type];
 
-      for (const t of types) {
+      const snaps = await Promise.all(types.map(t => {
         const collName = t === 'nearmiss' ? 'accident' : t;
         let query = collections[collName].orderBy('date', 'desc');
         if (t === 'nearmiss') query = query.where('accidentType', '==', 'nearmiss');
         if (dateFrom) query = query.where('date', '>=', dateFrom);
         if (dateTo)   query = query.where('date', '<=', dateTo);
+        return query.limit(50).get().then(snap => ({ snap, collName }));
+      }));
 
-        const snap = await query.limit(50).get();
+      snaps.forEach(({ snap, collName }) => {
         snap.forEach(doc => {
-          // _collType 은 항상 실제 컬렉션명(accident) 으로 저장 → showDetail/delete 에서 사용
           this._results.push({ ...doc.data(), id: doc.id, _collType: collName });
         });
-      }
+      });
 
       this._results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
@@ -58,14 +62,73 @@ const History = {
 
       if (this._results.length === 0) {
         this.listContainer.innerHTML = '<p class="empty-state">조회된 기록이 없습니다.</p>';
+        if (this.pagerContainer) this.pagerContainer.innerHTML = '';
         return;
       }
 
-      this.listContainer.innerHTML = this._results.map(item => this.renderCard(item)).join('');
+      this._renderPage(1);
     } catch (err) {
       console.error('History load error:', err);
       this.listContainer.innerHTML = '<p class="empty-state">데이터 조회 중 오류가 발생했습니다.</p>';
     }
+  },
+
+  // ── 페이지 렌더 ─────────────────────────────────────────────
+  _renderPage(page) {
+    const total     = this._results.length;
+    const totalPage = Math.ceil(total / this.PAGE_SIZE);
+    this._page      = Math.max(1, Math.min(page, totalPage));
+
+    const start = (this._page - 1) * this.PAGE_SIZE;
+    const slice = this._results.slice(start, start + this.PAGE_SIZE);
+
+    this.listContainer.innerHTML = slice.map(item => this.renderCard(item)).join('');
+    this._renderPager(totalPage);
+
+    // 페이지 이동 시 목록 상단으로 스크롤
+    this.listContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+
+  _renderPager(totalPage) {
+    if (!this.pagerContainer) return;
+    if (totalPage <= 1) { this.pagerContainer.innerHTML = ''; return; }
+
+    const cur = this._page;
+
+    // 표시할 페이지 번호 범위: 현재 페이지 기준 앞뒤 2개
+    const WING = 2;
+    let rangeStart = Math.max(1, cur - WING);
+    let rangeEnd   = Math.min(totalPage, cur + WING);
+    // 항상 최소 5개 보이도록 보정
+    if (rangeEnd - rangeStart < 4) {
+      if (rangeStart === 1) rangeEnd   = Math.min(totalPage, rangeStart + 4);
+      else                  rangeStart = Math.max(1, rangeEnd - 4);
+    }
+
+    const btn = (label, page, disabled, active) =>
+      `<button class="pager-btn${active ? ' pager-active' : ''}"
+               ${disabled ? 'disabled' : `onclick="History._renderPage(${page})"`}>${label}</button>`;
+
+    let html = btn('‹', cur - 1, cur === 1, false);
+
+    if (rangeStart > 1) {
+      html += btn('1', 1, false, false);
+      if (rangeStart > 2) html += `<span class="pager-ellipsis">…</span>`;
+    }
+
+    for (let p = rangeStart; p <= rangeEnd; p++) {
+      html += btn(p, p, false, p === cur);
+    }
+
+    if (rangeEnd < totalPage) {
+      if (rangeEnd < totalPage - 1) html += `<span class="pager-ellipsis">…</span>`;
+      html += btn(totalPage, totalPage, false, false);
+    }
+
+    html += btn('›', cur + 1, cur === totalPage, false);
+
+    this.pagerContainer.innerHTML =
+      `<div class="pager-wrap">${html}<span class="pager-info">${cur} / ${totalPage}</span></div>`;
   },
 
   // ── 인쇄 / PDF ──────────────────────────────────────────────
