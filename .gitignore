@@ -54,3 +54,6 @@ launch.html
 index.html.backup
 index.html.bak2
 js/tbm.js.bak2
+
+# Backend node_modules
+backend/node_modules/

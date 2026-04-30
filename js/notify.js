@@ -2,9 +2,18 @@
 const Notify = {
   _alerts:    [],
   _panelOpen: false,
+  _alimtalkConfig: {
+    enabled: false,
+    recipientPhone: '',
+    templateId: '',
+    apiEndpoint: '/api/send-alimtalk',
+    configEndpoint: '/api/notify-config',
+    sendOnTypes: ['ptw-expire', 'risk-overdue', 'risk-soon', 'ptw-pending']
+  },
 
   async init() {
     if (App.guestMode) return;   // 게스트는 알림 없음
+    await this._loadAlimtalkConfig();
     await this.refresh();
 
     // 패널 외부 클릭 시 닫기
@@ -121,7 +130,100 @@ const Notify = {
 
     this._sortAlerts();
     this._updateBadge();
+    await this._sendAlimtalkForNewAlerts();
     if (this._panelOpen) this._renderItems();
+  },
+
+  async _sendAlimtalkForNewAlerts() {
+    if (!this._alimtalkConfig.enabled) return;
+    const sentIds = this._loadSentAlertIds();
+    const newAlerts = this._alerts.filter(alert =>
+      this._alimtalkConfig.sendOnTypes.includes(alert.type) &&
+      !sentIds.includes(this._getAlertKey(alert))
+    );
+
+    for (const alert of newAlerts) {
+      const ok = await this._sendAlimtalk(alert);
+      if (ok) {
+        sentIds.push(this._getAlertKey(alert));
+      }
+    }
+
+    this._saveSentAlertIds(sentIds);
+  },
+
+  async _loadAlimtalkConfig() {
+    try {
+      const response = await fetch(this._alimtalkConfig.configEndpoint);
+      if (!response.ok) return;
+      const config = await response.json();
+      if (config.enabled) {
+        this._alimtalkConfig = {
+          ...this._alimtalkConfig,
+          enabled: config.enabled,
+          recipientPhone: config.recipientPhone,
+          templateId: config.templateId,
+          apiEndpoint: config.apiEndpoint,
+          sendOnTypes: config.sendOnTypes
+        };
+      }
+    } catch (error) {
+      console.warn('[Notify] loadAlimtalkConfig failed', error);
+    }
+  },
+
+  _getAlertKey(alert) {
+    return `${alert.type}|${alert.collType}|${alert.docId}`;
+  },
+
+  _loadSentAlertIds() {
+    try {
+      return JSON.parse(localStorage.getItem('safeon.sentAlimtalkIds') || '[]');
+    } catch (e) {
+      return [];
+    }
+  },
+
+  _saveSentAlertIds(ids) {
+    try {
+      localStorage.setItem('safeon.sentAlimtalkIds', JSON.stringify(ids.slice(-200)));
+    } catch (e) {
+      console.warn('[Notify] localStorage save failed', e);
+    }
+  },
+
+  async _sendAlimtalk(alert) {
+    const config = this._alimtalkConfig;
+    if (!config.recipientPhone || !config.templateId) {
+      console.warn('[Notify] 알림톡 설정이 올바르지 않습니다');
+      return false;
+    }
+
+    try {
+      const response = await fetch(config.apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientPhone: config.recipientPhone,
+          templateId: config.templateId,
+          message: {
+            title: alert.title,
+            body: alert.sub
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.warn('[Notify] sendAlimtalk failed', response.status, text);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.warn('[Notify] sendAlimtalk error', error);
+      return false;
+    }
   },
 
   _add(alert) { this._alerts.push(alert); },
