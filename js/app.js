@@ -23,6 +23,7 @@ const App = {
     this.setupNavigation();
     this.setupDate();
     this.updateDashboard();
+    this.renderProposalQR();
     this.updatePTWBadge();
     this.setupOfflineDetection();
     if (!this.guestMode) this.setupPWAInstall();
@@ -359,6 +360,56 @@ const App = {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
     return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  },
+
+  getAppBaseUrl() {
+    const href = location.href.split('?')[0].split('#')[0];
+    return href.replace(/\/index\.html$/, '/').replace(/\/$/, '/') ;
+  },
+
+  getProposalUrl() {
+    return this.getAppBaseUrl() + 'proposal.html';
+  },
+
+  renderProposalQR() {
+    const url = this.getProposalUrl();
+    const qrWrap = document.getElementById('proposal-qr-wrap');
+    const urlText = document.getElementById('proposal-url-text');
+    if (!qrWrap || !urlText) return;
+    urlText.textContent = url;
+    qrWrap.innerHTML = '';
+
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(url);
+      qr.make();
+      const cell = 5;
+      const margin = 12;
+      const count = qr.getModuleCount();
+      const size = count * cell + margin * 2;
+      let rects = '';
+      for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+          if (qr.isDark(r, c)) {
+            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#0d47a1"/>`;
+          }
+        }
+      }
+      qrWrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="border-radius:14px;display:block">` +
+        `<rect width="${size}" height="${size}" fill="#fff" rx="14"/>${rects}</svg>`;
+    } catch (err) {
+      qrWrap.innerHTML = '<p style="color:#d93025;font-size:13px;margin:0">QR 생성 실패</p>';
+    }
+  },
+
+  async copyProposalUrl() {
+    const url = this.getProposalUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      this.showToast('제안 QR 주소가 복사되었습니다 📋');
+    } catch (e) {
+      window.prompt('아래 주소를 복사하세요', url);
+    }
   },
 
   // ══════════════════════════════════════════════════════════

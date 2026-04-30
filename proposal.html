@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d47a1">
+  <title>SafeOn 제안 접수</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background: #f4f6fb; }
+    .proposal-page { max-width: 640px; margin: 0 auto; padding: 18px 16px 40px; }
+    .proposal-header { margin-bottom: 18px; }
+    .proposal-header h1 { margin: 0 0 8px; font-size: 22px; }
+    .proposal-header p { margin: 0; color: #475569; line-height: 1.6; }
+    .proposal-form { background: #fff; border: 1px solid #dfe3ea; border-radius: 18px; padding: 18px; box-shadow: 0 10px 24px rgba(15,23,42,0.05); }
+    .proposal-form .form-group { margin-bottom: 16px; }
+    .proposal-form label { display: block; margin-bottom: 6px; font-weight: 700; color: #102a43; }
+    .proposal-form input[type="text"],
+    .proposal-form input[type="tel"],
+    .proposal-form textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 14px; font-size: 14px; color: #102a43; background: #fff; }
+    .proposal-form textarea { resize: vertical; min-height: 110px; }
+    .proposal-form button[type="submit"] { width: 100%; margin-top: 4px; }
+    .photo-upload-input { display: none; }
+    .proposal-photo-box { border: 1.5px dashed #97a6b2; border-radius: 14px; padding: 16px; text-align: center; background: #f8fafc; cursor: pointer; }
+    .proposal-photo-box:hover { background: #eef2ff; }
+    .proposal-photo-box span { display: inline-block; margin-top: 6px; color: #334155; font-size: 13px; }
+    .proposal-photo-preview { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+    .proposal-photo-preview img { width: 100%; border-radius: 12px; object-fit: cover; max-height: 180px; }
+    .proposal-result { margin-top: 16px; border-radius: 14px; padding: 14px; font-size: 14px; line-height: 1.6; }
+    .proposal-result.success { background: #e8f7ea; border: 1px solid #a5d6a7; color: #1b5e20; }
+    .proposal-result.error { background: #fff1f0; border: 1px solid #f9a8d4; color: #9f1239; }
+    .proposal-footer { margin-top: 18px; font-size: 13px; color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="proposal-page">
+    <div class="proposal-header">
+      <h1>📢 안전보건 제안 접수</h1>
+      <p>근로자의 안전위험 제안을 현장에서 바로 접수합니다. 사진 첨부 후 제출하면 관리자에게 알림톡이 전송됩니다.</p>
+    </div>
+
+    <form id="proposal-form" class="proposal-form">
+      <div class="form-group">
+        <label for="proposal-affiliation">소속</label>
+        <input type="text" id="proposal-affiliation" placeholder="예: 생산팀" required>
+      </div>
+      <div class="form-group">
+        <label for="proposal-department">부서명</label>
+        <input type="text" id="proposal-department" placeholder="예: 2공장 품질관리" required>
+      </div>
+      <div class="form-group">
+        <label for="proposal-name">이름</label>
+        <input type="text" id="proposal-name" placeholder="성명" required>
+      </div>
+      <div class="form-group">
+        <label for="proposal-phone">전화번호</label>
+        <input type="tel" id="proposal-phone" placeholder="010-1234-5678" required>
+      </div>
+      <div class="form-group">
+        <label for="proposal-suggestion">제안 내용 / 위험 상황</label>
+        <textarea id="proposal-suggestion" placeholder="위험 상황과 제안 내용을 상세히 작성하세요" rows="5" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>사진 첨부 <span style="color:#d32f2f">*</span></label>
+        <div id="proposal-photo-box" class="proposal-photo-box" onclick="Proposal.openPhotoPicker()">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h4l2-2h4l2 2h4v12H4z" />
+            <path d="M12 11v6" />
+            <path d="M9 14h6" />
+          </svg>
+          <div><strong>사진을 탭하여 업로드</strong></div>
+          <span>최소 1장 이상 선택</span>
+        </div>
+        <input type="file" id="proposal-photo" class="photo-upload-input" accept="image/*" capture="environment">
+        <div id="proposal-photo-preview" class="proposal-photo-preview"></div>
+      </div>
+      <button type="submit" class="btn-primary">제안 제출하기</button>
+      <div id="proposal-result" class="proposal-result hidden"></div>
+    </form>
+
+    <div class="proposal-footer">
+      <p>제출 후 현장 관리자에게 알림톡이 전송됩니다. 사진은 안전 현장 확인용으로 사용됩니다.</p>
+    </div>
+  </div>
+  <script src="js/proposal.js"></script>
+</body>
+</html>

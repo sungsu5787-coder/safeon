@@ -29,15 +29,44 @@ const Notify = {
 
   // ── 데이터 조회 & 알림 목록 갱신 ────────────────────────────
   async refresh() {
-    const today   = new Date(); today.setHours(0,0,0,0);
-    const todayStr = today.toISOString().split('T')[0];
-    const d3 = new Date(today); d3.setDate(d3.getDate() + 3);
-    const d3Str = d3.toISOString().split('T')[0];
-
     this._alerts = [];
 
     try {
-      // risk: where+in+orderBy 복합 인덱스 불필요하도록 orderBy 제거 후 클라이언트 정렬
+      // 서버 API에서 알림 데이터 조회 시도
+      const response = await fetch('/api/alerts', { timeout: 5000 });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.alerts && data.alerts.length > 0) {
+          this._alerts = data.alerts;
+          console.log('[Notify] 서버 API에서 알림 로드:', this._alerts.length);
+        } else {
+          // 서버에서 빈 배열 반환 → 클라이언트 폴백
+          throw new Error('Server returned empty alerts, using client fallback');
+        }
+      } else {
+        throw new Error(`Alert API 오류: ${response.status}`);
+      }
+    } catch (e) {
+      console.log('[Notify] 서버 API 실패, Firestore 직접 접근 시도:', e.message);
+      // 폴백: 클라이언트에서 직접 조회
+      await this._refreshFromFirestore();
+    }
+
+    this._sortAlerts();
+    this._updateBadge();
+    await this._sendAlimtalkForNewAlerts();
+    if (this._panelOpen) this._renderItems();
+  },
+
+  async _refreshFromFirestore() {
+    if (App.guestMode) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d3 = new Date(today);
+    d3.setDate(d3.getDate() + 3);
+    const d3Str = d3.toISOString().split('T')[0];
+
+    try {
       const [ptwSnap, riskSnap] = await Promise.all([
         collections.ptw
           .orderBy('date', 'desc')
@@ -57,35 +86,36 @@ const Notify = {
         // 결재 대기
         if (d.status === 'submitted') {
           this._add({
-            urgency:  'low',
-            type:     'ptw-pending',
-            icon:     '📋',
+            urgency: 'low',
+            type: 'ptw-pending',
+            icon: '📋',
             collType: 'ptw',
-            docId:    d.id,
-            title:    d.workName || '작업허가서',
-            sub:      `${d.company || ''} · 결재 대기 중`.replace(/^ · /, ''),
-            date:     d.date || ''
+            docId: d.id,
+            title: d.workName || '작업허가서',
+            sub: `${d.company || ''} · 결재 대기 중`.replace(/^ · /, ''),
+            date: d.date || ''
           });
         }
 
         // 만료 임박: periodEnd 에서 날짜 부분만 추출
         if (d.periodEnd) {
-          const endStr  = d.periodEnd.split('T')[0];
-          const endDay  = new Date(endStr); endDay.setHours(0,0,0,0);
-          const diffMs  = endDay - today;
+          const endStr = d.periodEnd.split('T')[0];
+          const endDay = new Date(endStr);
+          endDay.setHours(0, 0, 0, 0);
+          const diffMs = endDay - today;
           const diffDay = Math.round(diffMs / 86400000);
 
           if (diffDay >= 0 && diffDay <= 3) {
             const label = diffDay === 0 ? '오늘 만료' : `D-${diffDay}`;
             this._add({
-              urgency:  diffDay <= 1 ? 'high' : 'mid',
-              type:     'ptw-expire',
-              icon:     '⏰',
+              urgency: diffDay <= 1 ? 'high' : 'mid',
+              type: 'ptw-expire',
+              icon: '⏰',
               collType: 'ptw',
-              docId:    d.id,
-              title:    d.workName || '작업허가서',
-              sub:      `${d.company ? d.company + ' · ' : ''}만료 ${label}`,
-              date:     endStr
+              docId: d.id,
+              title: d.workName || '작업허가서',
+              sub: `${d.company ? d.company + ' · ' : ''}만료 ${label}`,
+              date: endStr
             });
           }
         }
@@ -97,41 +127,36 @@ const Notify = {
 
         if (d.improveStatus === '지연') {
           this._add({
-            urgency:  'high',
-            type:     'risk-overdue',
-            icon:     '🔴',
+            urgency: 'high',
+            type: 'risk-overdue',
+            icon: '🔴',
             collType: 'risk',
-            docId:    d.id,
-            title:    d.workName || '위험성평가',
-            sub:      `개선 지연 · 예정일 ${d.planDate || '미설정'}`,
-            date:     d.planDate || d.date || ''
+            docId: d.id,
+            title: d.workName || '위험성평가',
+            sub: `개선 지연 · 예정일 ${d.planDate || '미설정'}`,
+            date: d.planDate || d.date || ''
           });
         } else if (d.improveStatus === '진행중' && d.planDate) {
-          const planDay = new Date(d.planDate); planDay.setHours(0,0,0,0);
+          const planDay = new Date(d.planDate);
+          planDay.setHours(0, 0, 0, 0);
           const diffDay = Math.round((planDay - today) / 86400000);
           if (diffDay >= 0 && diffDay <= 3) {
             this._add({
-              urgency:  'mid',
-              type:     'risk-soon',
-              icon:     '⚠️',
+              urgency: 'mid',
+              type: 'risk-soon',
+              icon: '⚠️',
               collType: 'risk',
-              docId:    d.id,
-              title:    d.workName || '위험성평가',
-              sub:      `개선 임박 D-${diffDay} · ${d.planDate}`,
-              date:     d.planDate
+              docId: d.id,
+              title: d.workName || '위험성평가',
+              sub: `개선 임박 D-${diffDay} · ${d.planDate}`,
+              date: d.planDate
             });
           }
         }
       });
-
     } catch (e) {
-      console.warn('[Notify] refresh error:', e);
+      console.warn('[Notify] Firestore fallback 오류:', e);
     }
-
-    this._sortAlerts();
-    this._updateBadge();
-    await this._sendAlimtalkForNewAlerts();
-    if (this._panelOpen) this._renderItems();
   },
 
   async _sendAlimtalkForNewAlerts() {
@@ -333,8 +358,7 @@ const Notify = {
       .map(u => `
         <div class="notify-group-label">${URGENCY_LABEL[u]}</div>
         ${groups[u].map(a => `
-          <div class="notify-item notify-urgency-${a.urgency}"
-               onclick="Notify._goto('${a.collType}','${a.docId}')">
+          <div class="notify-item notify-urgency-${a.urgency}" data-coll-type="${App.escapeHtml(a.collType)}" data-doc-id="${App.escapeHtml(a.docId)}">
             <span class="notify-item-icon">${a.icon}</span>
             <div class="notify-item-body">
               <div class="notify-item-title">${App.escapeHtml(a.title)}</div>
@@ -345,10 +369,22 @@ const Notify = {
             </svg>
           </div>`).join('')}
       `).join('');
+
+    container.querySelectorAll('.notify-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const collType = item.dataset.collType;
+        const docId = item.dataset.docId;
+        this._goto(collType, docId);
+      });
+    });
   },
 
   // ── 이동 ─────────────────────────────────────────────────────
   _goto(collType, docId) {
+    if (!collType || !docId) {
+      console.warn('[Notify] 잘못된 알림 이동 정보', collType, docId);
+      return;
+    }
     this._closePanel();
     setTimeout(() => App.showDetail(collType, docId), 230);
   }

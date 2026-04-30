@@ -429,6 +429,53 @@ main {
   margin-top: 5px;
   line-height: 1.5;
 }
+
+.proposal-qr-card {
+  background: #e8f4ff;
+  border: 1.5px solid #90caf9;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.proposal-qr-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.proposal-qr-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1976d2;
+  color: #fff;
+  margin-right: 8px;
+}
+.proposal-qr-preview {
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto 10px;
+  display: flex;
+  justify-content: center;
+}
+.proposal-qr-url {
+  font-size: 12px;
+  color: #0d47a1;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+.proposal-qr-note {
+  font-size: 12px;
+  color: #1e3a8a;
+  background: rgba(13,71,161,0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  line-height: 1.4;
+}
 .access-url-hint {
   font-size: 11px;
   color: #e65100;

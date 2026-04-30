@@ -3,6 +3,7 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
+const admin = require('firebase-admin');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -14,17 +15,161 @@ const KAKAO_RECIPIENT_PHONE = process.env.KAKAO_RECIPIENT_PHONE || '';
 const KAKAO_API_URL = process.env.KAKAO_API_URL || 'https://api.kakao.com/v1/alimtalk/send';
 const KAKAO_TEMPLATE_ID = process.env.KAKAO_TEMPLATE_ID || '';
 
+// Firebase Admin SDK 초기화
+let db = null;
+const serviceAccountPath = path.join(__dirname, 'firebase-service-account.json');
+if (fs.existsSync(serviceAccountPath)) {
+  try {
+    const serviceAccount = require(serviceAccountPath);
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: 'samhwa-safeon'
+      });
+    }
+    db = admin.firestore();
+    console.log('[Firebase] Admin SDK 초기화 완료');
+  } catch (err) {
+    console.warn('[Firebase] Admin SDK 초기화 실패:', err.message);
+    db = null;
+  }
+} else {
+  console.warn('[Firebase] 서비스 계정 키를 찾을 수 없습니다. 클라이언트 모드로 실행됩니다.');
+  db = null;
+}
+
+// Firebase Admin 초기화 없이 Firestore 접근할 수 없으므로 변수만 정의
+let firebaseReady = db !== null;
+
 function isValidEnvValue(value) {
   if (!value) return false;
   const invalidPatterns = ['REPLACE', 'YOUR_', '+8210xxxxxxxx'];
   return !invalidPatterns.some(pattern => value.includes(pattern));
 }
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(STATIC_ROOT, { extensions: ['html'] }));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/api/alerts', async (req, res) => {
+  // Firebase Admin SDK가 없을 때는 빈 배열 반환 (클라이언트가 폴백으로 Firestore 직접 접근)
+  if (!firebaseReady) {
+    return res.json({ 
+      alerts: [],
+      message: 'Firebase not initialized - client will use direct Firestore access'
+    });
+  }
+
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+
+    const d3 = new Date(today);
+    d3.setDate(d3.getDate() + 3);
+    const d3Str = d3.toISOString().split('T')[0];
+
+    const alerts = [];
+
+    // PTW 알림 조회
+    const ptwSnap = await db.collection('ptw').orderBy('date', 'desc').limit(100).get();
+    ptwSnap.forEach(doc => {
+      const d = { id: doc.id, ...doc.data() };
+      if (d.status === 'rejected') return;
+
+      // 결재 대기
+      if (d.status === 'submitted') {
+        alerts.push({
+          urgency: 'low',
+          type: 'ptw-pending',
+          icon: '📋',
+          collType: 'ptw',
+          docId: d.id,
+          title: d.workName || '작업허가서',
+          sub: `${d.company || ''} · 결재 대기 중`.replace(/^ · /, ''),
+          date: d.date || ''
+        });
+      }
+
+      // 만료 임박
+      if (d.periodEnd) {
+        const endStr = d.periodEnd.split('T')[0];
+        const endDay = new Date(endStr);
+        endDay.setHours(0, 0, 0, 0);
+        const diffMs = endDay - today;
+        const diffDay = Math.round(diffMs / 86400000);
+
+        if (diffDay >= 0 && diffDay <= 3) {
+          const label = diffDay === 0 ? '오늘 만료' : `D-${diffDay}`;
+          alerts.push({
+            urgency: diffDay <= 1 ? 'high' : 'mid',
+            type: 'ptw-expire',
+            icon: '⏰',
+            collType: 'ptw',
+            docId: d.id,
+            title: d.workName || '작업허가서',
+            sub: `${d.company ? d.company + ' · ' : ''}만료 ${label}`,
+            date: endStr
+          });
+        }
+      }
+    });
+
+    // 위험성평가 알림 조회
+    const riskSnap = await db.collection('risk')
+      .where('improveStatus', 'in', ['지연', '진행중'])
+      .limit(100)
+      .get();
+
+    riskSnap.forEach(doc => {
+      const d = { id: doc.id, ...doc.data() };
+
+      if (d.improveStatus === '지연') {
+        alerts.push({
+          urgency: 'high',
+          type: 'risk-overdue',
+          icon: '🔴',
+          collType: 'risk',
+          docId: d.id,
+          title: d.workName || '위험성평가',
+          sub: `개선 지연 · 예정일 ${d.planDate || '미설정'}`,
+          date: d.planDate || d.date || ''
+        });
+      } else if (d.improveStatus === '진행중' && d.planDate) {
+        const planDay = new Date(d.planDate);
+        planDay.setHours(0, 0, 0, 0);
+        const diffDay = Math.round((planDay - today) / 86400000);
+        if (diffDay >= 0 && diffDay <= 3) {
+          alerts.push({
+            urgency: 'mid',
+            type: 'risk-soon',
+            icon: '⚠️',
+            collType: 'risk',
+            docId: d.id,
+            title: d.workName || '위험성평가',
+            sub: `개선 임박 D-${diffDay} · ${d.planDate}`,
+            date: d.planDate
+          });
+        }
+      }
+    });
+
+    // 정렬
+    const rank = { high: 0, mid: 1, low: 2 };
+    alerts.sort((a, b) => {
+      const r = rank[a.urgency] - rank[b.urgency];
+      if (r !== 0) return r;
+      return (b.date || '').localeCompare(a.date || '');
+    });
+
+    res.json({ alerts });
+  } catch (error) {
+    console.error('[API] /api/alerts 오류:', error);
+    res.json({ alerts: [], error: error.message });
+  }
 });
 
 app.get('/api/notify-config', (req, res) => {
@@ -63,6 +208,67 @@ app.post('/api/send-alimtalk', async (req, res) => {
       result_code: '00',
       result_message: 'SUCCESS',
       msg_id: 'TEST_MSG_' + Date.now(),
+      success_cnt: 1,
+      error_cnt: 0
+    }
+  });
+});
+
+app.post('/api/submit-proposal', async (req, res) => {
+  if (!KAKAO_API_KEY) {
+    return res.status(500).json({ error: 'KAKAO_API_KEY is not configured in backend/.env' });
+  }
+
+  const { affiliation, department, name, phone, suggestion, imageData } = req.body || {};
+  if (!affiliation || !department || !name || !phone || !suggestion || !imageData) {
+    return res.status(400).json({ error: 'affiliation, department, name, phone, suggestion, and imageData are required' });
+  }
+
+  let savedImagePath = '';
+  if (typeof imageData === 'string' && imageData.startsWith('data:image/')) {
+    try {
+      const uploadsDir = path.join(__dirname, 'uploads', 'proposals');
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      const matches = imageData.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if (matches) {
+        const ext = matches[1].split('/')[1].replace('jpeg', 'jpg');
+        const safeName = `proposal_${Date.now()}.${ext}`;
+        const filePath = path.join(uploadsDir, safeName);
+        fs.writeFileSync(filePath, Buffer.from(matches[2], 'base64'));
+        savedImagePath = filePath;
+      }
+    } catch (err) {
+      console.warn('[Proposal] image save failed', err);
+    }
+  }
+
+  const message = {
+    title: '현장안전 제안 접수',
+    body: `소속:${affiliation}\n부서:${department}\n이름:${name}\n전화:${phone}\n위험제안:${suggestion}${savedImagePath ? '\n사진이 서버에 저장되었습니다' : ''}`
+  };
+
+  console.log('[제안 접수]');
+  console.log(`  소속: ${affiliation}`);
+  console.log(`  부서: ${department}`);
+  console.log(`  이름: ${name}`);
+  console.log(`  전화: ${phone}`);
+  console.log(`  제안: ${suggestion}`);
+  console.log(`  사진 저장: ${savedImagePath || '없음'}`);
+  if (savedImagePath) console.log(`  이미지 파일: ${savedImagePath}`);
+
+  console.log('[알림톡 전송 시뮬레이션]');
+  console.log(`수신자: ${KAKAO_RECIPIENT_PHONE}`);
+  console.log(`템플릿: ${KAKAO_TEMPLATE_ID}`);
+  console.log(`제목: ${message.title}`);
+  console.log(`내용: ${message.body}`);
+  console.log('---');
+
+  return res.status(200).json({
+    success: true,
+    apiResponse: {
+      result_code: '00',
+      result_message: 'SUCCESS',
+      msg_id: 'PROPOSAL_' + Date.now(),
       success_cnt: 1,
       error_cnt: 0
     }
