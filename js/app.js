@@ -15,7 +15,8 @@ const App = {
     checklist: '안전점검',
     ptw:       '작업허가서',
     accident:  '사고보고서',
-    history:   '이력조회'
+    history:   '이력조회',
+    proposals: '제안 관리'
   },
 
   async init() {
@@ -202,7 +203,8 @@ const App = {
       detail:    '상세보기',
       workplan:  '작업계획서',
       ptw:       '작업허가서 (PTW)',
-      accident:  '안전사고 보고서'
+      accident:  '안전사고 보고서',
+      proposals: '제안 관리'
     };
     const brandEl = document.getElementById('header-brand');
     const titleEl = document.getElementById('page-title');
@@ -225,10 +227,11 @@ const App = {
     this.currentPage = page;
 
     // 페이지별 후처리
-    if (page === 'history')  History.loadHistory();
-    if (page === 'workplan') WorkPlan.onPageShow();
-    if (page === 'ptw')      PTW.onPageShow();
-    if (page === 'accident') Accident.onPageShow();
+    if (page === 'history')   History.loadHistory();
+    if (page === 'workplan')  WorkPlan.onPageShow();
+    if (page === 'ptw')       PTW.onPageShow();
+    if (page === 'accident')  Accident.onPageShow();
+    if (page === 'proposals') ProposalsView.onPageShow();
 
     window.scrollTo(0, 0);
   },

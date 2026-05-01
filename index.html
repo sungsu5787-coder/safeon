@@ -275,6 +275,18 @@
               <span class="menu-label">이력조회</span>
               <span class="menu-desc">생성 기록 확인</span>
             </button>
+
+            <button class="menu-card" data-page="proposals">
+              <div class="menu-icon" style="background:#e3f2fd;color:#1e88e5">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  <line x1="9" y1="9" x2="15" y2="9"/>
+                  <line x1="9" y1="13" x2="13" y2="13"/>
+                </svg>
+              </div>
+              <span class="menu-label">제안 관리</span>
+              <span class="menu-desc">현황·상태 관리</span>
+            </button>
           </div>
 
           <!-- Today's Summary -->
@@ -443,6 +455,7 @@
             </div>
 
             <button type="submit" class="btn-primary" style="background:var(--danger)">📋 사고보고서 저장</button>
+            <div id="accident-offline-status" class="accident-offline-status hidden"></div>
           </form>
         </div>
       </section>
@@ -1024,6 +1037,20 @@
         </div>
       </section>
 
+      <!-- ====== 제안 관리 ====== -->
+      <section id="page-proposals" class="page">
+        <div class="page-content">
+          <div class="proposals-filter-bar">
+            <button class="proposals-filter-tab active" data-filter="전체" onclick="ProposalsView.setFilter('전체')">전체 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab" data-filter="접수" onclick="ProposalsView.setFilter('접수')">접수 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab" data-filter="검토중" onclick="ProposalsView.setFilter('검토중')">검토중 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab" data-filter="완료" onclick="ProposalsView.setFilter('완료')">완료 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab" data-filter="반려" onclick="ProposalsView.setFilter('반려')">반려 <span class="tab-badge">0</span></button>
+          </div>
+          <div id="proposals-list" class="proposals-list"></div>
+        </div>
+      </section>
+
       <!-- ====== 상세보기 ====== -->
       <section id="page-detail" class="page">
         <div class="page-content">
@@ -1304,6 +1331,17 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="js/html2canvas.min.js"></script>
   <script src="js/qrcode.min.js"></script>
+  <!-- 제안 상세 모달 -->
+  <div id="proposal-detail-modal" class="proposal-detail-overlay hidden" onclick="if(event.target===this)ProposalsView.closeDetail()">
+    <div class="proposal-detail-sheet">
+      <div class="proposal-detail-header">
+        <span>제안 상세</span>
+        <button class="proposal-detail-close" onclick="ProposalsView.closeDetail()">✕</button>
+      </div>
+      <div id="proposal-detail-content" class="proposal-detail-content"></div>
+    </div>
+  </div>
+
   <script src="js/firebase-config.js"></script>
   <script src="js/signature-canvas.js"></script>
   <script src="js/app.js"></script>
@@ -1316,6 +1354,8 @@
   <script src="js/accident.js"></script>
   <script src="js/qr-modal.js"></script>
   <script src="js/notify.js"></script>
+  <script src="js/proposal.js"></script>
+  <script src="js/proposals-view.js"></script>
 
   <!-- ====== 전역 확인 모달 (앱 전역 공용) ====== -->
   <div id="confirm-modal" class="confirm-overlay hidden" role="dialog" aria-modal="true">

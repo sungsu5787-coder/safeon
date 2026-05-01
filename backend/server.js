@@ -347,6 +347,39 @@ app.get('/api/proposal-count', (req, res) => {
   res.json({ count: proposalRecords.length });
 });
 
+app.get('/api/proposals', (req, res) => {
+  const records = loadProposalRecords();
+  const result = records.map(({ imagePath, clientIp, ...rest }) => ({
+    ...rest,
+    status: rest.status || '접수',
+    hasImage: !!imagePath,
+    imageUrl: imagePath ? `/api/proposals/${rest.id}/image` : null
+  })).reverse();
+  res.json({ proposals: result });
+});
+
+app.patch('/api/proposals/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body || {};
+  const VALID = ['접수', '검토중', '완료', '반려'];
+  if (!VALID.includes(status)) return res.status(400).json({ error: '유효하지 않은 상태값입니다.' });
+  const records = loadProposalRecords();
+  const idx = records.findIndex(r => r.id === id);
+  if (idx === -1) return res.status(404).json({ error: '제안을 찾을 수 없습니다.' });
+  records[idx].status = status;
+  records[idx].statusUpdatedAt = new Date().toISOString();
+  saveProposalRecords(records);
+  res.json({ success: true });
+});
+
+app.get('/api/proposals/:id/image', (req, res) => {
+  const records = loadProposalRecords();
+  const record = records.find(r => r.id === req.params.id);
+  if (!record || !record.imagePath) return res.status(404).send('Not found');
+  if (!fs.existsSync(record.imagePath)) return res.status(404).send('Image file not found');
+  res.sendFile(record.imagePath);
+});
+
 function httpRequest(urlString, options = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(urlString);

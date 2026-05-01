@@ -2,6 +2,8 @@
 const Accident = {
   photos: [],
   reporterSig: null,
+  _dbName: 'safeon-accident-db',
+  _storeName: 'pendingAccidents',
 
   TYPE_LABELS: {
     nearmiss:   '아차사고',
@@ -15,13 +17,13 @@ const Accident = {
     if (!this.form) return;
     this.form.addEventListener('submit', e => { e.preventDefault(); this.save(); });
 
-    // 사진 input 변경
     const photoInput = document.getElementById('accident-photo-input');
     if (photoInput) photoInput.addEventListener('change', e => this.handlePhotos(e));
 
-    // 업로드 영역 클릭 → input 트리거
     const uploadArea = document.getElementById('accident-upload-area');
     if (uploadArea) uploadArea.addEventListener('click', () => photoInput && photoInput.click());
+
+    this._initOfflineQueue();
   },
 
   onPageShow() {
@@ -186,14 +188,26 @@ const Accident = {
       createdAt:         new Date().toISOString()
     };
 
+    if (!navigator.onLine) {
+      await this._savePending(data);
+      App.showToast(`⚠️ 오프라인: 보고서가 기기에 저장되었습니다. 온라인 복구 시 자동 전송됩니다.`);
+      this.resetForm();
+      this._updateOfflineStatus();
+      return;
+    }
+
     try {
       await collections.accident.add(data);
       App.showToast(`✅ ${this.TYPE_LABELS[type]} 보고서 저장 완료`);
       this.resetForm();
+      this._updateOfflineStatus();
       App.updateDashboard();
     } catch (err) {
-      App.showToast('저장 오류: ' + err.message);
       console.error(err);
+      await this._savePending(data);
+      App.showToast(`⚠️ 저장 실패: 기기에 임시 저장되었습니다. 네트워크 복구 시 자동 전송됩니다.`);
+      this.resetForm();
+      this._updateOfflineStatus();
     }
   },
 
@@ -703,6 +717,115 @@ const Accident = {
       if (event.target !== overlay) return;
     }
     document.getElementById('prevention-modal').classList.add('hidden');
+  },
+
+  // ── 오프라인 큐 ────────────────────────────────────────────
+  _initOfflineQueue() {
+    window.addEventListener('online', () => this._syncPending());
+    this._updateOfflineStatus();
+    if (navigator.onLine) setTimeout(() => this._syncPending(), 800);
+  },
+
+  _openDb() {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) return reject(new Error('IndexedDB not supported'));
+      const req = indexedDB.open(this._dbName, 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(this._storeName)) {
+          db.createObjectStore(this._storeName, { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror  = () => reject(req.error);
+    });
+  },
+
+  async _withStore(mode, cb) {
+    const db = await this._openDb();
+    const tx = db.transaction(this._storeName, mode);
+    const store = tx.objectStore(this._storeName);
+    const result = await cb(store);
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(result);
+      tx.onerror    = () => reject(tx.error);
+      tx.onabort    = () => reject(tx.error);
+    });
+  },
+
+  async _savePending(data) {
+    const entry = {
+      id: 'accident_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      savedAt: new Date().toISOString(),
+      data
+    };
+    try {
+      await this._withStore('readwrite', store => { store.put(entry); });
+    } catch (e) {
+      console.warn('[Accident] pending save failed', e);
+    }
+  },
+
+  async _getPending() {
+    try {
+      return await this._withStore('readonly', store =>
+        new Promise((res, rej) => {
+          const req = store.getAll();
+          req.onsuccess = () => res(req.result || []);
+          req.onerror   = () => rej(req.error);
+        })
+      );
+    } catch (e) {
+      console.warn('[Accident] pending load failed', e);
+      return [];
+    }
+  },
+
+  async _deletePending(id) {
+    try {
+      await this._withStore('readwrite', store => { store.delete(id); });
+    } catch (e) {
+      console.warn('[Accident] pending delete failed', e);
+    }
+  },
+
+  async _syncPending() {
+    if (!navigator.onLine) return;
+    const pending = await this._getPending();
+    if (!pending.length) return;
+
+    for (const item of pending) {
+      try {
+        await collections.accident.add(item.data);
+        await this._deletePending(item.id);
+        App.showToast(`✅ 오프라인 저장된 ${item.data.accidentTypeLabel || '사고'} 보고서가 전송되었습니다.`);
+        App.updateDashboard();
+      } catch (err) {
+        console.warn('[Accident] sync failed', err);
+        break;
+      }
+    }
+    this._updateOfflineStatus();
+  },
+
+  async _updateOfflineStatus() {
+    const el = document.getElementById('accident-offline-status');
+    if (!el) return;
+    const pending = await this._getPending();
+    const count = pending.length;
+    if (count > 0) {
+      el.textContent = navigator.onLine
+        ? `✅ 오프라인 저장 대기 ${count}건이 있습니다. 온라인 복구 시 자동 전송됩니다.`
+        : `⚠️ 오프라인 저장 대기 ${count}건. 서버 복구 후 자동 전송됩니다.`;
+      el.classList.remove('hidden');
+      el.classList.toggle('offline', !navigator.onLine);
+    } else if (!navigator.onLine) {
+      el.textContent = '⚠️ 현재 오프라인 상태입니다. 저장하면 기기에 임시 보관됩니다.';
+      el.classList.remove('hidden');
+      el.classList.add('offline');
+    } else {
+      el.classList.add('hidden');
+    }
   },
 
   // ── 폼 초기화 ──────────────────────────────────────────────
