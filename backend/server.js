@@ -328,9 +328,15 @@ app.get('/api/proposals/:id/image', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-app.listen(PORT, '0.0.0.0', () => {
-  const ip = getLocalIPv4();
-  const url = ip ? `http://${ip}:${PORT}/` : `http://localhost:${PORT}/`;
-  console.log(`[SafeOn] Running at ${url}`);
-  console.log(`[SafeOn] Firebase: ${firebaseReady ? 'Admin SDK' : '클라이언트 모드'} | Storage: ${storageBucket ? '연결됨' : '로컬 디스크'}`);
-});
+// 직접 실행 시 (로컬 / Railway)
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    const ip = getLocalIPv4();
+    const url = ip ? `http://${ip}:${PORT}/` : `http://localhost:${PORT}/`;
+    console.log(`[SafeOn] Running at ${url}`);
+    console.log(`[SafeOn] Firebase: ${firebaseReady ? 'Admin SDK' : '클라이언트 모드'} | Storage: ${storageBucket ? '연결됨' : '로컬 디스크'}`);
+  });
+}
+
+// Vercel serverless export
+module.exports = app;
