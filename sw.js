@@ -14,6 +14,8 @@ const BASE = self.registration.scope.replace(self.location.origin, '');
 const PRECACHE_FILES = [
   '',
   'index.html',
+  'proposal.html',
+  'qr-access.html',
   'manifest.json',
   'css/style.css',
   'js/firebase-config.js',
@@ -21,6 +23,7 @@ const PRECACHE_FILES = [
   'js/html2canvas.min.js',
   'js/qrcode.min.js',
   'js/qr-modal.js',
+  'js/proposal.js',
   'js/app.js',
   'js/tbm.js',
   'js/risk.js',

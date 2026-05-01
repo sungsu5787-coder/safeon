@@ -29,6 +29,8 @@
     .proposal-result { margin-top: 16px; border-radius: 14px; padding: 14px; font-size: 14px; line-height: 1.6; }
     .proposal-result.success { background: #e8f7ea; border: 1px solid #a5d6a7; color: #1b5e20; }
     .proposal-result.error { background: #fff1f0; border: 1px solid #f9a8d4; color: #9f1239; }
+    .proposal-offline-status { margin-top: 12px; border-radius: 14px; padding: 12px; font-size: 13px; line-height: 1.5; background: #e3f2fd; border: 1px solid #90caf9; color: #0d47a1; }
+    .proposal-offline-status.offline { background: #fff0f0; border-color: #f9a8d4; color: #b00020; }
     .proposal-footer { margin-top: 18px; font-size: 13px; color: #475569; }
   </style>
 </head>
@@ -75,6 +77,7 @@
         <div id="proposal-photo-preview" class="proposal-photo-preview"></div>
       </div>
       <button type="submit" class="btn-primary">제안 제출하기</button>
+      <div id="proposal-offline-status" class="proposal-offline-status hidden"></div>
       <div id="proposal-result" class="proposal-result hidden"></div>
     </form>
 

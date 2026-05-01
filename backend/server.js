@@ -3,6 +3,7 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const admin = require('firebase-admin');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -52,6 +53,58 @@ app.use(express.static(STATIC_ROOT, { extensions: ['html'] }));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+function getLocalIPv4() {
+  const ifaces = os.networkInterfaces();
+  for (const name of Object.keys(ifaces)) {
+    for (const iface of ifaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        if (iface.address.startsWith('192.') || iface.address.startsWith('10.') || iface.address.startsWith('172.')) {
+          return iface.address;
+        }
+      }
+    }
+  }
+  for (const name of Object.keys(ifaces)) {
+    for (const iface of ifaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return null;
+}
+
+const PROPOSAL_RECORDS_FILE = path.join(__dirname, 'uploads', 'proposals', 'records.json');
+
+function loadProposalRecords() {
+  try {
+    if (!fs.existsSync(PROPOSAL_RECORDS_FILE)) return [];
+    const raw = fs.readFileSync(PROPOSAL_RECORDS_FILE, 'utf8');
+    return JSON.parse(raw || '[]');
+  } catch (err) {
+    console.warn('[Proposal] records load failed', err.message || err);
+    return [];
+  }
+}
+
+function saveProposalRecords(records) {
+  try {
+    fs.mkdirSync(path.dirname(PROPOSAL_RECORDS_FILE), { recursive: true });
+    fs.writeFileSync(PROPOSAL_RECORDS_FILE, JSON.stringify(records, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    console.warn('[Proposal] records save failed', err.message || err);
+    return false;
+  }
+}
+
+app.get('/local-ip.txt', (req, res) => {
+  const ip = getLocalIPv4();
+  if (!ip) return res.status(404).send('');
+  const port = PORT ? `:${PORT}` : '';
+  res.type('text/plain').send(`http://${ip}${port}/`);
 });
 
 app.get('/api/alerts', async (req, res) => {
@@ -263,6 +316,20 @@ app.post('/api/submit-proposal', async (req, res) => {
   console.log(`내용: ${message.body}`);
   console.log('---');
 
+  const proposalRecords = loadProposalRecords();
+  proposalRecords.push({
+    id: 'proposal_' + Date.now(),
+    createdAt: new Date().toISOString(),
+    affiliation,
+    department,
+    name,
+    phone,
+    suggestion,
+    imagePath: savedImagePath,
+    clientIp: req.ip
+  });
+  saveProposalRecords(proposalRecords);
+
   return res.status(200).json({
     success: true,
     apiResponse: {
@@ -273,6 +340,11 @@ app.post('/api/submit-proposal', async (req, res) => {
       error_cnt: 0
     }
   });
+});
+
+app.get('/api/proposal-count', (req, res) => {
+  const proposalRecords = loadProposalRecords();
+  res.json({ count: proposalRecords.length });
 });
 
 function httpRequest(urlString, options = {}) {
@@ -310,7 +382,10 @@ function httpRequest(urlString, options = {}) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`[SafeOn backend] Running at http://localhost:${PORT}`);
-  console.log(`[SafeOn backend] Static app served from ${STATIC_ROOT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  const localIp = getLocalIPv4();
+  const publicUrl = localIp ? `http://${localIp}:${PORT}/` : `http://localhost:${PORT}/`;
+  console.log(`[SafeOn backend] Running at ${publicUrl}`);
+  console.log('[SafeOn backend] Static app served from', STATIC_ROOT);
+  if (!localIp) console.log('[SafeOn backend] Local LAN IP을 찾지 못했습니다. 동일 네트워크에서 접근하려면 네트워크 설정을 확인하세요.');
 });

@@ -18,11 +18,18 @@ const App = {
     history:   '이력조회'
   },
 
-  init() {
+  async init() {
     this.initGuestMode();   // 가장 먼저 실행
     this.setupNavigation();
     this.setupDate();
     this.updateDashboard();
+    if (!this.guestMode) {
+      try {
+        await QRModal.refresh();
+      } catch (e) {
+        console.warn('[App] QR 초기화 실패', e);
+      }
+    }
     this.renderProposalQR();
     this.updatePTWBadge();
     this.setupOfflineDetection();
@@ -304,12 +311,25 @@ const App = {
         q(collections.ptw),
         q(collections.accident)
       ]);
+      let proposalCount = 0;
+      try {
+        const apiBase = window.API_BASE_URL || '';
+        const proposalRes = await fetch(`${apiBase}/api/proposal-count`);
+        if (proposalRes.ok) {
+          const proposalData = await proposalRes.json();
+          proposalCount = typeof proposalData.count === 'number' ? proposalData.count : 0;
+        }
+      } catch (proposalErr) {
+        console.warn('[Dashboard] proposal count load failed', proposalErr.message || proposalErr);
+      }
       document.getElementById('today-tbm-count').textContent      = tbmSnap.size;
       document.getElementById('today-risk-count').textContent     = riskSnap.size;
       document.getElementById('today-check-count').textContent    = checkSnap.size;
       document.getElementById('today-wp-count').textContent       = wpSnap.size;
       document.getElementById('today-ptw-count').textContent      = ptwSnap.size;
       document.getElementById('today-accident-count').textContent = accSnap.size;
+      const proposalEl = document.getElementById('today-proposal-count');
+      if (proposalEl) proposalEl.textContent = proposalCount;
     } catch (err) {
       console.log('Dashboard update:', err.message);
     }
@@ -364,11 +384,16 @@ const App = {
 
   getAppBaseUrl() {
     const href = location.href.split('?')[0].split('#')[0];
-    return href.replace(/\/index\.html$/, '/').replace(/\/$/, '/') ;
+    const basePath = href.replace(/\/index\.html$/, '/').replace(/\/$/, '/') ;
+    if (location.origin && location.origin !== 'null' && href.startsWith(location.origin)) {
+      return location.origin.replace(/\/$/, '') + basePath.substring(location.origin.length);
+    }
+    return basePath;
   },
 
   getProposalUrl() {
-    return this.getAppBaseUrl() + 'proposal.html';
+    const baseUrl = QRModal && QRModal._appUrl ? QRModal._appUrl : this.getAppBaseUrl();
+    return new URL('proposal.html', baseUrl).href;
   },
 
   renderProposalQR() {
@@ -2107,6 +2132,15 @@ const App = {
     } catch(e) {}
 
     // fallback
+    if (!stableUrl && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      try {
+        const localRes = await fetch('/local-ip.txt?_=' + t, { cache: 'no-store' });
+        if (localRes.ok) {
+          const localText = (await localRes.text()).replace(/^﻿/, '').trim();
+          if (localText.startsWith('http')) stableUrl = localText;
+        }
+      } catch(e) {}
+    }
     if (!stableUrl) stableUrl = location.href.split('?')[0].split('#')[0].replace(/\/index\.html$/, '/').replace(/([^/])$/, '$1/');
 
     // DOM 업데이트
@@ -2157,7 +2191,7 @@ const App = {
 
   copyUrl(elId) {
     const el = document.getElementById(elId);
-    const url = el ? el.textContent.trim() : location.origin;
+    const url = el ? el.textContent.trim() : this.getAppBaseUrl();
     if (!url || url === '로딩 중...') return;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(() => this.showToast('✅ 주소 복사 완료'));

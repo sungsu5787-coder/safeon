@@ -33,7 +33,10 @@
     const r = await fetch('/cf-url.txt?_=' + Date.now(), { cache: 'no-store' });
     if (r.ok) url = (await r.text()).trim();
   } catch(_) {}
-  if (!url) url = location.origin + '/';
+  if (!url) {
+    const href = location.href.split('?')[0].split('#')[0];
+    url = href.replace(/\/index\.html$/, '/').replace(/([^/])$/, '$1/');
+  }
 
   document.getElementById('url-text').textContent = url;
 

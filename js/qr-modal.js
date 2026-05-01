@@ -79,8 +79,13 @@ const QRModal = {
       return;
     }
     const perms   = Array.from(checks).map(c => c.value).join(',');
+    const href = location.href.split('?')[0].split('#')[0];
+    const basePath = href.replace(/\/index\.html$/, '/').replace(/\/$/, '/');
+    const safeOrigin = (location.origin && location.origin !== 'null' && href.startsWith(location.origin))
+      ? location.origin.replace(/\/$/, '') + basePath.substring(location.origin.length)
+      : basePath.replace(/\/$/, '');
     const baseUrl = this._tailscaleUrl || this._tunnelUrl || this._wifiUrl ||
-                    `http://localhost${location.port ? ':' + location.port : ''}`;
+                    safeOrigin;
     const guestUrl = `${baseUrl.replace(/\/$/, '')}/?guest=1&perm=${perms}`;
     this._guestUrl = guestUrl;
 
@@ -236,11 +241,24 @@ const QRModal = {
     this._wifiUrl      = isLocalIP(savedUrl)   ? savedUrl
                        : isLocalIP(currentUrl) ? currentUrl : '';
 
-    // Wi-Fi IP가 없고 현재 주소도 localhost이면 → WebRTC로 실제 IP 감지
+    // Wi-Fi IP가 없고 현재 주소도 localhost이면 → 서버에서 로컬 IP 또는 WebRTC로 실제 IP 감지
     if (!this._wifiUrl && isLocalhost(currentUrl)) {
-      const detectedIP = await this._detectLocalIP();
+      let detectedIP = '';
+      try {
+        const localRes = await fetch('/local-ip.txt?_=' + Date.now(), { cache: 'no-store' });
+        if (localRes.ok) {
+          const localText = _stripBom(await localRes.text());
+          if (localText.startsWith('http')) {
+            detectedIP = localText.replace(/\s+/g, '');
+          }
+        }
+      } catch (_) {}
+      if (!detectedIP) {
+        const localIP = await this._detectLocalIP();
+        if (localIP) detectedIP = `http://${localIP}:${port}/`;
+      }
       if (detectedIP) {
-        this._wifiUrl = `http://${detectedIP}:${port}/`;
+        this._wifiUrl = detectedIP;
       }
     }
 
@@ -362,7 +380,12 @@ const QRModal = {
 
   // ── 접속 정보 HTML 생성 ──────────────────────────────────────
   _buildInfoHtml(tunnelOk) {
-    const localUrl = `http://localhost${location.port ? ':' + location.port : ''}/`;
+    const href = location.href.split('?')[0].split('#')[0];
+    const basePath = href.replace(/\/index\.html$/, '/').replace(/\/$/, '/') ;
+    const localOrigin = (location.origin && location.origin !== 'null' && href.startsWith(location.origin))
+      ? location.origin.replace(/\/$/, '') + basePath.substring(location.origin.length)
+      : basePath.replace(/\/$/, '');
+    const localUrl = `${localOrigin}/`;
     let html = '';
 
     // ① Tailscale (최우선 — 항상 안정, DNS 오류 없음)

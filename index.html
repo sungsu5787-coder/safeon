@@ -170,7 +170,7 @@
             </div>
             <div id="proposal-qr-wrap" class="proposal-qr-preview"></div>
             <div id="proposal-url-text" class="proposal-qr-url"></div>
-            <div class="proposal-qr-note">근로자가 QR을 스캔하면 제안 폼으로 이동합니다.</div>
+            <div class="proposal-qr-note">근로자가 QR을 스캔하면 제안 폼으로 이동합니다. (동일 Wi-Fi/터널 URL로 모바일 접속 지원)</div>
           </div>
 
           <!-- Featured: 안전사고발생보고서 (TBM 위) -->
@@ -314,6 +314,10 @@
               <div class="summary-item">
                 <span class="summary-value" id="today-accident-count" style="color:#d93025">0</span>
                 <span class="summary-label">사고보고</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="today-proposal-count" style="color:#1e88e5">0</span>
+                <span class="summary-label">제안 건수</span>
               </div>
             </div>
           </div>
@@ -1342,6 +1346,11 @@
     if (typeof App !== 'undefined') App.dismissPWABanner(true);
     console.log('[PWA] 홈 화면 설치 완료');
   });
+
+  // API Base URL 설정 (로컬 개발 vs Vercel 배포)
+  window.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? '' // 로컬에서는 상대 경로 사용
+    : 'https://safeon-api.vercel.app'; // Vercel 배포 시 실제 API URL
   </script>
 
   <!-- Service Worker -->
