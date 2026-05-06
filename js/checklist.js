@@ -223,7 +223,7 @@ const Checklist = {
             <div class="check-status">
               <button type="button" onclick="Checklist.setStatus('${key}', 'pass', this)">양호</button>
               <button type="button" onclick="Checklist.setStatus('${key}', 'fail', this)">불량</button>
-              <button type="button" onclick="Checklist.setStatus('${key}', 'na', this)">N/A</button>
+              <button type="button" onclick="Checklist.setStatus('${key}', 'na', this)">해당없음</button>
             </div>
           </div>
         `;
