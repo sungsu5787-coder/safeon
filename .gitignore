@@ -58,3 +58,7 @@ js/tbm.js.bak2
 # Backend node_modules
 backend/node_modules/
 backend/uploads/
+.vercel
+
+# Vercel CLI 인증 데이터 (절대 커밋 금지)
+Userskss57AppDataRoaming/

@@ -1,9 +1,18 @@
 {
   "version": 2,
   "builds": [
-    { "src": "backend/server.js", "use": "@vercel/node" }
+    { "src": "backend/server.js", "use": "@vercel/node" },
+    { "src": "**/*.html", "use": "@vercel/static" },
+    { "src": "css/**", "use": "@vercel/static" },
+    { "src": "js/**", "use": "@vercel/static" },
+    { "src": "images/**", "use": "@vercel/static" },
+    { "src": "icons/**", "use": "@vercel/static" },
+    { "src": "manifest.json", "use": "@vercel/static" },
+    { "src": "sw.js", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "backend/server.js" }
+    { "src": "/api/(.*)", "dest": "backend/server.js" },
+    { "src": "/local-ip.txt", "dest": "backend/server.js" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
