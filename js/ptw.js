@@ -275,7 +275,7 @@ const PTW = {
             <div class="check-status">
               <button type="button" onclick="PTW.setCheck('${key}','pass',this)">적합</button>
               <button type="button" onclick="PTW.setCheck('${key}','fail',this)">부적합</button>
-              <button type="button" onclick="PTW.setCheck('${key}','na',this)">N/A</button>
+              <button type="button" onclick="PTW.setCheck('${key}','na',this)">해당없음</button>
             </div>
           </div>`;
       });

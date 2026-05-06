@@ -947,7 +947,7 @@ const App = {
               <button type="button" class="cl-edit-btn ${failActive}" data-val="fail"
                 onclick="App._clEditToggle(this,'fail')">불량</button>
               <button type="button" class="cl-edit-btn ${naActive}" data-val="na"
-                onclick="App._clEditToggle(this,'na')">N/A</button>
+                onclick="App._clEditToggle(this,'na')">해당없음</button>
             </div>
           </div>`;
         });
@@ -1295,7 +1295,7 @@ const App = {
 
   renderChecklistDetail(d) {
     const resultsHtml = Object.entries(d.results||{}).map(([key,val]) => {
-      const txt   = val==='pass'?'양호':val==='fail'?'불량':'N/A';
+      const txt   = val==='pass'?'양호':val==='fail'?'불량':'해당없음';
       const color = val==='pass'?'var(--success)':val==='fail'?'var(--danger)':'var(--gray-500)';
       return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)">
         <span>${this.escapeHtml(key)}</span>
@@ -1392,7 +1392,7 @@ const App = {
         const cl = (typeof PTW !== 'undefined') ? PTW.checklists[tk] : null;
         const typeLabel = cl ? cl.label : tk;
         const rows = items.sort((a, b) => a.idx - b.idx).map(({ idx, v }) => {
-          const result = v === 'pass' ? '✅ 적합' : v === 'fail' ? '❌ 부적합' : '— N/A';
+          const result = v === 'pass' ? '✅ 적합' : v === 'fail' ? '❌ 부적합' : '— 해당없음';
           const itemName = cl && cl.items[idx] ? cl.items[idx] : `항목 ${idx + 1}`;
           return `<div style="display:flex;justify-content:space-between;padding:4px 0 4px 8px;border-bottom:1px solid var(--gray-100);font-size:13px">
             <span style="color:var(--gray-700)">${this.escapeHtml(itemName)}</span><span style="white-space:nowrap;margin-left:8px">${result}</span>
@@ -1836,7 +1836,7 @@ const App = {
         ['💬 종합의견', tr(d.opinion)],
       ].filter(([,v]) => v);
       const resRows = Object.entries(d.results||{}).map(([k, v]) =>
-        [tr(k, 22), v==='pass'?'✅ 양호':v==='fail'?'❌ 불량':'— N/A']
+        [tr(k, 22), v==='pass'?'✅ 양호':v==='fail'?'❌ 불량':'— 해당없음']
       );
       const resTbl = resRows.length
         ? '\n\n🔍 점검결과\n' + this._textTable(['점검항목','결과'], resRows)
@@ -1905,7 +1905,7 @@ const App = {
         const cl = (typeof PTW !== 'undefined') ? PTW.checklists[tk] : null;
         const typeLabel = cl ? cl.label : tk;
         items.sort((a,b) => a.idx-b.idx).forEach(({idx, v}) => {
-          const statusLabel = v==='pass'?'✅ 적합':v==='fail'?'❌ 부적합':'— N/A';
+          const statusLabel = v==='pass'?'✅ 적합':v==='fail'?'❌ 부적합':'— 해당없음';
           const itemLabel   = cl && cl.items[idx] ? this._trunc(cl.items[idx], 20) : `항목 ${idx+1}`;
           checkRows.push([typeLabel, itemLabel, statusLabel]);
         });

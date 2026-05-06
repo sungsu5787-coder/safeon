@@ -396,7 +396,7 @@ const History = {
       const parts  = [];
       if (pass) parts.push(`<span class="hc-chip hc-pass">✅ 양호 ${pass}</span>`);
       if (fail) parts.push(`<span class="hc-chip hc-fail">❌ 불량 ${fail}</span>`);
-      if (na)   parts.push(`<span class="hc-chip hc-none">— N/A ${na}</span>`);
+      if (na)   parts.push(`<span class="hc-chip hc-none">— 해당없음 ${na}</span>`);
       if (!parts.length) parts.push(`<span class="hc-chip hc-none">점검항목 없음</span>`);
       return parts.join('');
     }
@@ -417,7 +417,7 @@ const History = {
       const parts = [];
       if (pass) parts.push(`<span class="hc-chip hc-pass">✅ 적합 ${pass}</span>`);
       if (fail) parts.push(`<span class="hc-chip hc-fail">❌ 부적합 ${fail}</span>`);
-      if (na)   parts.push(`<span class="hc-chip hc-none">— N/A ${na}</span>`);
+      if (na)   parts.push(`<span class="hc-chip hc-none">— 해당없음 ${na}</span>`);
       if (!res.length) parts.push(`<span class="hc-chip hc-none">체크 없음</span>`);
       return parts.join('');
     }
