@@ -133,13 +133,18 @@
               <div class="access-url-row-header">
                 <span class="access-url-badge badge-stable">📶 고정 주소</span>
                 <span class="access-url-badge-hint">재시작해도 절대 안 바뀜</span>
-                <button class="access-url-copy" onclick="App.copyUrl('access-url-stable')" title="복사">
+                <button class="access-url-copy" onclick="App.copyUrl('access-url-stable')" title="복사" id="access-url-copy-btn">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>복사
                 </button>
+                <button class="access-url-toggle" onclick="App.toggleAccessUrl()" id="access-url-toggle-btn" title="접기/펼치기">
+                  <svg id="access-url-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
               </div>
-              <div class="access-url-value" id="access-url-stable">로딩 중...</div>
-              <div class="access-url-bookmark-hint">
-                ⭐ <strong>이 주소를 홈화면에 추가하세요</strong> — 아래 QR 버튼 또는 브라우저 메뉴 → 홈 화면에 추가
+              <div id="access-url-stable-body">
+                <div class="access-url-value" id="access-url-stable">로딩 중...</div>
+                <div class="access-url-bookmark-hint">
+                  ⭐ <strong>이 주소를 홈화면에 추가하세요</strong> — 아래 QR 버튼 또는 브라우저 메뉴 → 홈 화면에 추가
+                </div>
               </div>
             </div>
 

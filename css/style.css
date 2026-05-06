@@ -359,6 +359,23 @@ main {
   padding-top: 4px;
 }
 .access-url-cf-row.hidden { display: none; }
+#access-url-stable-body.collapsed { display: none; }
+.access-url-toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  color: #4caf7d;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.2s;
+  border-radius: 4px;
+}
+.access-url-toggle:hover { opacity: 1; background: rgba(0,0,0,0.05); }
+#access-url-toggle-icon { transition: transform 0.2s; }
+#access-url-toggle-icon.rotated { transform: rotate(180deg); }
 
 .access-url-row-header {
   display: flex;

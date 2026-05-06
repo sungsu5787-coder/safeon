@@ -2122,6 +2122,7 @@ const App = {
   _accessUrlTimer: null,
 
   async loadAccessUrl() {
+    this._restoreAccessUrlToggle();
     await this._refreshAccessUrl();
     // CF URL은 서버 재시작마다 바뀌므로 30초마다 자동 갱신
     if (this._accessUrlTimer) clearInterval(this._accessUrlTimer);
@@ -2224,6 +2225,30 @@ const App = {
 
   // 하위 호환 (기존 호출 유지)
   copyAccessUrl() { this.copyUrl('access-url-stable'); },
+
+  toggleAccessUrl() {
+    const body = document.getElementById('access-url-stable-body');
+    const icon = document.getElementById('access-url-toggle-icon');
+    const copyBtn = document.getElementById('access-url-copy-btn');
+    if (!body) return;
+    const collapsed = body.classList.toggle('collapsed');
+    icon.classList.toggle('rotated', collapsed);
+    if (copyBtn) copyBtn.style.display = collapsed ? 'none' : '';
+    try { localStorage.setItem('accessUrlCollapsed', collapsed ? '1' : '0'); } catch(e) {}
+  },
+
+  _restoreAccessUrlToggle() {
+    try {
+      if (localStorage.getItem('accessUrlCollapsed') === '1') {
+        const body = document.getElementById('access-url-stable-body');
+        const icon = document.getElementById('access-url-toggle-icon');
+        const copyBtn = document.getElementById('access-url-copy-btn');
+        if (body) body.classList.add('collapsed');
+        if (icon) icon.classList.add('rotated');
+        if (copyBtn) copyBtn.style.display = 'none';
+      }
+    } catch(e) {}
+  },
 
   // ── 강제 업데이트 ──────────────────────────────────────────
   async forceUpdate() {
