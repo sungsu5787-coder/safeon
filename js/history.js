@@ -327,8 +327,12 @@ const History = {
     const info     = this._getItemInfo(item);
     const checkBar = this._renderCheckBar(item);
 
+    const cardClick = collType === 'proposal'
+      ? `History._openProposal('${item.id}')`
+      : `App.showDetail('${collType}', '${item.id}')`;
+
     return `
-      <div class="history-card" onclick="App.showDetail('${collType}', '${item.id}')">
+      <div class="history-card" onclick="${cardClick}">
         <div class="history-card-header">
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <span class="history-type-badge ${badgeClass[displayType]||''}">${typeLabels[displayType]||displayType}</span>
@@ -352,6 +356,21 @@ const History = {
         </div>
       </div>
     `;
+  },
+
+  // ── 안전제안 상세보기 (이력조회에서 호출) ─────────────────────
+  async _openProposal(id) {
+    try {
+      const apiBase = window.API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/proposals`);
+      if (!res.ok) throw new Error('server error');
+      const data = await res.json();
+      ProposalsView._proposals = data.proposals || [];
+      ProposalsView.showDetail(String(id));
+    } catch(e) {
+      App.showToast('제안 내용을 불러올 수 없습니다');
+      console.error('[History._openProposal]', e);
+    }
   },
 
   // ── 유형별 체크 현황 바 ─────────────────────────────────────

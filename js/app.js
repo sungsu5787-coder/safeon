@@ -522,6 +522,12 @@ const App = {
     const container = document.getElementById('detail-content');
     container.innerHTML = '<p class="empty-state">로딩 중...</p>';
 
+    if (!collections[type]) {
+      container.innerHTML = '<p class="empty-state">지원하지 않는 기록 유형입니다.</p>';
+      console.error('[loadDetail] 알 수 없는 타입:', type);
+      return;
+    }
+
     try {
       const doc = await collections[type].doc(id).get();
       if (!doc.exists) {
