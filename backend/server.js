@@ -383,6 +383,30 @@ app.patch('/api/proposals/:id/status', async (req, res) => {
   res.json({ success: true });
 });
 
+app.patch('/api/proposals/:id/note', async (req, res) => {
+  const { id } = req.params;
+  const { note } = req.body || {};
+  if (typeof note !== 'string') return res.status(400).json({ error: '비고 내용이 필요합니다.' });
+  const now = new Date().toISOString();
+  if (db) {
+    try {
+      await db.collection(PROPOSALS_COLLECTION).doc(id).update({ note, noteUpdatedAt: now });
+      return res.json({ success: true });
+    } catch (e) { console.warn('[Proposal] Firestore Admin 비고 업데이트 실패:', e.message); }
+  }
+  try {
+    const ok = await _fsPatch(PROPOSALS_COLLECTION, id, { note, noteUpdatedAt: now }, ['note', 'noteUpdatedAt']);
+    if (ok) return res.json({ success: true });
+  } catch (e) { console.warn('[Proposal] Firestore REST 비고 업데이트 실패:', e.message); }
+  const records = _readJsonFile();
+  const idx = records.findIndex(r => r.id === id);
+  if (idx === -1) return res.status(404).json({ error: '제안을 찾을 수 없습니다.' });
+  records[idx].note = note;
+  records[idx].noteUpdatedAt = now;
+  _writeJsonFile(records);
+  res.json({ success: true });
+});
+
 app.get('/api/proposals/:id/image', async (req, res) => {
   const records = await loadProposalRecords();
   const record = records.find(r => r.id === req.params.id);

@@ -76,7 +76,10 @@ const ProposalsView = {
         <div class="proposal-card-body">${App.escapeHtml(preview)}</div>
         <div class="proposal-card-footer">
           <span>${date}</span>
-          ${p.hasImage ? '<span class="proposal-has-photo">📷 사진</span>' : ''}
+          <div style="display:flex;gap:6px">
+            ${p.note ? '<span class="proposal-has-photo">📝 비고</span>' : ''}
+            ${p.hasImage ? '<span class="proposal-has-photo">📷 사진</span>' : ''}
+          </div>
         </div>
       </div>`;
   },
@@ -114,6 +117,12 @@ const ProposalsView = {
                     onclick="ProposalsView.setStatus('${p.id}','${s}')">${s}</button>
           `).join('')}
         </div>
+      </div>
+      <div class="proposal-detail-note-section">
+        <div class="proposal-detail-label">비고</div>
+        <textarea id="proposal-note-input" class="proposal-note-textarea" rows="3"
+          placeholder="처리 상태 관련 내용을 입력하세요 (담당자 의견, 조치 결과 등)">${App.escapeHtml(p.note || '')}</textarea>
+        <button class="proposal-note-save-btn" onclick="ProposalsView.saveNote('${p.id}')">비고 저장</button>
       </div>`;
 
     modal.classList.remove('hidden');
@@ -140,6 +149,27 @@ const ProposalsView = {
       this._render();
     } catch {
       App.showToast('상태 변경에 실패했습니다.');
+    }
+  },
+
+  async saveNote(id) {
+    const textarea = document.getElementById('proposal-note-input');
+    if (!textarea) return;
+    const note = textarea.value.trim();
+    try {
+      const apiBase = window.API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/proposals/${id}/note`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note })
+      });
+      if (!res.ok) throw new Error('fail');
+      const p = this._proposals.find(x => x.id === id);
+      if (p) p.note = note;
+      App.showToast('✅ 비고가 저장되었습니다.');
+      this._render();
+    } catch {
+      App.showToast('비고 저장에 실패했습니다.');
     }
   }
 };

@@ -2400,6 +2400,11 @@ main {
   max-height: 240px;
 }
 .proposal-detail-status { margin-top: 4px; }
+.proposal-detail-note-section { margin-top: 16px; }
+.proposal-note-textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #dde1e7; border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; background: #f8f9fa; margin-top: 6px; }
+.proposal-note-textarea:focus { outline: none; border-color: var(--primary); background: #fff; }
+.proposal-note-save-btn { margin-top: 8px; width: 100%; padding: 10px; background: var(--primary); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.proposal-note-save-btn:active { opacity: 0.85; }
 .proposal-status-btns {
   display: flex;
   gap: 8px;
