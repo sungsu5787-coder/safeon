@@ -264,10 +264,8 @@ app.post('/api/send-alimtalk', async (req, res) => {
 
 // ── 제안 접수 ─────────────────────────────────────────────────
 app.post('/api/submit-proposal', async (req, res) => {
-  if (!KAKAO_API_KEY) return res.status(500).json({ error: 'KAKAO_API_KEY not configured' });
-
   const { affiliation, department, name, phone, suggestion, imageData } = req.body || {};
-  if (!affiliation || !department || !name || !phone || !suggestion || !imageData)
+  if (!affiliation || !department || !name || !phone || !suggestion)
     return res.status(400).json({ error: '필수 항목이 누락되었습니다.' });
 
   const recordId = 'proposal_' + Date.now();
