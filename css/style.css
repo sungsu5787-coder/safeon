@@ -3487,6 +3487,7 @@ input[type="date"]:disabled {
 /* 이력 뱃지 */
 .badge-accident { background: #fce8e6; color: #c5221f; }
 .badge-nearmiss { background: #fff9c4; color: #f57f17; }
+.badge-proposal { background: #e8f5e9; color: #2e7d32; }
 
 /* ===== AI 재발방지대책 추천 ===== */
 /* label + AI 버튼 행 */

@@ -33,6 +33,36 @@ const History = {
     this._results = [];
 
     try {
+      // 안전제안: API에서 별도 로드
+      const includeProposal = type === 'all' || type === 'proposal';
+      if (includeProposal) {
+        try {
+          const apiBase = window.API_BASE_URL || '';
+          const res = await fetch(`${apiBase}/api/proposals`);
+          if (res.ok) {
+            const data = await res.json();
+            (data.proposals || []).forEach(p => {
+              const date = p.createdAt ? p.createdAt.split('T')[0] : '';
+              if (dateFrom && date < dateFrom) return;
+              if (dateTo   && date > dateTo)   return;
+              this._results.push({ ...p, date, _collType: 'proposal' });
+            });
+          }
+        } catch (e) { console.warn('[History] 안전제안 로드 실패:', e); }
+      }
+
+      if (type === 'proposal') {
+        this._results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        if (this.countLabel) this.countLabel.textContent = this._results.length + '건';
+        if (!this._results.length) {
+          this.listContainer.innerHTML = '<p class="empty-state">조회된 기록이 없습니다.</p>';
+          if (this.pagerContainer) this.pagerContainer.innerHTML = '';
+          return;
+        }
+        this._renderPage(1);
+        return;
+      }
+
       // 'nearmiss' = accident 컬렉션에서 accidentType === 'nearmiss' 필터 조회
       const types = type === 'all'
         ? ['tbm', 'risk', 'checklist', 'workplan', 'ptw', 'accident']
@@ -138,7 +168,7 @@ const History = {
     const dateFrom   = document.getElementById('history-date-from').value;
     const dateTo     = document.getElementById('history-date-to').value;
     const typeVal    = document.getElementById('history-type').value;
-    const typeLabels = { all:'전체', tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서' };
+    const typeLabels = { all:'전체', tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서', proposal:'안전제안' };
 
     const badgeStyle = {
       tbm:       'background:#e8f0fe;color:#1557b0',
@@ -214,7 +244,7 @@ const History = {
   exportCSV() {
     if (!this._results.length) { App.showToast('내보낼 기록이 없습니다.'); return; }
 
-    const typeLabels = { tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서' };
+    const typeLabels = { tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서', proposal:'안전제안' };
     const header = ['번호', '구분', '일자', '제목', '세부내용', '상태'];
 
     const rows = this._results.map((item, i) => {
@@ -270,6 +300,9 @@ const History = {
     } else if (t === 'accident') {
       title = item.location || '장소 미입력';
       sub   = [item.reporter, item.time].filter(Boolean).join(' · ');
+    } else if (t === 'proposal') {
+      title = (item.suggestion || '').slice(0, 40) || '안전제안';
+      sub   = [item.affiliation, item.department, item.name].filter(Boolean).join(' · ');
     }
     return { title, sub };
   },
@@ -285,8 +318,8 @@ const History = {
     // accident 컬렉션이면서 accidentType === 'nearmiss' 인 경우 별도 배지 표시
     const isNearmiss = collType === 'accident' && item.accidentType === 'nearmiss';
     const displayType = isNearmiss ? 'nearmiss' : collType;
-    const typeLabels = { tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서' };
-    const badgeClass = { tbm:'badge-tbm', risk:'badge-risk', checklist:'badge-checklist', workplan:'badge-workplan', ptw:'badge-ptw', nearmiss:'badge-nearmiss', accident:'badge-accident' };
+    const typeLabels = { tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서', proposal:'안전제안' };
+    const badgeClass = { tbm:'badge-tbm', risk:'badge-risk', checklist:'badge-checklist', workplan:'badge-workplan', ptw:'badge-ptw', nearmiss:'badge-nearmiss', accident:'badge-accident', proposal:'badge-proposal' };
 
     const statusBadge = (item.status && item.status !== 'draft')
       ? this.renderStatusBadge(item.status) : '';
