@@ -87,14 +87,69 @@ function _writeJsonFile(records) {
   } catch (e) { console.warn('[Proposal] JSON 저장 실패:', e.message); }
 }
 
+// ── Firestore REST API 폴백 (Admin SDK 없을 때) ───────────────
+const FIRESTORE_API_KEY = 'AIzaSyDmPqngE7WIfu6ejgTE64R71IiEZz7SzuQ';
+const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
+
+function _toFsFields(obj) {
+  const f = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v == null) continue;
+    if (typeof v === 'string') f[k] = { stringValue: v };
+    else if (typeof v === 'boolean') f[k] = { booleanValue: v };
+    else if (typeof v === 'number') f[k] = { integerValue: String(v) };
+  }
+  return f;
+}
+
+function _fromFsDoc(doc) {
+  const id = doc.name.split('/').pop();
+  const obj = { id };
+  for (const [k, v] of Object.entries(doc.fields || {})) {
+    if ('stringValue' in v) obj[k] = v.stringValue;
+    else if ('booleanValue' in v) obj[k] = v.booleanValue;
+    else if ('integerValue' in v) obj[k] = parseInt(v.integerValue);
+    else if ('doubleValue' in v) obj[k] = v.doubleValue;
+  }
+  return obj;
+}
+
+async function _fsGetAll(col) {
+  let docs = [], pageToken = null;
+  do {
+    const url = `${FIRESTORE_URL}/${col}?key=${FIRESTORE_API_KEY}&pageSize=100${pageToken ? '&pageToken=' + pageToken : ''}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'Firestore REST error');
+    (data.documents || []).forEach(d => docs.push(_fromFsDoc(d)));
+    pageToken = data.nextPageToken || null;
+  } while (pageToken);
+  return docs;
+}
+
+async function _fsPatch(col, id, obj, masks) {
+  const qs = masks ? '&' + masks.map(m => `updateMask.fieldPaths=${encodeURIComponent(m)}`).join('&') : '';
+  const url = `${FIRESTORE_URL}/${col}/${id}?key=${FIRESTORE_API_KEY}${qs}`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: _toFsFields(obj) })
+  });
+  return res.ok;
+}
+
 // ── Proposal CRUD ─────────────────────────────────────────────
 async function loadProposalRecords() {
   if (firebaseReady) {
     try {
       const snap = await db.collection(PROPOSALS_COLLECTION).orderBy('createdAt').get();
       return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (e) { console.warn('[Proposal] Firestore 로드 실패, JSON 폴백:', e.message); }
+    } catch (e) { console.warn('[Proposal] Firestore Admin 로드 실패:', e.message); }
   }
+  try {
+    const docs = await _fsGetAll(PROPOSALS_COLLECTION);
+    return docs.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+  } catch (e) { console.warn('[Proposal] Firestore REST 로드 실패, JSON 폴백:', e.message); }
   return _readJsonFile();
 }
 
@@ -103,8 +158,12 @@ async function saveProposalRecord(record) {
     try {
       await db.collection(PROPOSALS_COLLECTION).doc(record.id).set(record);
       return;
-    } catch (e) { console.warn('[Proposal] Firestore 저장 실패, JSON 폴백:', e.message); }
+    } catch (e) { console.warn('[Proposal] Firestore Admin 저장 실패:', e.message); }
   }
+  try {
+    await _fsPatch(PROPOSALS_COLLECTION, record.id, record);
+    return;
+  } catch (e) { console.warn('[Proposal] Firestore REST 저장 실패, JSON 폴백:', e.message); }
   const records = _readJsonFile();
   const idx = records.findIndex(r => r.id === record.id);
   if (idx >= 0) records[idx] = record; else records.push(record);
@@ -117,8 +176,12 @@ async function updateProposalStatus(id, status) {
     try {
       await db.collection(PROPOSALS_COLLECTION).doc(id).update({ status, statusUpdatedAt: now });
       return true;
-    } catch (e) { console.warn('[Proposal] Firestore 상태 업데이트 실패, JSON 폴백:', e.message); }
+    } catch (e) { console.warn('[Proposal] Firestore Admin 상태 업데이트 실패:', e.message); }
   }
+  try {
+    const ok = await _fsPatch(PROPOSALS_COLLECTION, id, { status, statusUpdatedAt: now }, ['status', 'statusUpdatedAt']);
+    if (ok) return true;
+  } catch (e) { console.warn('[Proposal] Firestore REST 상태 업데이트 실패:', e.message); }
   const records = _readJsonFile();
   const idx = records.findIndex(r => r.id === id);
   if (idx === -1) return false;
@@ -145,7 +208,12 @@ async function saveProposalImage(imageData, recordId) {
       await file.save(buffer, { metadata: { contentType: matches[1] } });
       const [url] = await file.getSignedUrl({ action: 'read', expires: '2100-01-01' });
       return { imagePath: `gs://${FIREBASE_STORAGE_BUCKET}/proposals/${safeName}`, imageUrl: url };
-    } catch (e) { console.warn('[Proposal] Storage 저장 실패, 로컬 폴백:', e.message); }
+    } catch (e) { console.warn('[Proposal] Storage 저장 실패, 폴백:', e.message); }
+  }
+
+  // Vercel 서버리스 환경: data URL로 Firestore에 함께 저장
+  if (process.env.VERCEL) {
+    return { imagePath: '', imageUrl: imageData };
   }
 
   // 로컬 디스크 폴백
@@ -295,12 +363,13 @@ app.get('/api/proposal-count', async (req, res) => {
 
 app.get('/api/proposals', async (req, res) => {
   const records = await loadProposalRecords();
-  const result = records.map(({ imagePath, clientIp, ...rest }) => ({
-    ...rest,
-    status: rest.status || '접수',
-    hasImage: !!(imagePath || rest.imageUrl),
-    imageUrl: rest.imageUrl || (imagePath && !imagePath.startsWith('gs://') ? `/api/proposals/${rest.id}/image` : null)
-  })).reverse();
+  const result = records.map(({ imagePath, clientIp, imageUrl: rawUrl, ...rest }) => {
+    const hasImage = !!(imagePath || rawUrl);
+    let imageUrl = null;
+    if (rawUrl && rawUrl.startsWith('http')) imageUrl = rawUrl;
+    else if (hasImage) imageUrl = `/api/proposals/${rest.id}/image`;
+    return { ...rest, status: rest.status || '접수', hasImage, imageUrl };
+  }).reverse();
   res.json({ proposals: result });
 });
 
@@ -318,9 +387,14 @@ app.get('/api/proposals/:id/image', async (req, res) => {
   const records = await loadProposalRecords();
   const record = records.find(r => r.id === req.params.id);
   if (!record) return res.status(404).send('Not found');
-  // Firebase Storage URL이 있으면 리다이렉트
   if (record.imageUrl && record.imageUrl.startsWith('http')) return res.redirect(record.imageUrl);
-  // 로컬 파일
+  if (record.imageUrl && record.imageUrl.startsWith('data:')) {
+    const m = record.imageUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
+    if (m) {
+      res.setHeader('Content-Type', m[1]);
+      return res.send(Buffer.from(m[2], 'base64'));
+    }
+  }
   if (record.imagePath && fs.existsSync(record.imagePath)) return res.sendFile(record.imagePath);
   res.status(404).send('Image not found');
 });
