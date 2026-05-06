@@ -70,7 +70,8 @@ const Proposal = {
       return this.showResult('위험 상황을 증빙할 사진을 반드시 첨부해야 합니다.', false);
     }
 
-    const imageData = await this.readFileAsDataUrl(this._file);
+    const rawData = await this.readFileAsDataUrl(this._file);
+    const imageData = await this.compressImage(rawData);
     const payload = { affiliation, department, name, phone, suggestion, imageData };
 
     if (!navigator.onLine) {
@@ -233,6 +234,26 @@ const Proposal = {
     } else {
       statusEl.classList.add('hidden');
     }
+  },
+
+  compressImage(dataUrl, maxWidth = 1280, quality = 0.75) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round(height * maxWidth / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
   },
 
   readFileAsDataUrl(file) {

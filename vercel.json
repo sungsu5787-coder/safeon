@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "functions": {
+    "backend/server.js": { "maxDuration": 30 }
+  },
   "builds": [
     { "src": "backend/server.js", "use": "@vercel/node" },
     { "src": "**/*.html", "use": "@vercel/static" },
