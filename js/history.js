@@ -71,15 +71,17 @@ const History = {
       const snaps = await Promise.all(types.map(t => {
         const collName = t === 'nearmiss' ? 'accident' : t;
         let query = collections[collName].orderBy('date', 'desc');
-        if (t === 'nearmiss') query = query.where('accidentType', '==', 'nearmiss');
         if (dateFrom) query = query.where('date', '>=', dateFrom);
         if (dateTo)   query = query.where('date', '<=', dateTo);
-        return query.limit(50).get().then(snap => ({ snap, collName }));
+        return query.limit(50).get().then(snap => ({ snap, collName, t }));
       }));
 
-      snaps.forEach(({ snap, collName }) => {
+      snaps.forEach(({ snap, collName, t }) => {
         snap.forEach(doc => {
-          this._results.push({ ...doc.data(), id: doc.id, _collType: collName });
+          const data = doc.data();
+          // 복합 인덱스 없이도 동작하도록 accidentType은 클라이언트에서 필터링
+          if (t === 'nearmiss' && data.accidentType !== 'nearmiss') return;
+          this._results.push({ ...data, id: doc.id, _collType: collName });
         });
       });
 
