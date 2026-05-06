@@ -1377,15 +1377,30 @@ const App = {
 
     const typeLabels = (d.workTypeLabels || d.workTypes || []).join(', ');
 
-    const checkHtml = Object.entries(d.checkResults||{}).length
-      ? Object.entries(d.checkResults).map(([k,v]) => {
-          const label = v==='pass'?'✅ 적합':v==='fail'?'❌ 부적합':'— N/A';
-          const parts = k.split('_');
-          return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--gray-100);font-size:13px">
-            <span>${this.escapeHtml(parts[0])} #${parseInt(parts[1])+1}</span><span>${label}</span>
+    const checkHtml = (() => {
+      const entries = Object.entries(d.checkResults || {});
+      if (!entries.length) return '<p style="color:var(--gray-500);font-size:13px">-</p>';
+      const byType = {};
+      entries.forEach(([k, v]) => {
+        const lastU = k.lastIndexOf('_');
+        const tk = k.substring(0, lastU);
+        const idx = parseInt(k.substring(lastU + 1));
+        if (!byType[tk]) byType[tk] = [];
+        byType[tk].push({ idx, v });
+      });
+      return Object.entries(byType).map(([tk, items]) => {
+        const cl = (typeof PTW !== 'undefined') ? PTW.checklists[tk] : null;
+        const typeLabel = cl ? cl.label : tk;
+        const rows = items.sort((a, b) => a.idx - b.idx).map(({ idx, v }) => {
+          const result = v === 'pass' ? '✅ 적합' : v === 'fail' ? '❌ 부적합' : '— N/A';
+          const itemName = cl && cl.items[idx] ? cl.items[idx] : `항목 ${idx + 1}`;
+          return `<div style="display:flex;justify-content:space-between;padding:4px 0 4px 8px;border-bottom:1px solid var(--gray-100);font-size:13px">
+            <span style="color:var(--gray-700)">${this.escapeHtml(itemName)}</span><span style="white-space:nowrap;margin-left:8px">${result}</span>
           </div>`;
-        }).join('')
-      : '<p style="color:var(--gray-500);font-size:13px">-</p>';
+        }).join('');
+        return `<div style="font-size:12px;font-weight:700;color:var(--primary);margin-top:8px;margin-bottom:2px">${this.escapeHtml(typeLabel)}</div>${rows}`;
+      }).join('');
+    })();
 
     return `
       <div class="detail-status-bar" style="background:${statusColor[st]||'var(--primary)'}">
