@@ -312,7 +312,54 @@ app.get('/api/alerts', async (req, res) => {
   }
 });
 
-// ── 알림톡 ───────────────────────────────────────────────────
+// ── 알림톡 내부 전송 함수 ────────────────────────────────────
+function sendKakaoAlimtalk(recipientPhone, templateId, message) {
+  if (!isValidEnvValue(KAKAO_API_KEY) || !isValidEnvValue(KAKAO_API_URL)) {
+    console.warn('[알림톡] 환경변수 미설정 (KAKAO_API_KEY 또는 KAKAO_API_URL)');
+    return Promise.resolve({ success: false, error: 'config_missing' });
+  }
+
+  const payload = JSON.stringify({ recipientPhone, templateId, message });
+
+  return new Promise(resolve => {
+    let url;
+    try { url = new URL(KAKAO_API_URL); } catch (e) {
+      return resolve({ success: false, error: 'invalid_url' });
+    }
+    const options = {
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname + url.search,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${KAKAO_API_KEY}`,
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    };
+    const lib = url.protocol === 'https:' ? https : http;
+    const req = lib.request(options, res2 => {
+      let body = '';
+      res2.on('data', chunk => body += chunk);
+      res2.on('end', () => {
+        const ok = res2.statusCode >= 200 && res2.statusCode < 300;
+        let data;
+        try { data = JSON.parse(body); } catch (_) { data = { raw: body }; }
+        if (ok) console.log('[알림톡] 전송 성공:', data);
+        else    console.warn('[알림톡] 전송 실패:', res2.statusCode, data);
+        resolve({ success: ok, data, statusCode: res2.statusCode });
+      });
+    });
+    req.on('error', e => {
+      console.error('[알림톡] 네트워크 오류:', e.message);
+      resolve({ success: false, error: e.message });
+    });
+    req.write(payload);
+    req.end();
+  });
+}
+
+// ── 알림톡 API ───────────────────────────────────────────────
 app.get('/api/notify-config', (req, res) => {
   const enabled = isValidEnvValue(KAKAO_API_KEY) && isValidEnvValue(KAKAO_RECIPIENT_PHONE) && isValidEnvValue(KAKAO_TEMPLATE_ID);
   res.json({ enabled, recipientPhone: KAKAO_RECIPIENT_PHONE, templateId: KAKAO_TEMPLATE_ID,
@@ -320,14 +367,18 @@ app.get('/api/notify-config', (req, res) => {
 });
 
 app.post('/api/send-alimtalk', async (req, res) => {
-  if (!KAKAO_API_KEY) return res.status(500).json({ error: 'KAKAO_API_KEY not configured' });
+  if (!isValidEnvValue(KAKAO_API_KEY))
+    return res.status(500).json({ error: 'KAKAO_API_KEY not configured' });
   const { recipientPhone, templateId, message } = req.body;
   if (!recipientPhone || !templateId || !message?.title || !message?.body)
     return res.status(400).json({ error: 'recipientPhone, templateId, message.title, message.body required' });
 
-  console.log('[알림톡]', recipientPhone, '-', message.title);
-  return res.status(200).json({ success: true,
-    apiResponse: { result_code: '00', result_message: 'SUCCESS', msg_id: 'MSG_' + Date.now(), success_cnt: 1, error_cnt: 0 } });
+  console.log('[알림톡] 전송 요청:', recipientPhone, '-', message.title);
+  const result = await sendKakaoAlimtalk(recipientPhone, templateId, message);
+  return res.status(200).json({
+    success: result.success,
+    apiResponse: result.data || { result_code: result.error || 'ERR', msg_id: 'MSG_' + Date.now() }
+  });
 });
 
 // ── 제안 접수 ─────────────────────────────────────────────────
@@ -350,6 +401,14 @@ app.post('/api/submit-proposal', async (req, res) => {
     status: '접수',
     clientIp: req.ip
   });
+
+  // 안전 제안 접수 시 알림톡 발송
+  if (isValidEnvValue(KAKAO_API_KEY) && isValidEnvValue(KAKAO_RECIPIENT_PHONE)) {
+    sendKakaoAlimtalk(KAKAO_RECIPIENT_PHONE, KAKAO_TEMPLATE_ID, {
+      title: `[SafeOn] 새 안전 제안 접수`,
+      body: `${affiliation} ${department} ${name}\n${suggestion.slice(0, 50)}${suggestion.length > 50 ? '...' : ''}`
+    }).catch(e => console.warn('[알림톡] 제안 접수 알림 실패:', e.message));
+  }
 
   return res.status(200).json({ success: true,
     apiResponse: { result_code: '00', result_message: 'SUCCESS', msg_id: recordId, success_cnt: 1, error_cnt: 0 } });

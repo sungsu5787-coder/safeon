@@ -2,6 +2,7 @@
 const Notify = {
   _alerts:    [],
   _panelOpen: false,
+  _dismissedIds: new Set(),
   _alimtalkConfig: {
     enabled: false,
     recipientPhone: '',
@@ -12,11 +13,14 @@ const Notify = {
   },
 
   async init() {
-    if (App.guestMode) return;   // 게스트는 알림 없음
+    if (App.guestMode) return;
+    this._dismissedIds = this._loadDismissedIds();
     await this._loadAlimtalkConfig();
     await this.refresh();
 
-    // 패널 외부 클릭 시 닫기
+    // 5분마다 자동 갱신
+    setInterval(() => this.refresh(), 5 * 60 * 1000);
+
     document.addEventListener('click', e => {
       if (!this._panelOpen) return;
       const panel = document.getElementById('notify-panel');
@@ -25,6 +29,34 @@ const Notify = {
         this._closePanel();
       }
     });
+  },
+
+  // ── 읽음/닫기 처리 ───────────────────────────────────────────
+  dismiss(key) {
+    this._dismissedIds.add(key);
+    this._saveDismissedIds();
+    this._updateBadge();
+    if (this._panelOpen) this._renderItems();
+  },
+
+  clearAll() {
+    this._alerts.forEach(a => this._dismissedIds.add(this._getAlertKey(a)));
+    this._saveDismissedIds();
+    this._updateBadge();
+    if (this._panelOpen) this._renderItems();
+  },
+
+  _loadDismissedIds() {
+    try {
+      return new Set(JSON.parse(localStorage.getItem('safeon.dismissedAlerts') || '[]'));
+    } catch (e) { return new Set(); }
+  },
+
+  _saveDismissedIds() {
+    try {
+      const arr = [...this._dismissedIds].slice(-500);
+      localStorage.setItem('safeon.dismissedAlerts', JSON.stringify(arr));
+    } catch (e) {}
   },
 
   // ── 데이터 조회 & 알림 목록 갱신 ────────────────────────────
@@ -266,7 +298,7 @@ const Notify = {
   _updateBadge() {
     const badge = document.getElementById('notify-badge');
     if (!badge) return;
-    const count = this._alerts.length;
+    const count = this._alerts.filter(a => !this._dismissedIds.has(this._getAlertKey(a))).length;
     badge.textContent = count > 9 ? '9+' : String(count);
     badge.classList.toggle('hidden', count === 0);
 
@@ -293,6 +325,8 @@ const Notify = {
       panel.classList.remove('hidden');
       requestAnimationFrame(() => panel.classList.add('notify-panel-visible'));
     }
+    // 패널 열 때마다 최신 알림 갱신
+    this.refresh();
   },
 
   _closePanel() {
@@ -308,11 +342,11 @@ const Notify = {
     const panel = document.getElementById('notify-panel');
     if (!panel) return;
 
-    const count = this._alerts.length;
+    const activeCount = this._alerts.filter(a => !this._dismissedIds.has(this._getAlertKey(a))).length;
     panel.innerHTML = `
       <div class="notify-panel-header">
         <span class="notify-panel-title">알림</span>
-        <span class="notify-panel-count">${count}건</span>
+        <span class="notify-panel-count">${activeCount}건</span>
         <button class="notify-panel-close" onclick="Notify._closePanel()" aria-label="닫기">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -328,6 +362,7 @@ const Notify = {
           </svg>
           새로고침
         </button>
+        ${activeCount > 0 ? `<button class="notify-clear-btn" onclick="Notify.clearAll()">전체 지우기</button>` : ''}
       </div>`;
     this._renderItems();
   },
@@ -337,7 +372,9 @@ const Notify = {
     const container = document.getElementById('notify-items');
     if (!container) return;
 
-    if (!this._alerts.length) {
+    const visible = this._alerts.filter(a => !this._dismissedIds.has(this._getAlertKey(a)));
+
+    if (!visible.length) {
       container.innerHTML = `
         <div class="notify-empty">
           <div class="notify-empty-icon">✅</div>
@@ -349,7 +386,7 @@ const Notify = {
 
     const URGENCY_LABEL = { high: '🔴 즉시 처리', mid: '🟡 주의 필요', low: '📋 확인 필요' };
     const groups = {};
-    this._alerts.forEach(a => {
+    visible.forEach(a => {
       (groups[a.urgency] = groups[a.urgency] || []).push(a);
     });
 
@@ -357,30 +394,37 @@ const Notify = {
       .filter(u => groups[u]?.length)
       .map(u => `
         <div class="notify-group-label">${URGENCY_LABEL[u]}</div>
-        ${groups[u].map(a => `
+        ${groups[u].map(a => {
+          const key = App.escapeHtml(this._getAlertKey(a));
+          return `
           <div class="notify-item notify-urgency-${a.urgency}" data-coll-type="${App.escapeHtml(a.collType)}" data-doc-id="${App.escapeHtml(a.docId)}">
             <span class="notify-item-icon">${a.icon}</span>
             <div class="notify-item-body">
               <div class="notify-item-title">${App.escapeHtml(a.title)}</div>
               <div class="notify-item-sub">${App.escapeHtml(a.sub)}</div>
             </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>`).join('')}
+            <button class="notify-item-dismiss" data-key="${key}" aria-label="닫기">×</button>
+          </div>`;
+        }).join('')}
       `).join('');
 
     container.querySelectorAll('.notify-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const collType = item.dataset.collType;
-        const docId = item.dataset.docId;
-        this._goto(collType, docId);
+      item.addEventListener('click', e => {
+        if (e.target.closest('.notify-item-dismiss')) return;
+        this._goto(item.dataset.collType, item.dataset.docId);
+      });
+    });
+    container.querySelectorAll('.notify-item-dismiss').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        this.dismiss(btn.dataset.key);
       });
     });
   },
 
   // ── 이동 ─────────────────────────────────────────────────────
   _goto(collType, docId) {
+
     if (!collType || !docId) {
       console.warn('[Notify] 잘못된 알림 이동 정보', collType, docId);
       return;
