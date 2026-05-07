@@ -71,12 +71,10 @@ const Notify = {
   async _refreshFromFirestore() {
     if (App.guestMode) return;
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    try {
-      const [ptwSnap, riskSnap] = await Promise.all([
-        collections.ptw.orderBy('date', 'desc').limit(100).get(),
-        collections.risk.where('improveStatus', 'in', ['지연', '진행중']).limit(100).get()
-      ]);
 
+    // PTW 쿼리 — 실패해도 Risk 쿼리 계속 진행
+    try {
+      const ptwSnap = await collections.ptw.orderBy('date', 'desc').limit(100).get();
       ptwSnap.forEach(doc => {
         const d = { id: doc.id, ...doc.data() };
         if (d.status === 'rejected') return;
@@ -93,8 +91,17 @@ const Notify = {
           }
         }
       });
+    } catch (e) {
+      console.warn('[Notify] PTW 쿼리 오류:', e);
+    }
 
-      riskSnap.forEach(doc => {
+    // Risk 쿼리 — in 연산자 대신 == 두 번으로 분리 (복합 인덱스 불필요)
+    try {
+      const [delayedSnap, inProgressSnap] = await Promise.all([
+        collections.risk.where('improveStatus', '==', '지연').limit(100).get(),
+        collections.risk.where('improveStatus', '==', '진행중').limit(100).get()
+      ]);
+      const processRisk = doc => {
         const d = { id: doc.id, ...doc.data() };
         if (d.improveStatus === '지연') {
           this._add({ urgency: 'high', type: 'risk-overdue', icon: '🔴', collType: 'risk', docId: d.id,
@@ -106,9 +113,11 @@ const Notify = {
               title: d.workName || '위험성평가', sub: `개선 임박 D-${diffDay} · ${d.planDate}`, date: d.planDate });
           }
         }
-      });
+      };
+      delayedSnap.forEach(processRisk);
+      inProgressSnap.forEach(processRisk);
     } catch (e) {
-      console.warn('[Notify] Firestore 조회 오류:', e);
+      console.warn('[Notify] Risk 쿼리 오류:', e);
     }
   },
 
