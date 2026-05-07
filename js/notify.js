@@ -8,7 +8,6 @@ const Notify = {
     if (App.guestMode) return;
     this._dismissedIds = this._loadDismissedIds();
     await this.refresh();
-    setInterval(() => this.refresh(), 5 * 60 * 1000);
     document.addEventListener('click', e => {
       if (!this._panelOpen) return;
       const panel = document.getElementById('notify-panel');
