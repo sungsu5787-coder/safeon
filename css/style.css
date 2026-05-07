@@ -4769,3 +4769,156 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   from { transform: translateY(-100%); opacity: 0; }
   to   { transform: translateY(0);     opacity: 1; }
 }
+
+/* ================================================================
+   TBM 공유 QR 모달
+   ================================================================ */
+.tbm-share-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 700;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.tbm-share-overlay.hidden { display: none; }
+.tbm-share-box {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0));
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.18);
+}
+.tbm-share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.tbm-share-title { font-size: 16px; font-weight: 700; color: #1a237e; }
+.tbm-share-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+.tbm-share-desc { font-size: 13px; color: #666; margin: 0 0 14px; }
+.tbm-share-lang-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.tbm-share-lang-tab {
+  flex: 1;
+  min-width: 60px;
+  padding: 8px 4px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fafafa;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tbm-share-lang-tab.active { border-color: #1a237e; background: #e8eaf6; color: #1a237e; }
+.tbm-share-qr-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 12px;
+  min-height: 200px;
+  align-items: center;
+}
+.tbm-share-url-text {
+  font-size: 10px;
+  color: #bbb;
+  text-align: center;
+  word-break: break-all;
+  margin-bottom: 14px;
+  padding: 0 8px;
+  line-height: 1.4;
+}
+.tbm-share-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.tbm-share-btn {
+  flex: 1;
+  padding: 10px 4px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+}
+.tbm-share-btn-primary { background: #1a237e; border-color: #1a237e; color: #fff; }
+.tbm-share-hint { font-size: 12px; color: #bbb; text-align: center; margin: 0; }
+
+/* ================================================================
+   TBM 공유 뷰어 (QR 스캔 후 전체화면)
+   ================================================================ */
+.tbm-shared-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: #f5f6fa;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tbm-shared-viewer.hidden { display: none; }
+.tbm-viewer-top {
+  background: #1a237e;
+  color: #fff;
+  padding: 16px 16px 12px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0));
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.tbm-viewer-brand { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.tbm-viewer-lang-row { display: flex; gap: 6px; }
+.tbm-viewer-lang-btn {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255,255,255,0.75);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tbm-viewer-lang-btn.active { background: rgba(255,255,255,0.25); border-color: #fff; color: #fff; }
+.tbm-viewer-body { padding: 12px 12px calc(32px + env(safe-area-inset-bottom, 0)); }
+.tbm-viewer-field {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.tbm-viewer-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tbm-viewer-row2 .tbm-viewer-field { margin-bottom: 0; }
+.tvf-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a237e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+.tvf-value { font-size: 15px; color: #212121; line-height: 1.5; word-break: break-word; }
+.tvf-multi { white-space: pre-wrap; font-size: 14px; }
+.tbm-viewer-chip {
+  display: inline-block;
+  background: #e8eaf6;
+  color: #1a237e;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 2px 3px 2px 0;
+}
+.tbm-viewer-photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.tbm-viewer-photo { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; cursor: pointer; }

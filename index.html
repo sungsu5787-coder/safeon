@@ -1332,6 +1332,48 @@
     </div>
   </div>
 
+  <!-- TBM 공유 QR 모달 -->
+  <div id="tbm-share-modal" class="tbm-share-overlay hidden"
+       onclick="TBM.closeShareModal(event)">
+    <div class="tbm-share-box">
+      <div class="tbm-share-header">
+        <span class="tbm-share-title">📋 TBM 공유 QR</span>
+        <button type="button" class="tbm-share-close" onclick="TBM.closeShareModal()">✕</button>
+      </div>
+      <p class="tbm-share-desc">언어를 선택하여 QR을 근로자에게 공유하세요</p>
+      <div class="tbm-share-lang-tabs">
+        <button class="tbm-share-lang-tab active" data-lang="ko" onclick="TBM.switchShareLang('ko')">🇰🇷 한국어</button>
+        <button class="tbm-share-lang-tab" data-lang="zh" onclick="TBM.switchShareLang('zh')">🇨🇳 中文</button>
+        <button class="tbm-share-lang-tab" data-lang="vi" onclick="TBM.switchShareLang('vi')">🇻🇳 VI</button>
+        <button class="tbm-share-lang-tab" data-lang="en" onclick="TBM.switchShareLang('en')">🇬🇧 EN</button>
+      </div>
+      <div id="tbm-share-qr-wrap" class="tbm-share-qr-wrap"></div>
+      <div id="tbm-share-url-text" class="tbm-share-url-text"></div>
+      <div class="tbm-share-actions">
+        <button type="button" class="tbm-share-btn" onclick="TBM.downloadShareQR()">💾 QR 저장</button>
+        <button type="button" class="tbm-share-btn" onclick="TBM.copyShareUrl()">🔗 URL 복사</button>
+        <button type="button" class="tbm-share-btn tbm-share-btn-primary" onclick="TBM.webShareUrl()">📤 공유</button>
+      </div>
+      <p class="tbm-share-hint">💡 QR을 인쇄하거나 화면으로 보여주세요</p>
+    </div>
+  </div>
+
+  <!-- TBM 공유 뷰어 (QR 스캔 시 표시) -->
+  <div id="tbm-shared-viewer" class="tbm-shared-viewer hidden">
+    <div class="tbm-viewer-top">
+      <div class="tbm-viewer-brand">🦺 SafeOn TBM</div>
+      <div class="tbm-viewer-lang-row">
+        <button class="tbm-viewer-lang-btn active" data-lang="ko" onclick="TBM.switchViewerLang('ko')">🇰🇷 한국어</button>
+        <button class="tbm-viewer-lang-btn" data-lang="zh" onclick="TBM.switchViewerLang('zh')">🇨🇳 中文</button>
+        <button class="tbm-viewer-lang-btn" data-lang="vi" onclick="TBM.switchViewerLang('vi')">🇻🇳 VI</button>
+        <button class="tbm-viewer-lang-btn" data-lang="en" onclick="TBM.switchViewerLang('en')">🇬🇧 EN</button>
+      </div>
+    </div>
+    <div id="tbm-viewer-body" class="tbm-viewer-body">
+      <p style="padding:40px;text-align:center;color:#aaa">로딩 중...</p>
+    </div>
+  </div>
+
   <!-- App Scripts (순서 중요) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>

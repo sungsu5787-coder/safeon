@@ -554,12 +554,13 @@ const TBM = {
     };
 
     try {
-      await collections.tbm.add(data);
+      const docRef = await collections.tbm.add(data);
       App.showToast(this.photos.length
         ? this._t('saved-with-photo')(this.photos.length)
         : this._t('toast-saved'));
       this.resetForm();
       App.updateDashboard();
+      setTimeout(() => TBM.openShareQR(docRef.id), 600);
     } catch (err) {
       App.showToast(this._t('toast-error'));
       console.error(err);
@@ -575,5 +576,214 @@ const TBM = {
     if (prev) prev.innerHTML = '';
     document.getElementById('tbm-date').value = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[name="tbm-disaster"]').forEach(cb => { cb.checked = false; });
+  },
+
+  // ── TBM 공유 QR ──────────────────────────────────────────
+  _shareDocId: null,
+  _shareLang: 'ko',
+  _shareUrl: '',
+
+  openShareQR(docId) {
+    this._shareDocId = docId;
+    this._shareLang  = this._lang;
+    document.getElementById('tbm-share-modal').classList.remove('hidden');
+    this._buildShareQR();
+  },
+
+  _getShareBase() {
+    const base = (QRModal._tailscaleUrl || QRModal._tunnelUrl || QRModal._wifiUrl || '').replace(/\/$/, '');
+    if (base) return base;
+    const href = location.href.split('?')[0].split('#')[0];
+    return href.replace(/\/index\.html$/, '').replace(/\/$/, '');
+  },
+
+  _buildShareQR() {
+    const url = `${this._getShareBase()}/?guest=1&mode=tbm-view&id=${this._shareDocId}&lang=${this._shareLang}`;
+    this._shareUrl = url;
+
+    document.querySelectorAll('.tbm-share-lang-tab').forEach(btn =>
+      btn.classList.toggle('active', btn.dataset.lang === this._shareLang)
+    );
+
+    const wrap = document.getElementById('tbm-share-qr-wrap');
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(url);
+      qr.make();
+      const cell = 5, margin = 16;
+      const count = qr.getModuleCount();
+      const size  = count * cell + margin * 2;
+      let rects = '';
+      for (let r = 0; r < count; r++)
+        for (let c = 0; c < count; c++)
+          if (qr.isDark(r, c))
+            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#1a237e"/>`;
+      wrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="border-radius:12px;display:block;margin:0 auto"><rect width="${size}" height="${size}" fill="#fff" rx="12"/>${rects}</svg>`;
+    } catch {
+      wrap.innerHTML = '<p style="color:#d93025;text-align:center;padding:16px">QR 생성 실패</p>';
+    }
+
+    const urlEl = document.getElementById('tbm-share-url-text');
+    if (urlEl) urlEl.textContent = url;
+  },
+
+  switchShareLang(lang) {
+    this._shareLang = lang;
+    this._buildShareQR();
+  },
+
+  closeShareModal(event) {
+    if (event && event.target !== document.getElementById('tbm-share-modal')) return;
+    document.getElementById('tbm-share-modal').classList.add('hidden');
+  },
+
+  downloadShareQR() {
+    const svg = document.querySelector('#tbm-share-qr-wrap svg');
+    if (!svg) return;
+    const names = { ko:'한국어', zh:'中文', vi:'Tieng-Viet', en:'English' };
+    const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
+    const a = document.createElement('a');
+    a.download = `TBM-QR-${names[this._shareLang] || this._shareLang}.svg`;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    App.showToast('QR 저장 완료 💾');
+  },
+
+  async copyShareUrl() {
+    if (!this._shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(this._shareUrl);
+      App.showToast('URL 복사됐습니다 📋');
+    } catch {
+      window.prompt('아래 URL을 복사하세요', this._shareUrl);
+    }
+  },
+
+  async webShareUrl() {
+    if (!this._shareUrl) return;
+    const names = { ko:'한국어', zh:'中文', vi:'Tiếng Việt', en:'English' };
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'TBM 공유', text: `SafeOn TBM (${names[this._shareLang]})`, url: this._shareUrl });
+        return;
+      } catch {}
+    }
+    this.copyShareUrl();
+  },
+
+  // ── TBM 공유 뷰어 ─────────────────────────────────────────
+  _viewData: null,
+  _viewId:   null,
+  _VIEWER_UNITS: { ko: '명', zh: '人', vi: 'người', en: '' },
+  _DISASTER_LABELS: {
+    ko: { 끼임:'끼임', 떨어짐:'떨어짐', 부딪힘:'부딪힘', 물체에맞음:'물체에맞음', 화재폭발:'화재·폭발', 전도:'전도', 감전:'감전', 근골격계질환:'근골격계', 기타:'기타' },
+    zh: { 끼임:'夹伤', 떨어짐:'坠落', 부딪힘:'碰撞', 물체에맞음:'落物打击', 화재폭발:'火灾·爆炸', 전도:'跌倒', 감전:'触电', 근골격계질환:'肌肉骨骼', 기타:'其他' },
+    vi: { 끼임:'Kẹt tay', 떨어짐:'Té ngã', 부딪힘:'Va chạm', 물체에맞음:'Vật rơi', 화재폭발:'Cháy·Nổ', 전도:'Trượt ngã', 감전:'Điện giật', 근골격계질환:'Cơ xương', 기타:'Khác' },
+    en: { 끼임:'Pinch', 떨어짐:'Fall', 부딪힘:'Collision', 물체에맞음:'Falling object', 화재폭발:'Fire/Explosion', 전도:'Slip/Trip', 감전:'Electric shock', 근골격계질환:'Musculoskeletal', 기타:'Other' }
+  },
+  _HAZARD_LABEL: { ko:'재해유형', zh:'事故类型', vi:'Loại tai nạn', en:'Hazard Type' },
+
+  async initSharedView(id, lang) {
+    this._viewId = id;
+    const viewer = document.getElementById('tbm-shared-viewer');
+    if (viewer) viewer.classList.remove('hidden');
+
+    try {
+      const doc = await collections.tbm.doc(id).get();
+      if (!doc.exists) {
+        document.getElementById('tbm-viewer-body').innerHTML =
+          '<p style="padding:40px;text-align:center;color:#999">TBM 데이터를 찾을 수 없습니다.</p>';
+        return;
+      }
+      this._viewData = doc.data();
+      this._renderSharedView(lang);
+    } catch (err) {
+      document.getElementById('tbm-viewer-body').innerHTML =
+        '<p style="padding:40px;text-align:center;color:#999">데이터를 불러오는 중 오류가 발생했습니다.</p>';
+      console.error(err);
+    }
+  },
+
+  switchViewerLang(lang) {
+    if (this._viewData) this._renderSharedView(lang);
+  },
+
+  _renderSharedView(lang) {
+    const t   = TBM_I18N[lang] || TBM_I18N.ko;
+    const d   = this._viewData;
+    const esc = s => App.escapeHtml(s || '');
+    const unit = this._VIEWER_UNITS[lang] || '';
+    const dtMap = this._DISASTER_LABELS[lang] || this._DISASTER_LABELS.ko;
+
+    document.querySelectorAll('.tbm-viewer-lang-btn').forEach(btn =>
+      btn.classList.toggle('active', btn.dataset.lang === lang)
+    );
+
+    const parts = (d.participants || [])
+      .map(p => `<span class="tbm-viewer-chip">${esc(p)}</span>`).join('');
+
+    const dtChips = (d.disasterTypes || [])
+      .map(k => `<span class="tbm-viewer-chip">${dtMap[k] || k}</span>`).join('');
+
+    const photos = (d.photos || []).length
+      ? `<div class="tbm-viewer-photos">${(d.photos || []).map((p, i) =>
+          `<img class="tbm-viewer-photo" src="${p}" alt="photo ${i+1}"
+                onclick="App._viewPhoto('${p}')" loading="lazy">`
+        ).join('')}</div>`
+      : '';
+
+    document.getElementById('tbm-viewer-body').innerHTML = `
+      <div class="tbm-viewer-field">
+        <div class="tvf-label">📅 ${t['work-date']}</div>
+        <div class="tvf-value">${esc(d.date)}</div>
+      </div>
+      <div class="tbm-viewer-field">
+        <div class="tvf-label">🔧 ${t['work-name']}</div>
+        <div class="tvf-value">${esc(d.workName)}</div>
+      </div>
+      <div class="tbm-viewer-row2">
+        <div class="tbm-viewer-field">
+          <div class="tvf-label">📍 ${t['location']}</div>
+          <div class="tvf-value">${esc(d.location)}</div>
+        </div>
+        <div class="tbm-viewer-field">
+          <div class="tvf-label">👷 ${t['workers']}</div>
+          <div class="tvf-value">${d.workers || '-'}${unit ? ' ' + unit : ''}</div>
+        </div>
+      </div>
+      <div class="tbm-viewer-field">
+        <div class="tvf-label">📋 ${t['content']}</div>
+        <div class="tvf-value tvf-multi">${esc(d.content)}</div>
+      </div>
+      ${dtChips ? `<div class="tbm-viewer-field">
+        <div class="tvf-label">🎯 ${this._HAZARD_LABEL[lang] || '재해유형'}</div>
+        <div class="tvf-value">${dtChips}</div>
+      </div>` : ''}
+      <div class="tbm-viewer-field">
+        <div class="tvf-label">⚠️ ${t['hazards']}</div>
+        <div class="tvf-value tvf-multi">${esc(d.hazards)}</div>
+      </div>
+      <div class="tbm-viewer-field">
+        <div class="tvf-label">🛡️ ${t['measures']}</div>
+        <div class="tvf-value tvf-multi">${esc(d.measures)}</div>
+      </div>
+      ${d.instructions ? `<div class="tbm-viewer-field">
+        <div class="tvf-label">📣 ${t['instructions']}</div>
+        <div class="tvf-value tvf-multi">${esc(d.instructions)}</div>
+      </div>` : ''}
+      <div class="tbm-viewer-field">
+        <div class="tvf-label">👥 ${t['participants']}</div>
+        <div class="tvf-value">${parts || '<span style="color:#bbb">-</span>'}</div>
+      </div>
+      <div class="tbm-viewer-field">
+        <div class="tvf-label">👔 ${t['supervisor']}</div>
+        <div class="tvf-value">${esc(d.supervisor)}</div>
+      </div>
+      ${photos ? `<div class="tbm-viewer-field">
+        <div class="tvf-label">📷 ${t['photos-title'] || '현장사진'}</div>
+        ${photos}
+      </div>` : ''}
+    `;
   }
 };

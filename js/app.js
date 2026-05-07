@@ -44,6 +44,12 @@ const App = {
     Accident.init();
     if (!this.guestMode) this.loadAccessUrl();
     Notify.init();
+
+    // TBM 공유 뷰어 모드 — QR 스캔으로 접속한 경우
+    const _p = new URLSearchParams(location.search);
+    if (_p.get('mode') === 'tbm-view' && _p.get('id')) {
+      TBM.initSharedView(_p.get('id'), _p.get('lang') || 'ko');
+    }
   },
 
   // ── 게스트 모드 초기화 ───────────────────────────────────
