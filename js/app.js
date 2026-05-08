@@ -1724,6 +1724,34 @@ const App = {
     }
   },
 
+  // ── 1페이지 맞춤 스케일 계산·적용 ──────────────────────────
+  // landscape: true → A4 가로, false → A4 세로 (margin 8mm 기준)
+  _applyPrintScale(printArea, landscape) {
+    const inner = printArea.querySelector('.print-inner');
+    if (!inner) return;
+    const MM = 3.7795; // 1mm = 3.7795px (96dpi)
+    const maxH = Math.round((landscape ? 194 : 281) * MM);
+    // 일시적으로 오프스크린에 표시하여 높이 측정
+    const prev = printArea.style.cssText;
+    printArea.style.cssText = 'display:block!important;visibility:hidden;position:fixed;top:-9999px;left:0;width:794px';
+    const h = inner.scrollHeight;
+    printArea.style.cssText = prev;
+    if (h > maxH) {
+      const scale = +(maxH / h).toFixed(4);
+      inner.style.transform = `scale(${scale})`;
+      inner.style.width      = (100 / scale).toFixed(2) + '%';
+      printArea.style.height   = Math.ceil(h * scale) + 'px';
+      printArea.style.overflow = 'hidden';
+    }
+  },
+
+  // ── 인쇄 @page 방향 설정 ────────────────────────────────────
+  _setPrintOrientation(landscape) {
+    let s = document.getElementById('_print_page_style');
+    if (!s) { s = document.createElement('style'); s.id = '_print_page_style'; document.head.appendChild(s); }
+    s.textContent = `@media print { @page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: 8mm; } }`;
+  },
+
   // ── 상세보기 인쇄/PDF ────────────────────────────────────
   printDetail() {
     if (!this._detailData) { this.showToast('출력할 내용이 없습니다.'); return; }
@@ -1731,9 +1759,10 @@ const App = {
     const title = this._detailTitle(this._detailType, this._detailData);
     const bodyHtml = document.getElementById('detail-content').innerHTML;
 
+    this._setPrintOrientation(false);
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = `
-      <div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;color:#202124;padding:20px;max-width:800px;margin:0 auto">
+      <div class="print-inner" style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;color:#202124;padding:20px;max-width:800px;margin:0 auto">
         <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #1a73e8;padding-bottom:10px;margin-bottom:16px">
           <div style="width:36px;height:36px;background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
@@ -1752,9 +1781,10 @@ const App = {
         </div>
       </div>`;
 
+    this._applyPrintScale(printArea, false);
     setTimeout(() => {
       window.print();
-      setTimeout(() => { printArea.innerHTML = ''; }, 1000);
+      setTimeout(() => { printArea.innerHTML = ''; printArea.style.cssText = ''; }, 1000);
     }, 150);
   },
 

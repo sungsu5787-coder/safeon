@@ -200,7 +200,7 @@ const History = {
     // print-area에 내용 주입 후 window.print() 호출
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = `
-      <div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;color:#202124;padding:20px">
+      <div class="print-inner" style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;color:#202124;padding:20px">
         <div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #1a73e8;padding-bottom:12px;margin-bottom:16px">
           <div style="width:40px;height:40px;background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
@@ -234,11 +234,11 @@ const History = {
         </div>
       </div>`;
 
-    // 잠깐 딜레이 후 print (렌더링 완료 대기)
+    App._setPrintOrientation(true); // 이력 테이블은 A4 가로
+    App._applyPrintScale(printArea, true);
     setTimeout(() => {
       window.print();
-      // 인쇄 후 print-area 초기화
-      setTimeout(() => { printArea.innerHTML = ''; }, 1000);
+      setTimeout(() => { printArea.innerHTML = ''; printArea.style.cssText = ''; }, 1000);
     }, 150);
   },
 

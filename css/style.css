@@ -3807,17 +3807,19 @@ input[type="date"]:disabled {
 .print-area { display: none; }
 
 @media print {
-  /* body 직속 자식 전체 숨기고 #print-area만 표시 */
+  @page { size: A4 portrait; margin: 8mm; }
   body > *:not(#print-area) { display: none !important; }
   #print-area {
     display: block !important;
     position: static !important;
     width: 100%;
-    height: auto;
+    overflow: hidden;
     background: #fff;
     padding: 0 !important;
     margin: 0 !important;
   }
+  /* JS로 scale 주입되는 래퍼 */
+  .print-inner { transform-origin: top left; display: block; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
 
