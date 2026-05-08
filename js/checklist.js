@@ -287,8 +287,13 @@ const Checklist = {
     };
 
     try {
-      await collections.checklist.add(data);
+      const ref = await collections.checklist.add(data);
       App.showToast('✅ 점검 결과가 저장되었습니다');
+      Notify.addCompletion({
+        icon: '✅', title: `${data.type} 완료`,
+        sub: `${date}${location ? ' · ' + location : ''}`,
+        collType: 'checklist', docId: ref.id
+      });
       this.resetForm();
       App.updateDashboard();
     } catch (err) {

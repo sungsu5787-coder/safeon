@@ -45,6 +45,30 @@ const Notify = {
     } catch (e) {}
   },
 
+  // ── 완료 알림 ────────────────────────────────────────────────
+  // 모듈 저장 직후 호출 → localStorage에 24시간 보관
+  addCompletion({ icon, title, sub, collType, docId = '' }) {
+    try {
+      const key  = 'safeon.completions';
+      const list = JSON.parse(localStorage.getItem(key) || '[]');
+      list.push({ icon, title, sub, collType, docId, savedAt: Date.now() });
+      // 최근 50건만 보관
+      localStorage.setItem(key, JSON.stringify(list.slice(-50)));
+    } catch (e) {}
+    this.refresh();
+  },
+
+  _loadCompletions() {
+    try {
+      const TTL  = 24 * 60 * 60 * 1000; // 24시간
+      const list = JSON.parse(localStorage.getItem('safeon.completions') || '[]');
+      const now  = Date.now();
+      return list
+        .filter(c => now - c.savedAt < TTL)
+        .map(c => ({ ...c, urgency: 'done', type: `done|${c.collType}|${c.docId}|${c.savedAt}`, date: '' }));
+    } catch (e) { return []; }
+  },
+
   // ── 데이터 조회 ──────────────────────────────────────────────
   async refresh() {
     this._alerts = [];
@@ -56,6 +80,8 @@ const Notify = {
     } catch (e) {
       await this._refreshFromFirestore();
     }
+    // 완료 알림 병합 (Firestore 알림 앞에 표시)
+    this._alerts = [...this._loadCompletions(), ...this._alerts];
     this._sortAlerts();
     this._updateBadge();
     if (this._panelOpen) this._renderItems();
@@ -190,8 +216,8 @@ const Notify = {
   _add(alert) { this._alerts.push(alert); },
 
   _sortAlerts() {
-    const rank = { high: 0, mid: 1, low: 2 };
-    this._alerts.sort((a, b) => (rank[a.urgency] - rank[b.urgency]) || (b.date || '').localeCompare(a.date || ''));
+    const rank = { done: -1, high: 0, mid: 1, low: 2 };
+    this._alerts.sort((a, b) => (rank[a.urgency] ?? 2) - (rank[b.urgency] ?? 2) || (b.date || '').localeCompare(a.date || ''));
   },
 
   _getAlertKey(alert) { return `${alert.type}|${alert.collType}|${alert.docId}`; },
@@ -278,10 +304,10 @@ const Notify = {
         </div>`;
       return;
     }
-    const URGENCY_LABEL = { high: '🔴 즉시 처리', mid: '🟡 주의 필요', low: '📋 확인 필요' };
+    const URGENCY_LABEL = { done: '✅ 완료', high: '🔴 즉시 처리', mid: '🟡 주의 필요', low: '📋 확인 필요' };
     const groups = {};
     visible.forEach(a => { (groups[a.urgency] = groups[a.urgency] || []).push(a); });
-    container.innerHTML = ['high', 'mid', 'low']
+    container.innerHTML = ['done', 'high', 'mid', 'low']
       .filter(u => groups[u]?.length)
       .map(u => `
         <div class="notify-group-label">${URGENCY_LABEL[u]}</div>

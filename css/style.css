@@ -3962,6 +3962,7 @@ input[type="date"]:disabled {
 .notify-urgency-high { border-left-color: #f44336; }
 .notify-urgency-mid  { border-left-color: #f9a825; }
 .notify-urgency-low  { border-left-color: #1a73e8; }
+.notify-urgency-done { border-left-color: #34a853; background: #f0fdf4; }
 
 .notify-item-icon {
   font-size: 20px;
