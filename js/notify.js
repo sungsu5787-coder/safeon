@@ -50,16 +50,9 @@ const Notify = {
     this._alerts = [];
     try {
       const res = await fetch('/api/alerts');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.alerts?.length) {
-          this._alerts = data.alerts;
-        } else {
-          throw new Error('empty');
-        }
-      } else {
-        throw new Error(res.status);
-      }
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      this._alerts = data.alerts || [];
     } catch (e) {
       await this._refreshFromFirestore();
     }
@@ -70,6 +63,11 @@ const Notify = {
 
   async _refreshFromFirestore() {
     if (App.guestMode) return;
+    // 익명 인증 완료 대기 (최대 3초)
+    await new Promise(resolve => {
+      const unsub = firebase.auth().onAuthStateChanged(user => { unsub(); resolve(user); });
+      setTimeout(resolve, 3000);
+    });
     const today = new Date(); today.setHours(0, 0, 0, 0);
 
     // PTW 쿼리 — 실패해도 Risk 쿼리 계속 진행
@@ -118,6 +116,57 @@ const Notify = {
       inProgressSnap.forEach(processRisk);
     } catch (e) {
       console.warn('[Notify] Risk 쿼리 오류:', e);
+    }
+
+    const todayStr   = today.toISOString().split('T')[0];
+    const weekAgo    = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+
+    // TBM 오늘 미실시 확인
+    try {
+      const tbmTodaySnap = await collections.tbm.where('date', '==', todayStr).limit(1).get();
+      if (tbmTodaySnap.empty) {
+        this._add({ urgency: 'low', type: 'tbm-missing', icon: '📣', collType: 'tbm', docId: '',
+          title: 'TBM 미실시', sub: '오늘 TBM 기록이 없습니다', date: todayStr });
+      }
+    } catch (e) {
+      console.warn('[Notify] TBM 쿼리 오류:', e);
+    }
+
+    // 안전점검 — 최근 7일 내 불량(fail) 항목
+    try {
+      const clSnap = await collections.checklist.where('date', '>=', weekAgoStr).limit(50).get();
+      clSnap.forEach(doc => {
+        const d = { id: doc.id, ...doc.data() };
+        const hasFail = d.results && Object.values(d.results).some(v => v === 'fail');
+        if (hasFail) {
+          this._add({ urgency: 'mid', type: 'checklist-fail', icon: '❗', collType: 'checklist', docId: d.id,
+            title: d.type || '안전점검', sub: `불량 항목 · ${d.location || d.date || ''}`.replace(/ · $/, ''), date: d.date || '' });
+        }
+      });
+    } catch (e) {
+      console.warn('[Notify] 체크리스트 쿼리 오류:', e);
+    }
+
+    // 사고 — 최근 7일 내 산업재해·중대재해·안전사고
+    try {
+      const accSnap = await collections.accident.where('date', '>=', weekAgoStr).limit(50).get();
+      accSnap.forEach(doc => {
+        const d = { id: doc.id, ...doc.data() };
+        const sub = `${d.location || ''} · ${d.date || ''}`.replace(/^ · | · $/, '');
+        if (d.accidentType === 'industrial' || d.accidentType === 'serious') {
+          this._add({ urgency: 'high', type: 'accident-serious', icon: '🚨', collType: 'accident', docId: d.id,
+            title: d.accidentTypeLabel || '중대사고', sub, date: d.date || '' });
+        } else if (d.accidentType === 'safety') {
+          this._add({ urgency: 'mid', type: 'accident-safety', icon: '🩹', collType: 'accident', docId: d.id,
+            title: '안전사고 발생', sub, date: d.date || '' });
+        } else if (d.accidentType === 'nearmiss') {
+          this._add({ urgency: 'low', type: 'accident-nearmiss', icon: '⚡', collType: 'accident', docId: d.id,
+            title: '아차사고 발생', sub, date: d.date || '' });
+        }
+      });
+    } catch (e) {
+      console.warn('[Notify] 사고 쿼리 오류:', e);
     }
   },
 
@@ -220,7 +269,7 @@ const Notify = {
       .map(u => `
         <div class="notify-group-label">${URGENCY_LABEL[u]}</div>
         ${groups[u].map(a => {
-          const key = App.escapeHtml(this._getAlertKey(a));
+          const key = this._getAlertKey(a);
           return `
           <div class="notify-item notify-urgency-${a.urgency}" data-coll-type="${App.escapeHtml(a.collType)}" data-doc-id="${App.escapeHtml(a.docId)}">
             <span class="notify-item-icon">${a.icon}</span>
@@ -248,8 +297,11 @@ const Notify = {
 
   // ── 이동 ─────────────────────────────────────────────────────
   _goto(collType, docId) {
-    if (!collType || !docId) return;
+    if (!collType) return;
     this._closePanel();
-    setTimeout(() => App.showDetail(collType, docId), 230);
+    setTimeout(() => {
+      if (docId) App.showDetail(collType, docId);
+      else App.navigateTo(collType);
+    }, 230);
   }
 };

@@ -262,7 +262,7 @@ app.get('/local-ip.txt', (req, res) => {
 
 // ── 알림 ─────────────────────────────────────────────────────
 app.get('/api/alerts', async (req, res) => {
-  if (!firebaseReady) return res.json({ alerts: [], message: 'Firebase not initialized' });
+  if (!firebaseReady) return res.status(503).json({ alerts: [], message: 'Firebase not initialized' });
   try {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const alerts = [];
@@ -284,8 +284,12 @@ app.get('/api/alerts', async (req, res) => {
       }
     });
 
-    const riskSnap = await db.collection('risk').where('improveStatus', 'in', ['지연', '진행중']).limit(100).get();
-    riskSnap.forEach(doc => {
+    // in 연산자 대신 == 두 번으로 분리 — 복합 인덱스 불필요
+    const [delayedSnap, inProgressSnap] = await Promise.all([
+      db.collection('risk').where('improveStatus', '==', '지연').limit(100).get(),
+      db.collection('risk').where('improveStatus', '==', '진행중').limit(100).get()
+    ]);
+    const processRisk = doc => {
       const d = { id: doc.id, ...doc.data() };
       if (d.improveStatus === '지연') {
         alerts.push({ urgency: 'high', type: 'risk-overdue', icon: '🔴', collType: 'risk', docId: d.id,
@@ -297,6 +301,47 @@ app.get('/api/alerts', async (req, res) => {
             title: d.workName || '위험성평가', sub: `개선 임박 D-${diffDay} · ${d.planDate}`, date: d.planDate });
         }
       }
+    };
+    delayedSnap.forEach(processRisk);
+    inProgressSnap.forEach(processRisk);
+
+    const todayStr   = today.toISOString().split('T')[0];
+    const weekAgo    = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+
+    // TBM 오늘 미실시 확인
+    const tbmTodaySnap = await db.collection('tbm').where('date', '==', todayStr).limit(1).get();
+    if (tbmTodaySnap.empty) {
+      alerts.push({ urgency: 'low', type: 'tbm-missing', icon: '📣', collType: 'tbm', docId: '',
+        title: 'TBM 미실시', sub: '오늘 TBM 기록이 없습니다', date: todayStr });
+    }
+
+    // 안전점검 — 최근 7일 내 불량(fail) 항목
+    const clSnap = await db.collection('checklist').where('date', '>=', weekAgoStr).limit(50).get();
+    clSnap.forEach(doc => {
+      const d = { id: doc.id, ...doc.data() };
+      const hasFail = d.results && Object.values(d.results).some(v => v === 'fail');
+      if (hasFail) {
+        alerts.push({ urgency: 'mid', type: 'checklist-fail', icon: '❗', collType: 'checklist', docId: d.id,
+          title: d.type || '안전점검', sub: `불량 항목 · ${d.location || d.date || ''}`.replace(/ · $/, ''), date: d.date || '' });
+      }
+    });
+
+    // 사고 — 최근 7일 내 산업재해·중대재해·안전사고
+    const accSnap = await db.collection('accident').where('date', '>=', weekAgoStr).limit(50).get();
+    accSnap.forEach(doc => {
+      const d = { id: doc.id, ...doc.data() };
+      const sub = `${d.location || ''} · ${d.date || ''}`.replace(/^ · | · $/, '');
+      if (d.accidentType === 'industrial' || d.accidentType === 'serious') {
+        alerts.push({ urgency: 'high', type: 'accident-serious', icon: '🚨', collType: 'accident', docId: d.id,
+          title: d.accidentTypeLabel || '중대사고', sub, date: d.date || '' });
+      } else if (d.accidentType === 'safety') {
+        alerts.push({ urgency: 'mid', type: 'accident-safety', icon: '🩹', collType: 'accident', docId: d.id,
+          title: '안전사고 발생', sub, date: d.date || '' });
+      } else if (d.accidentType === 'nearmiss') {
+        alerts.push({ urgency: 'low', type: 'accident-nearmiss', icon: '⚡', collType: 'accident', docId: d.id,
+          title: '아차사고 발생', sub, date: d.date || '' });
+      }
     });
 
     const rank = { high: 0, mid: 1, low: 2 };
@@ -304,11 +349,9 @@ app.get('/api/alerts', async (req, res) => {
     res.json({ alerts });
   } catch (error) {
     console.error('[API] /api/alerts 오류:', error);
-    res.json({ alerts: [], error: error.message });
+    res.status(500).json({ alerts: [], error: error.message });
   }
 });
-
-// ── 알림 ─────────────────────────────────────────────────────
 
 // ── 제안 접수 ─────────────────────────────────────────────────
 app.post('/api/submit-proposal', async (req, res) => {

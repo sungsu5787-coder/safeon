@@ -15,6 +15,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// Firestore 보안 규칙이 auth != null 일 때도 동작하도록 익명 로그인
+firebase.auth().signInAnonymously().catch(e => console.warn('[Auth] 익명 로그인 실패:', e.message));
+
 var collections = {
   tbm:       db.collection('tbm'),
   risk:      db.collection('risk'),
