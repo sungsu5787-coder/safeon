@@ -1,8 +1,48 @@
-// 알림 패널 — 배지, 개별 닫기, 전체 지우기, 5분 자동 갱신
+// 알림 패널 — 배지, 개별 닫기, 전체 지우기, 멜로디 알림
 const Notify = {
   _alerts:      [],
   _panelOpen:   false,
   _dismissedIds: new Set(),
+  _audioCtx:    null,
+
+  // ── 멜로디 ───────────────────────────────────────────────────
+  // type: 'done' | 'high' | 'mid' | 'low'
+  playMelody(type = 'low') {
+    if (localStorage.getItem('safeon.soundOff') === '1') return;
+    try {
+      if (!this._audioCtx) this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = this._audioCtx;
+      if (ctx.state === 'suspended') ctx.resume();
+      const MELODIES = {
+        done: [{ f: 523.25, t: 0 }, { f: 659.25, t: 0.13 }, { f: 783.99, t: 0.26 }, { f: 1046.50, t: 0.39 }],
+        high: [{ f: 880, t: 0 }, { f: 440, t: 0.14 }, { f: 880, t: 0.28 }, { f: 440, t: 0.42 }],
+        mid:  [{ f: 659.25, t: 0 }, { f: 523.25, t: 0.18 }],
+        low:  [{ f: 523.25, t: 0 }],
+      };
+      (MELODIES[type] || MELODIES.low).forEach(({ f, t }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.value = f;
+        const s = ctx.currentTime + t;
+        gain.gain.setValueAtTime(0.22, s);
+        gain.gain.exponentialRampToValueAtTime(0.001, s + 0.28);
+        osc.start(s); osc.stop(s + 0.30);
+      });
+    } catch (e) {}
+  },
+
+  toggleSound() {
+    const off = localStorage.getItem('safeon.soundOff') === '1';
+    localStorage.setItem('safeon.soundOff', off ? '0' : '1');
+    if (!off) {
+      // 방금 켰으면 테스트 음 재생
+      this.playMelody('low');
+    }
+    if (this._panelOpen) this._renderPanel();
+  },
+
+  _soundOff() { return localStorage.getItem('safeon.soundOff') === '1'; },
 
   async init() {
     if (App.guestMode) return;
@@ -55,6 +95,7 @@ const Notify = {
       // 최근 50건만 보관
       localStorage.setItem(key, JSON.stringify(list.slice(-50)));
     } catch (e) {}
+    this.playMelody('done');
     this.refresh();
   },
 
@@ -251,6 +292,13 @@ const Notify = {
       panel.classList.remove('hidden');
       requestAnimationFrame(() => panel.classList.add('notify-panel-visible'));
     }
+    // 미확인 알림 긴급도에 따라 멜로디 재생 (사용자 제스처 직후이므로 iOS도 허용)
+    const unread = this._alerts.filter(a => !this._dismissedIds.has(this._getAlertKey(a)) && a.urgency !== 'done');
+    if (unread.length) {
+      const top = unread.find(a => a.urgency === 'high') ? 'high'
+                : unread.find(a => a.urgency === 'mid')  ? 'mid' : 'low';
+      this.playMelody(top);
+    }
     this.refresh();
   },
 
@@ -286,7 +334,15 @@ const Notify = {
           </svg>
           새로고침
         </button>
-        ${activeCount > 0 ? `<button class="notify-clear-btn" onclick="Notify.clearAll()">전체 지우기</button>` : ''}
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="notify-sound-btn" onclick="Notify.toggleSound()" title="${this._soundOff() ? '소리 켜기' : '소리 끄기'}">
+            ${this._soundOff()
+              ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
+              : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`
+            }
+          </button>
+          ${activeCount > 0 ? `<button class="notify-clear-btn" onclick="Notify.clearAll()">전체 지우기</button>` : ''}
+        </div>
       </div>`;
     this._renderItems();
   },

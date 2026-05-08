@@ -4053,6 +4053,13 @@ input[type="date"]:disabled {
 .notify-item-dismiss:hover { background: var(--gray-100); color: var(--gray-600); }
 .notify-item-dismiss:active { background: var(--gray-200); }
 .notify-refresh-btn:active { opacity: 0.7; }
+.notify-sound-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: none; border: none; cursor: pointer;
+  color: var(--gray-500); -webkit-tap-highlight-color: transparent;
+}
+.notify-sound-btn:active { background: var(--gray-100); }
 
 /* ===== QR 헤더 버튼 ===== */
 .btn-qr-header {
