@@ -133,16 +133,33 @@ const Notify = {
       console.warn('[Notify] TBM 쿼리 오류:', e);
     }
 
-    // 안전점검 — 최근 7일 내 불량(fail) 항목
+    // 안전점검 — 불량 항목 + 유형별 미실시 (단일 쿼리로 처리)
     try {
-      const clSnap = await collections.checklist.where('date', '>=', weekAgoStr).limit(50).get();
+      const monthAgo    = new Date(today); monthAgo.setDate(monthAgo.getDate() - 30);
+      const monthAgoStr = monthAgo.toISOString().split('T')[0];
+      const clSnap = await collections.checklist.where('date', '>=', monthAgoStr).limit(200).get();
+      const doneToday = new Set(), doneWeek = new Set(), doneMonth = new Set();
       clSnap.forEach(doc => {
         const d = { id: doc.id, ...doc.data() };
+        if (d.typeCode && d.date === todayStr)    doneToday.add(d.typeCode);
+        if (d.typeCode && d.date >= weekAgoStr)   doneWeek.add(d.typeCode);
+        if (d.typeCode)                            doneMonth.add(d.typeCode);
         const hasFail = d.results && Object.values(d.results).some(v => v === 'fail');
-        if (hasFail) {
+        if (hasFail && d.date >= weekAgoStr) {
           this._add({ urgency: 'mid', type: 'checklist-fail', icon: '❗', collType: 'checklist', docId: d.id,
             title: d.type || '안전점검', sub: `불량 항목 · ${d.location || d.date || ''}`.replace(/ · $/, ''), date: d.date || '' });
         }
+      });
+      const MISSING = [
+        { code: 'daily',     label: '일일 안전점검', sub: '오늘 일일 안전점검 기록이 없습니다',    done: doneToday.has('daily') },
+        { code: 'weekly',    label: '주간 안전점검', sub: '이번 주 주간 안전점검 기록이 없습니다',  done: doneWeek.has('weekly') },
+        { code: 'special',   label: '특별 안전점검', sub: '이번 달 특별 안전점검 기록이 없습니다',  done: doneMonth.has('special') },
+        { code: 'equipment', label: '장비 점검',     sub: '이번 달 장비 점검 기록이 없습니다',      done: doneMonth.has('equipment') },
+        { code: 'fire',      label: '소방안전점검',  sub: '이번 달 소방안전점검 기록이 없습니다',   done: doneMonth.has('fire') },
+      ];
+      MISSING.forEach(({ code, label, sub, done }) => {
+        if (!done) this._add({ urgency: 'low', type: `checklist-missing-${code}`, icon: '📋',
+          collType: 'checklist', docId: '', title: `${label} 미실시`, sub, date: todayStr });
       });
     } catch (e) {
       console.warn('[Notify] 체크리스트 쿼리 오류:', e);

@@ -316,15 +316,32 @@ app.get('/api/alerts', async (req, res) => {
         title: 'TBM 미실시', sub: '오늘 TBM 기록이 없습니다', date: todayStr });
     }
 
-    // 안전점검 — 최근 7일 내 불량(fail) 항목
-    const clSnap = await db.collection('checklist').where('date', '>=', weekAgoStr).limit(50).get();
+    // 안전점검 — 불량 항목 + 유형별 미실시 (단일 쿼리로 처리)
+    const monthAgo    = new Date(today); monthAgo.setDate(monthAgo.getDate() - 30);
+    const monthAgoStr = monthAgo.toISOString().split('T')[0];
+    const clSnap = await db.collection('checklist').where('date', '>=', monthAgoStr).limit(200).get();
+    const doneToday = new Set(), doneWeek = new Set(), doneMonth = new Set();
     clSnap.forEach(doc => {
       const d = { id: doc.id, ...doc.data() };
+      if (d.typeCode && d.date === todayStr)    doneToday.add(d.typeCode);
+      if (d.typeCode && d.date >= weekAgoStr)   doneWeek.add(d.typeCode);
+      if (d.typeCode)                            doneMonth.add(d.typeCode);
       const hasFail = d.results && Object.values(d.results).some(v => v === 'fail');
-      if (hasFail) {
+      if (hasFail && d.date >= weekAgoStr) {
         alerts.push({ urgency: 'mid', type: 'checklist-fail', icon: '❗', collType: 'checklist', docId: d.id,
           title: d.type || '안전점검', sub: `불량 항목 · ${d.location || d.date || ''}`.replace(/ · $/, ''), date: d.date || '' });
       }
+    });
+    const MISSING = [
+      { code: 'daily',     label: '일일 안전점검', sub: '오늘 일일 안전점검 기록이 없습니다',    done: doneToday.has('daily') },
+      { code: 'weekly',    label: '주간 안전점검', sub: '이번 주 주간 안전점검 기록이 없습니다',  done: doneWeek.has('weekly') },
+      { code: 'special',   label: '특별 안전점검', sub: '이번 달 특별 안전점검 기록이 없습니다',  done: doneMonth.has('special') },
+      { code: 'equipment', label: '장비 점검',     sub: '이번 달 장비 점검 기록이 없습니다',      done: doneMonth.has('equipment') },
+      { code: 'fire',      label: '소방안전점검',  sub: '이번 달 소방안전점검 기록이 없습니다',   done: doneMonth.has('fire') },
+    ];
+    MISSING.forEach(({ code, label, sub, done }) => {
+      if (!done) alerts.push({ urgency: 'low', type: `checklist-missing-${code}`, icon: '📋',
+        collType: 'checklist', docId: '', title: `${label} 미실시`, sub, date: todayStr });
     });
 
     // 사고 — 최근 7일 내 산업재해·중대재해·안전사고
