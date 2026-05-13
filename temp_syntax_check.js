@@ -1,0 +1,1 @@
+const fs = require(\" "fs\);const code = fs.readFileSync(\js/notify.js\,\utf8\);new Function(code);console.log(\notify.js" "OK\); ; C:\Program" "Files\nodejs\node.exe temp_syntax_check.js ; del temp_syntax_check.js

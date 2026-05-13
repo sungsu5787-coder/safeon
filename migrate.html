@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>데이터 마이그레이션 — 로컬 → Firebase</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 20px; color: #1a73e8; }
+    .log { background: #f1f3f4; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    button { background: #1a73e8; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; cursor: pointer; margin-top: 16px; }
+    button:disabled { background: #9aa0a6; cursor: not-allowed; }
+    .done { color: #1e8e3e; font-weight: bold; }
+    .err  { color: #d93025; }
+  </style>
+</head>
+<body>
+<h1>🔄 로컬 데이터 → Firebase 마이그레이션</h1>
+<p>로컬 서버(<code>localhost:8181/api/...</code>)에 저장된 기존 데이터를 Firebase Firestore로 한 번만 이전합니다.<br>
+이미 완료했다면 다시 실행해도 중복 방지됩니다.</p>
+<button id="btn" onclick="run()">마이그레이션 시작</button>
+<div class="log" id="log">버튼을 눌러 시작하세요.</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyDmPqngE7WIfu6ejgTE64R71IiEZz7SzuQ",
+  authDomain:        "samhwa-safeon.firebaseapp.com",
+  projectId:         "samhwa-safeon",
+  storageBucket:     "samhwa-safeon.firebasestorage.app",
+  messagingSenderId: "289570800087",
+  appId:             "1:289570800087:web:ebdfd0a425a98475800b92"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const COLLS = ['tbm','risk','checklist','workplan','ptw','accident'];
+
+function log(msg, cls) {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function run() {
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  document.getElementById('log').innerHTML = '';
+  log('마이그레이션 시작...');
+
+  let total = 0;
+  for (const coll of COLLS) {
+    log(`\n[${coll}] 로컬 API 조회 중...`);
+    let items = [];
+    try {
+      const res = await fetch(`/api/${coll}?limit=9999`, { cache: 'no-store' });
+      if (!res.ok) { log(`  ⚠️ 로컬 API 응답 없음 (서버가 켜져 있어야 합니다)`, 'err'); continue; }
+      items = await res.json();
+    } catch(e) {
+      log(`  ❌ 로컬 서버 연결 실패: ${e.message}`, 'err');
+      continue;
+    }
+
+    if (!items.length) { log(`  → 데이터 없음, 건너뜀`); continue; }
+    log(`  → ${items.length}건 발견`);
+
+    // Firebase에 이미 있는 ID 조회
+    const snap = await db.collection(coll).get();
+    const existing = new Set(snap.docs.map(d => d.id));
+
+    let added = 0;
+    for (const item of items) {
+      const { id, ...data } = item;
+      if (id && existing.has(id)) { continue; } // 중복 방지
+      try {
+        if (id) {
+          await db.collection(coll).doc(id).set(data);
+        } else {
+          await db.collection(coll).add(data);
+        }
+        added++;
+      } catch(e) {
+        log(`  ❌ 업로드 실패: ${e.message}`, 'err');
+      }
+    }
+    log(`  ✅ ${added}건 Firebase에 추가 완료`);
+    total += added;
+  }
+
+  log(`\n🎉 마이그레이션 완료 — 총 ${total}건 이전`, 'done');
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>

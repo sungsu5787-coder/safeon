@@ -1,0 +1,64 @@
+# 임시/백업 파일
+*.bak
+*.bak2
+*.backup
+*.log
+
+# PowerShell 스크립트 (로컬 서버용)
+*.ps1
+*.bat
+
+# 텍스트 출력 로그
+*-out.txt
+scan-out.txt
+scan*.txt
+diag*.txt
+verify*.txt
+check-pt-out.txt
+kr-replacements.txt
+cp949-test-results.txt
+
+# Cloudflare 터널 실행파일
+cloudflared.exe
+tunnel-url.txt
+cf-url.txt
+
+# Claude 설정 폴더
+.claude/
+
+# 진단/수정 스크립트
+analyze-corruption.ps1
+apply-fixes.ps1
+bulk-fix.ps1
+bulk-kr-fix.ps1
+check-bytes.ps1
+check-index.ps1
+check-pt.ps1
+comprehensive-fix.ps1
+diagnose-cp949.ps1
+extract-strings.ps1
+fix*.ps1
+fix2.ps1
+full-recover.ps1
+recover-korean.ps1
+scan*.ps1
+test-*.ps1
+verify*.ps1
+bump-ver.ps1
+
+# HTML 개발용 임시
+approval-workflow.html
+tbm-module.html
+legal-content.html
+launch.html
+index.html.backup
+index.html.bak2
+js/tbm.js.bak2
+
+# Backend node_modules
+backend/node_modules/
+backend/uploads/
+.vercel
+
+# Vercel CLI 인증 데이터 (절대 커밋 금지)
+Userskss57AppDataRoaming/
