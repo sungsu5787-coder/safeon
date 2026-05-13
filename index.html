@@ -1,0 +1,1682 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <title>SafeOn - 현장 안전보건 관리</title>
+
+  <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
+  <script>
+  (function(){
+    var V = 'v34';                              // 이 값(V) 수정 시 처리됩니다
+    var KEY = 'sfo_ver';
+    var prev = localStorage.getItem(KEY);
+    localStorage.setItem(KEY, V);
+    if (prev && prev !== V) {
+      // 버전 불일치 시 SW 등록 해제 + 캐시 전체 삭제 + 강제 새로고침
+      (async function(){
+        try {
+          if ('serviceWorker' in navigator) {
+            var regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(function(r){ return r.unregister(); }));
+          }
+          if ('caches' in window) {
+            var keys = await caches.keys();
+            await Promise.all(keys.map(function(k){ return caches.delete(k); }));
+          }
+        } catch(e) { console.warn('cache clear error:', e); }
+        // 쿼리스트링으로 HTTP 캐시까지 무효화 (guest/perm 파라미터 보존)
+        var _sp = new URLSearchParams(location.search);
+        _sp.set('r', Date.now());
+        location.replace(location.pathname + '?' + _sp.toString());
+      })();
+    }
+  })();
+  </script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header" id="app-header">
+      <!-- 브랜드 헤더 (홈) -->
+      <div class="header-brand" id="header-brand">
+        <div class="header-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+        </div>
+        <div class="header-brand-text">
+          <span class="header-title-en">SAMHWA SafeOn</span>
+          <span class="header-title-ko">삼화 세이프온</span>
+        </div>
+      </div>
+      <!-- 페이지 제목 (홈 제외) -->
+      <h1 id="page-title" class="header-page-title hidden">현장 안전보건</h1>
+      <!-- 알림 벨 버튼 -->
+      <button id="btn-notify" class="btn-notify-header" onclick="Notify.toggle()" title="알림" aria-label="알림">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span id="notify-badge" class="notify-badge hidden">0</span>
+      </button>
+
+      <!-- 알림 패널 -->
+      <div id="notify-panel" class="notify-panel hidden" role="dialog" aria-label="알림 패널"></div>
+
+      <!-- QR 코드 버튼 (우측 상단 고정) -->
+      <button id="btn-qr" class="btn-qr-header" onclick="QRModal.open()" title="QR 코드">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/>
+          <rect x="5" y="16" width="3" height="3"/>
+          <path d="M14 14h3v3"/><path d="M17 17h3v3"/><path d="M14 20h3"/>
+        </svg>
+      </button>
+      <button id="btn-back" class="btn-icon hidden" aria-label="뒤로가기"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+
+      <!-- ====== HOME ====== -->
+      <section id="page-home" class="page active">
+        <div class="dashboard">
+          <div class="greeting">
+            <div class="greeting-row">
+              <div class="greeting-texts">
+                <h2 id="greeting-text">안녕하세요</h2>
+                <p id="today-date"></p>
+                <!-- 오프라인 준비 상태 배지 -->
+                <div id="offline-ready-badge" class="offline-ready-badge hidden"></div>
+              </div>
+              <div class="greeting-right">
+                <img src="icons/mascot.png" class="mascot-img" alt="안전 마스코트" onerror="this.style.display='none'">
+                <button class="btn-force-update" onclick="App.forceUpdate()" title="강제 업데이트">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                  업데이트
+                </button>
+              </div>
+            </div>
+
+            <!-- PWA 홈 화면 설치 배너 -->
+            <div id="pwa-install-banner" class="pwa-install-banner hidden">
+              <div class="pwa-install-icon">📲</div>
+              <div class="pwa-install-body">
+                <div class="pwa-install-title" id="pwa-install-title">홈 화면에 추가하면 오프라인에서도 사용!</div>
+                <div class="pwa-install-desc" id="pwa-install-desc">서버(PC)가 꺼져도 알아서 실행됩니다</div>
+              </div>
+              <button class="pwa-install-btn" id="pwa-install-btn" onclick="App.triggerPWAInstall()">추가</button>
+              <button class="pwa-install-close" onclick="App.dismissPWABanner()" aria-label="닫기">✕</button>
+            </div>
+          </div>
+
+          <!-- 접속 주소 카드 -->
+          <div class="access-url-card hidden" id="access-url-card">
+
+            <!-- 고정 주소 (Wi-Fi / Tailscale) — 이것만 북마크 -->
+            <div class="access-url-row access-url-row-stable">
+              <div class="access-url-row-header">
+                <span class="access-url-badge badge-stable">📶 고정 주소</span>
+                <span class="access-url-badge-hint">재시작해도 절대 안 바뀜</span>
+                <button class="access-url-copy" onclick="App.copyUrl('access-url-stable')" title="복사" id="access-url-copy-btn">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>복사
+                </button>
+                <button class="access-url-toggle" onclick="App.toggleAccessUrl()" id="access-url-toggle-btn" title="접기/펼치기">
+                  <svg id="access-url-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+              </div>
+              <div id="access-url-stable-body">
+                <div class="access-url-value" id="access-url-stable">로딩 중...</div>
+                <div class="access-url-bookmark-hint">
+                  ⭐ <strong>이 주소를 홈화면에 추가하세요</strong> — 아래 QR 버튼 또는 브라우저 메뉴 → 홈 화면에 추가
+                </div>
+              </div>
+            </div>
+
+            <!-- Cloudflare 외부 주소 — 북마크 절대 금지 -->
+            <div class="access-url-row access-url-cf-row hidden" id="access-url-cf-row">
+              <div class="access-url-row-header">
+                <span class="access-url-badge badge-cf">🌐 외부 접속 (임시)</span>
+                <button class="access-url-copy" onclick="App.copyUrl('access-url-cf')" title="복사">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>복사
+                </button>
+              </div>
+              <div class="access-url-value access-url-cf-value" id="access-url-cf">로딩 중...</div>
+              <div class="access-url-hint access-url-hint-danger">
+                ❌ <strong>북마크 금지</strong> — 서버 재시작마다 주소가 바뀝니다<br>
+                접속할 때마다 위 QR 버튼으로 현재 주소를 확인하세요 (앱이 자동 갱신)
+              </div>
+            </div>
+
+          </div>
+
+          <div class="proposal-qr-card" id="proposal-qr-card">
+            <div class="proposal-qr-card-header">
+              <div>
+                <span class="proposal-qr-badge">📢</span>
+                <strong>안전보건 제안 QR</strong>
+              </div>
+              <button class="btn-small" type="button" onclick="App.copyProposalUrl()">주소 복사</button>
+            </div>
+            <div id="proposal-qr-wrap" class="proposal-qr-preview"></div>
+            <div id="proposal-url-text" class="proposal-qr-url"></div>
+            <div class="proposal-qr-note">근로자가 QR을 스캔하면 제안 폼으로 이동합니다. (동일 Wi-Fi/터널 URL로 모바일 접속 지원)</div>
+          </div>
+
+          <!-- Featured: 안전사고발생보고서 (TBM 위) -->
+          <button class="menu-card-featured menu-card-accident" data-page="accident">
+            <div class="featured-icon-wrap">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                <line x1="12" y1="8" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="featured-text">
+              <span class="featured-label">안전사고 보고서</span>
+              <span class="featured-desc">아차사고 · 안전사고 · 산업재해 · 중대재해</span>
+            </div>
+            <svg class="featured-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
+          <!-- Featured: TBM (전폭 FAB 카드) -->
+          <button class="menu-card-featured menu-card-tbm" data-page="tbm">
+            <div class="featured-icon-wrap">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 19h20"/>
+                <path d="M5 19v-3a7 7 0 0 0 14 0v3"/>
+                <path d="M12 2v7"/>
+              </svg>
+            </div>
+            <div class="featured-text">
+              <span class="featured-label">TBM</span>
+              <span class="featured-desc">Tool Box Meeting · 작업 전 안전 미팅</span>
+            </div>
+            <svg class="featured-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
+          <!-- Featured: PTW 작업허가서(전폭 FAB 카드) -->
+          <button class="menu-card-featured menu-card-ptw" data-page="ptw">
+            <div class="featured-icon-wrap">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="2"/>
+                <path d="M9 12l2 2 4-4"/>
+                <line x1="9" y1="17" x2="15" y2="17"/>
+              </svg>
+            </div>
+            <div class="featured-text">
+              <span class="featured-label">작업허가서(PTW)</span>
+              <span class="featured-desc">Permit to Work · 3단계 전자결재</span>
+            </div>
+            <svg class="featured-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
+          <!-- Featured: 사업장현황 -->
+          <button class="menu-card-featured menu-card-workplace" data-page="workplaceinfo">
+            <div class="featured-icon-wrap">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="15" rx="2"/>
+                <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+                <line x1="12" y1="12" x2="12" y2="16"/>
+                <line x1="10" y1="14" x2="14" y2="14"/>
+              </svg>
+            </div>
+            <div class="featured-text">
+              <span class="featured-label">사업장현황</span>
+              <span class="featured-desc">사업장 · 인원 · 등록정보 관리</span>
+            </div>
+            <svg class="featured-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
+          <!-- 나머지 메뉴 카드 (2×2) -->
+          <div class="menu-grid">
+            <button class="menu-card" data-page="risk">
+              <div class="menu-icon risk-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="22 12 18 12 15 3 9 21 6 12 2 12"/>
+                </svg>
+              </div>
+              <span class="menu-label">위험성평가</span>
+              <span class="menu-desc">실시간AI 분석</span>
+            </button>
+
+            <button class="menu-card" data-page="checklist">
+              <div class="menu-icon check-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  <polyline points="9 11 11 13 14.5 9.5"/>
+                </svg>
+              </div>
+              <span class="menu-label">안전점검</span>
+              <span class="menu-desc">체크리스트점검</span>
+            </button>
+
+            <button class="menu-card" data-page="workplan">
+              <div class="menu-icon workplan-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                  <line x1="8" y1="14" x2="16" y2="14"/>
+                  <line x1="8" y1="18" x2="12" y2="18"/>
+                </svg>
+              </div>
+              <span class="menu-label">작업계획서</span>
+              <span class="menu-desc">TBM · 사진첨부</span>
+            </button>
+
+            <button class="menu-card" data-page="history">
+              <div class="menu-icon history-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"/>
+                  <line x1="8" y1="12" x2="21" y2="12"/>
+                  <line x1="8" y1="18" x2="21" y2="18"/>
+                  <circle cx="3" cy="6" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="3" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="3" cy="18" r="1.5" fill="currentColor" stroke="none"/>
+                </svg>
+              </div>
+              <span class="menu-label">이력조회</span>
+              <span class="menu-desc">생성 기록 확인</span>
+            </button>
+
+            <button class="menu-card" data-page="proposals">
+              <div class="menu-icon" style="background:#EFF6FF;color:#2563EB">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  <line x1="9" y1="9" x2="15" y2="9"/>
+                  <line x1="9" y1="13" x2="13" y2="13"/>
+                </svg>
+              </div>
+              <span class="menu-label">제안 관리</span>
+              <span class="menu-desc">현황·상태 관리</span>
+            </button>
+
+            <button class="menu-card" data-page="safetyreport">
+              <div class="menu-icon" style="background:#FFF7ED;color:#C2410C">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <line x1="3" y1="9" x2="21" y2="9"/>
+                  <polyline points="9 16 12 13 15 16"/>
+                  <line x1="12" y1="13" x2="12" y2="20"/>
+                </svg>
+              </div>
+              <span class="menu-label">안전보건현황</span>
+              <span class="menu-desc">월별 종합 보고</span>
+            </button>
+          </div>
+
+          <!-- Today's Summary -->
+          <div class="today-summary">
+            <div class="dashboard-header-row">
+              <h3 id="dashboard-period-title">오늘의 현황</h3>
+              <button class="btn-dash-today" onclick="App.resetDashboardToToday()">조회</button>
+            </div>
+            <div class="dashboard-date-row">
+              <input type="date" id="dash-date-from" onchange="App.updateDashboardRange()">
+              <span class="dash-date-sep">~</span>
+              <input type="date" id="dash-date-to" onchange="App.updateDashboardRange()">
+            </div>
+            <div class="summary-cards">
+              <div class="summary-item">
+                <span class="summary-value" id="today-tbm-count">0</span>
+                <span class="summary-label">TBM</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="today-risk-count">0</span>
+                <span class="summary-label">위험성평가</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="today-check-count">0</span>
+                <span class="summary-label">안전점검</span>
+              </div>
+            </div>
+            <div class="summary-cards-2">
+              <div class="summary-item">
+                <span class="summary-value" id="today-wp-count" style="color:#16A34A">0</span>
+                <span class="summary-label">작업계획서</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="today-ptw-count" style="color:#D97706">0</span>
+                <span class="summary-label">작업허가서</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="today-accident-count" style="color:#DC2626">0</span>
+                <span class="summary-label">사고보고</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="today-proposal-count" style="color:#2563EB">0</span>
+                <span class="summary-label">제안 건수</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== 안전사고발생보고서?====== -->
+      <section id="page-accident" class="page">
+        <div class="page-content">
+          <form id="accident-form" class="form">
+
+            <!-- 사고유형 -->
+            <div class="form-group">
+              <label>사고유형 <span style="color:var(--danger)">*</span></label>
+              <div class="accident-type-grid">
+                <button type="button" class="accident-type-btn" data-type="nearmiss"   onclick="Accident.selectType(this)">💡 아차사고</button>
+                <button type="button" class="accident-type-btn" data-type="safety"     onclick="Accident.selectType(this)">🚨 안전사고</button>
+                <button type="button" class="accident-type-btn" data-type="industrial" onclick="Accident.selectType(this)">🏭 산업재해</button>
+                <button type="button" class="accident-type-btn" data-type="serious"    onclick="Accident.selectType(this)">⚠️ 중대재해</button>
+              </div>
+            </div>
+
+            <!-- 기본정보 -->
+            <div class="accident-section-title">📋 기본정보</div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>발생일자</label>
+                <input type="date" id="accident-date" required>
+              </div>
+              <div class="form-group">
+                <label>발생시간</label>
+                <input type="time" id="accident-time">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>발생장소</label>
+              <input type="text" id="accident-location" placeholder="예: A동 3층 계단" required>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>보고자</label>
+                <input type="text" id="accident-reporter" placeholder="성명">
+              </div>
+              <div class="form-group">
+                <label>소속</label>
+                <input type="text" id="accident-dept" placeholder="소속/부서">
+              </div>
+            </div>
+            <div class="accident-section-title">📝 사고내용</div>
+            <div class="form-group">
+              <label>사고경위</label>
+              <textarea id="accident-content" rows="4" placeholder="사고 발생 경위를 기술하세요"></textarea>
+            </div>
+            <div class="form-group">
+              <label>원인 추정 및 확인</label>
+              <textarea id="accident-cause" rows="3" placeholder="사고 발생 원인 추정 및 확인을 기술하세요"></textarea>
+            </div>
+            <div id="accident-injured-section">
+              <div class="accident-section-title">🤕 부상자 정보</div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label>부상자 서명 <span class="sig-note">정자기입요망</span></label>
+                  <input type="text" id="accident-injured-name" placeholder="성명">
+                </div>
+                <div class="form-group">
+                  <label>나이 / 소속</label>
+                  <input type="text" id="accident-injured-info" placeholder="예: 35세 / 근로자">
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label>부상부위</label>
+                  <input type="text" id="accident-injured-part" placeholder="예: 손목, 팔목">
+                </div>
+                <div class="form-group">
+                  <label>부상정도</label>
+                  <input type="text" id="accident-injured-level" placeholder="예: 경상 / 중상">
+                </div>
+              </div>
+            </div>
+
+            <!-- 조치 버튼 -->
+            <div class="accident-section-title">✅ 조치사항</div>
+            <div class="form-group">
+              <label>즉시조치사항</label>
+              <textarea id="accident-immediate" rows="3" placeholder="사고 발생 후 즉시 취한 조치 사항"></textarea>
+            </div>
+            <div class="form-group">
+              <div class="label-with-btn">
+                <label>재발방지대책</label>
+                <button type="button" class="btn-ai-suggest" onclick="Accident.suggestPrevention()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                  AI 추천
+                </button>
+              </div>
+              <textarea id="accident-prevention" rows="4" placeholder="재발 방지를 위한 대책"></textarea>
+            </div>
+
+
+            <!-- 사진 업로드 -->
+            <div class="accident-section-title">📷 현장사진 첨부</div>
+            <div class="form-group">
+              <input type="file" id="accident-photo-input" accept="image/*" multiple style="display:none">
+              <div class="photo-upload-area" id="accident-upload-area">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <p style="margin:8px 0 2px;font-weight:600;color:var(--gray-700)">사진을 추가하려면 탭하세요</p>
+                <p style="font-size:12px;color:var(--gray-500)"></p>
+              </div>
+              <div id="accident-photo-preview" class="photo-preview-grid"></div>
+            </div>
+
+            <!-- 보고서 서명 -->
+            <div class="accident-section-title">✍️ 보고서 서명 <span class="sig-note">정자기입요망</span></div>
+            <div class="form-group">
+              <div class="signature-wrap">
+                <canvas id="accident-sig-canvas" class="signature-canvas"></canvas>
+                <button type="button" id="accident-sig-clear" class="btn-sig-clear">지우기</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="background:var(--danger)">📋 사고보고서 저장</button>
+            <div id="accident-offline-status" class="accident-offline-status hidden"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ====== TBM ====== -->
+      <section id="page-tbm" class="page">
+        <div class="page-content">
+          <!-- 언어 전환 -->
+          <div class="tbm-lang-switcher">
+            <button class="tbm-lang-btn active" data-lang="ko" onclick="TBM.setLang('ko')">한국</button>
+            <button class="tbm-lang-btn"        data-lang="zh" onclick="TBM.setLang('zh')">中文</button>
+            <button class="tbm-lang-btn"        data-lang="vi" onclick="TBM.setLang('vi')">VI</button>
+            <button class="tbm-lang-btn"        data-lang="en" onclick="TBM.setLang('en')">EN</button>
+          </div>
+
+          <form id="tbm-form" class="form">
+            <div class="form-group">
+              <label>📅 작업일자</label>
+              <input type="date" id="tbm-date" required>
+            </div>
+            <div class="form-group">
+              <label>🔨 공종/작업명</label>
+              <input type="text" id="tbm-work-name" data-i18n-ph="work-name-ph" placeholder="예: 철골 용접 작업" required>
+            </div>
+            <div class="form-group">
+              <label>📍 작업장소</label>
+              <input type="text" id="tbm-location" data-i18n-ph="location-ph" placeholder="예: A동 3층">
+            </div>
+            <div class="form-group">
+              <label>👷 작업인원</label>
+              <input type="number" id="tbm-workers" min="1" data-i18n-ph="workers-ph" placeholder="인원 수">
+            </div>
+            <div class="form-group">
+              <label>📝 작업내용</label>
+              <textarea id="tbm-content" rows="3" data-i18n-ph="content-ph" placeholder="오늘의 작업 내용을 입력하세요"></textarea>
+            </div>
+            <!-- 재해유형 체크박스 -->
+            <div class="form-group">
+              <label>⚠️ 재해유형 (유의할 사항)</label>
+              <div class="disaster-type-grid">
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="끼임"><span>⚙️ 끼임</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="떨어짐"><span>⬇️ 떨어짐(추락)</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="부딪힘"><span>💥 부딪힘</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="물체에맞음"><span>🪨 물체에맞음</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="화재폭발"><span>🔥 화재폭발</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="전도"><span>🚶 전도</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="감전"><span>⚡ 감전</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="근골격계질환"><span>🦴 근골격계</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="tbm-disaster" value="기타"><span>⚠️ 기타</span></label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>🔍 위험요인</label>
+              <textarea id="tbm-hazards" rows="3" data-i18n-ph="hazards-ph" placeholder="예상되는 위험요인을 입력하세요"></textarea>
+            </div>
+            <div class="form-group">
+              <div class="label-with-btn">
+                <label>🛡️ 안전대책</label>
+                <button type="button" class="btn-ai-suggest" onclick="TBM.openModal()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                  AI 추천
+                </button>
+              </div>
+              <textarea id="tbm-measures" rows="3" data-i18n-ph="measures-ph" placeholder="안전대책을 입력하세요"></textarea>
+            </div>
+            <div class="form-group">
+              <label>📢 특별 지시사항</label>
+              <textarea id="tbm-instructions" rows="2" data-i18n-ph="instructions-ph" placeholder="추가 지시사항 (선택)"></textarea>
+            </div>
+            <div class="form-group">
+              <label>👥 참석자</label>
+              <div id="tbm-participants" class="participants-list"></div>
+              <div class="participant-input">
+                <input type="text" id="tbm-participant-name" data-i18n-ph="participant-ph" placeholder="이름">
+                <button type="button" id="btn-add-participant" class="btn-small" data-i18n="add-btn">추가</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>👔 관리감독자</label>
+              <input type="text" id="tbm-supervisor" data-i18n-ph="supervisor-ph" placeholder="관리감독자 성명" required>
+            </div>
+
+            <!-- 현장사진 업로드 -->
+            <div class="accident-section-title" data-i18n="photos-title">📷 현장사진 첨부</div>
+            <div class="form-group">
+              <input type="file" id="tbm-photo-input" accept="image/*" multiple style="display:none">
+              <div class="photo-upload-area" id="tbm-upload-area">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <p id="tbm-photo-upload-txt" style="margin:8px 0 2px;font-weight:600;color:var(--gray-700)">사진을 추가하려면 탭하세요</p>
+                <p id="tbm-photo-upload-desc" style="font-size:12px;color:var(--gray-500)"></p>
+              </div>
+              <div id="tbm-photo-preview" class="photo-preview-grid"></div>
+            </div>
+
+            <button type="submit" id="tbm-submit-btn" class="btn-primary" data-i18n="submit">TBM 저장</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ====== 위험성평가 ====== -->
+      <section id="page-risk" class="page">
+        <div class="page-content">
+          <form id="risk-form" class="form">
+            <div class="form-group">
+              <label>평가일자</label>
+              <input type="date" id="risk-date" required
+                     onchange="Risk.onAssessDateChange()">
+            </div>
+
+            <!-- 개선 계획일 / 완료일-->
+            <div class="risk-date-row">
+              <div class="form-group risk-date-cell">
+                <label class="label-plan">
+                  목표 개선결정일
+                  <span class="label-badge-optional">선택</span>
+                </label>
+                <input type="date" id="risk-plan-date"
+                       onchange="Risk.onPlanDateChange()">
+                <div class="date-hint" id="risk-plan-hint"></div>
+              </div>
+              <div class="form-group risk-date-cell">
+                <label class="label-complete">
+                  실제 개선완료일
+                  <span class="label-badge-optional">선택</span>
+                </label>
+                <input type="date" id="risk-complete-date"
+                       onchange="Risk.onCompleteDateChange()">
+                <div class="date-hint" id="risk-complete-hint"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>작업명</label>
+              <input type="text" id="risk-work-name" placeholder="예: 비계 설치 작업" required>
+            </div>
+            <div class="form-group">
+              <label>작업장소</label>
+              <input type="text" id="risk-location" placeholder="작업 장소" required>
+            </div>
+            <div class="form-group">
+              <label>위험확인 목록</label>
+              <div id="risk-items"></div>
+              <button type="button" id="btn-add-risk" class="btn-secondary">+ 위험확인 추가</button>
+            </div>
+
+            <div class="form-group">
+              <label>평가자 <span class="sig-note">정자기입요망</span></label>
+              <input type="text" id="risk-assessor" placeholder="평가자 서명" required>
+            </div>
+            <button type="submit" class="btn-primary">위험성평가 저장</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ====== 안전점검 ====== -->
+      <section id="page-checklist" class="page">
+        <div class="page-content">
+          <form id="checklist-form" class="form">
+            <div class="form-group">
+              <label>📅 점검일자</label>
+              <input type="date" id="check-date" required>
+            </div>
+            <div class="form-group">
+              <label>📋 점검유형</label>
+              <select id="check-type" required>
+                <option value="">선택하세요</option>
+                <option value="daily">일일 안전점검</option>
+                <option value="weekly">주간 안전점검</option>
+                <option value="special">특별 안전점검</option>
+                <option value="equipment">장비 점검</option>
+                <option value="fire">소방안전점검</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>📍 점검장소</label>
+              <input type="text" id="check-location" placeholder="점검 장소" required>
+            </div>
+            <div id="checklist-items" class="checklist-container"></div>
+            <div class="form-group">
+              <label>💬 종합의견</label>
+              <textarea id="check-opinion" rows="3" placeholder="점검 종합의견"></textarea>
+            </div>
+
+            <!-- 사진 첨부 -->
+            <div class="form-group">
+              <label>📷 현장사진 첨부</label>
+              <input type="file" id="check-photo-input" accept="image/*" multiple style="display:none">
+              <div class="photo-upload-area" id="check-upload-area">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <p style="margin:8px 0 2px;font-weight:600;color:var(--gray-700)">사진을 추가하려면 탭하세요</p>
+                <p style="font-size:12px;color:var(--gray-500)">최대 10장 · 10MB 이하</p>
+              </div>
+              <div id="check-photo-preview" class="photo-preview-grid"></div>
+            </div>
+
+            <div class="form-group">
+              <label>👤 점검자 <span class="sig-note">정자기입요망</span></label>
+              <input type="text" id="check-inspector" placeholder="점검자 서명" required>
+            </div>
+            <button type="submit" class="btn-primary">✅ 점검 결과 저장</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ====== 작업계획서====== -->
+      <section id="page-workplan" class="page">
+        <div class="page-content">
+          <form id="workplan-form" class="form">
+
+            <div class="ptw-section-title">📋 기본 정보</div>
+            <div class="form-group">
+              <label>생성일자</label>
+              <input type="date" id="wp-date" required>
+            </div>
+            <div class="form-group">
+              <label>업체명(시공사)</label>
+              <input type="text" id="wp-company" placeholder="시공사 업체명" required>
+            </div>
+            <div class="form-group">
+              <label>공종/작업명</label>
+              <input type="text" id="wp-work-name" placeholder="예: 비계 설치 작업" required>
+            </div>
+            <div class="form-group">
+              <label>작업장소</label>
+              <input type="text" id="wp-location" placeholder="예: A동 3층 북측" required>
+            </div>
+            <div class="form-group">
+              <label>사업기간</label>
+              <div class="wp-period-picker">
+                <div class="wp-period-row">
+                  <div class="wp-period-field">
+                    <span class="wp-period-label"></span>
+                    <input type="date" id="wp-period-start" required>
+                  </div>
+                  <span class="wp-period-arrow">→</span>
+                  <div class="wp-period-field">
+                    <span class="wp-period-label"></span>
+                    <input type="date" id="wp-period-end" required>
+                  </div>
+                </div>
+                <div class="wp-period-shortcuts">
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(1)">1일</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(3)">3일</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(7)">1주</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(14)">2주</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(30)">1개월</button>
+                </div>
+                <div id="wp-period-summary" class="wp-period-summary hidden"></div>
+              </div>
+              <!-- 미사용 hidden input -->
+              <input type="hidden" id="wp-period">
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>총 작업인원</label>
+                <input type="number" id="wp-workers" min="1" placeholder="명" required>
+              </div>
+              <div class="form-group">
+                <label>현장책임자</label>
+                <input type="text" id="wp-supervisor" placeholder="성명" required>
+              </div>
+            </div>
+
+            <!-- 참입인원 목록 -->
+            <div class="form-group wp-crew-section">
+              <div class="wp-crew-header">
+                <label>투입인원 목록</label><span id="wp-crew-count" class="wp-crew-count">0명</span>
+              </div>
+              <div class="participant-input wp-crew-input">
+                <input type="text" id="wp-crew-name" placeholder="성명" maxlength="20">
+                <input type="text" id="wp-crew-role" placeholder="직책·역할 (예: 용접공)" maxlength="20">
+                <button type="button" id="btn-add-crew" onclick="WorkPlan.addCrew()">추가</button>
+              </div>
+              <div id="wp-crew-list" class="wp-crew-list"></div>
+            </div>
+
+            <div class="form-group">
+              <label>투입장비</label>
+              <input type="text" id="wp-equipment" placeholder="장비 목록 (예: 굴삭기, 지게차)">
+            </div>
+
+            <div class="ptw-section-title">📝 작업내용</div>
+            <div class="form-group">
+              <label>작업내용</label>
+              <textarea id="wp-content" rows="3" data-i18n-ph="content-ph" placeholder="상세 작업내용을 기재하세요" required></textarea>
+            </div>
+            <!-- 재해유형 체크박스 -->
+            <div class="form-group">
+              <label>⚠️ 재해유형 (유의할 사항)</label>
+              <div class="disaster-type-grid">
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="끼임"><span>⚙️ 끼임</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="떨어짐"><span>⬇️ 떨어짐(추락)</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="부딪힘"><span>💥 부딪힘</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="물체에맞음"><span>🪨 물체에맞음</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="화재폭발"><span>🔥 화재폭발</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="전도"><span>🚶 전도</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="감전"><span>⚡ 감전</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="근골격계질환"><span>🦴 근골격계</span></label>
+                <label class="disaster-type-item"><input type="checkbox" name="wp-disaster" value="기타"><span>⚠️ 기타</span></label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>🔍 위험요인</label>
+              <textarea id="wp-hazards" rows="3" data-i18n-ph="hazards-ph" placeholder="예상 위험요인을 기재하세요" required></textarea>
+            </div>
+            <div class="form-group">
+              <div class="label-with-btn">
+                <label>🛡️ 안전대책</label>
+                <button type="button" class="btn-ai-suggest" onclick="WorkPlan.suggestMeasures()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                  AI 추천
+                </button>
+              </div>
+              <textarea id="wp-measures" rows="4" placeholder="안전대책을 기재하세요" required></textarea>
+            </div>
+
+            <div class="ptw-section-title">📷 현장사진 첨부</div>
+            <div class="form-group">
+              <input type="file" id="wp-photo-input" accept="image/*" multiple style="display:none">
+              <div class="photo-upload-area" id="wp-upload-area">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <p style="margin:8px 0 2px;font-weight:600;color:var(--gray-700)">사진을 추가하려면 탭하세요</p>
+                <p style="font-size:12px;color:var(--gray-500)"></p>
+              </div>
+              <div id="wp-photo-preview" class="photo-preview-grid"></div>
+            </div>
+
+            <div class="ptw-section-title">✍️ 현장책임자 서명 <span class="sig-note">정자기입요망</span></div>
+            <div class="form-group">
+              <div class="signature-wrap">
+                <canvas id="wp-sig-canvas" class="signature-canvas"></canvas>
+                <button type="button" id="wp-sig-clear" class="btn-sig-clear">지우기</button>
+              </div>
+              <p style="font-size:12px;color:var(--gray-500);margin-top:4px">아래 칸에 서명하세요</p>
+            </div>
+
+            <!-- ⚠️ 법적 책임 고지 -->
+            <div class="wp-legal-notice">
+              <div class="wp-legal-header">
+                <span class="wp-legal-icon">⚠️</span>
+                <span class="wp-legal-title">법적 책임 고지 · 작업 전 반드시 확인하세요</span>
+              </div>
+              <div class="wp-legal-body">
+                <p class="wp-legal-main">
+                  본 작업계획서에 기재된 <strong>위험확인 및 안전대책을 이행하지 않은 상태에서 작업을 진행</strong>할 경우,
+                  발생하는 산업재해·사고에 대한 <strong>민사·형사상 모든 법적 책임은 해당 신청인(시공업체)에 귀속</strong>됩니다
+                </p>
+                <div class="wp-legal-laws">
+                  <p class="wp-legal-laws-title">📋 적용 법령</p>
+                  <ul>
+                    <li><b>산업안전보건법 제63조</b> — 도급인·수급인의 안전보건 조치 의무 (위반 시 형사처벌)</li>
+                    <li><b>산업안전보건법 제167조</b> — 중대재해 발생 시 <b>7년 이하 징역 또는 1억원 이하 벌금</b></li>
+                    <li><b>중대재해처벌법 제6조</b> — 안전보건관리체계 미이행으로 인한 중대산업재해 발생 시 <b>경영책임자 1년 이상 징역</b></li>
+                    <li><b>민법 제750조</b> — 불법행위로 인한 손해배상 책임 (직접·간접 손해배상 가능)</li>
+                    <li><b>형법 제268조</b> — 업무상과실·중과실 치사상 (5년 이하 금고 또는 2천만원 이하 벌금)</li>
+                    <li><b>산업안전보건법 제175조</b> — 안전조치 미이행 과태료 <b>최대 5천만원 이하</b></li>
+                  </ul>
+                </div>
+                <p class="wp-legal-confirm">
+                  신청인은 본 작업계획서의 확인·서명으로 위 안전대책 사항 이행을 약속하며,
+                  <strong>미이행으로 인한 모든 민·형사상 책임, 행정처분, 과태료 부과 및 손해배상 책임을 확인(동의)됩니다</strong>
+                </p>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary">작업계획서 저장</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ====== 작업허가서(PTW) ====== -->
+      <section id="page-ptw" class="page">
+        <div class="page-content">
+
+          <!-- 작업계획서 진행 알림 패널 -->
+          <div id="ptw-wp-notifications" class="hidden"></div>
+
+          <form id="ptw-form" class="form">
+
+            <!-- 작업유형 -->
+            <div class="ptw-section-title">✅ 작업유형 선택 (복수 가능)</div>
+            <div class="form-group">
+              <div class="ptw-type-grid">
+                <button type="button" class="ptw-type-item" data-type="fire"      onclick="PTW.toggleType(this)">
+                  <span class="ptw-type-chk"></span><span>🔥 화기작업</span>
+                </button>
+                <button type="button" class="ptw-type-item" data-type="heavy"     onclick="PTW.toggleType(this)">
+                  <span class="ptw-type-chk"></span><span>⚖️ 중량물작업</span>
+                </button>
+                <button type="button" class="ptw-type-item" data-type="confined"  onclick="PTW.toggleType(this)">
+                  <span class="ptw-type-chk"></span><span>🏭 밀폐공간작업</span>
+                </button>
+                <button type="button" class="ptw-type-item" data-type="height"    onclick="PTW.toggleType(this)">
+                  <span class="ptw-type-chk"></span><span>🏗️ 고소작업</span>
+                </button>
+                <button type="button" class="ptw-type-item" data-type="excavation" onclick="PTW.toggleType(this)">
+                  <span class="ptw-type-chk"></span><span>⛏️ 굴착작업</span>
+                </button>
+                <button type="button" class="ptw-type-item" data-type="electric"  onclick="PTW.toggleType(this)">
+                  <span class="ptw-type-chk"></span><span>⚡ 전기작업</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 신청정보 -->
+            <div class="ptw-section-title">📋 신청 정보</div>
+            <div class="form-group">
+              <label>신청일자</label>
+              <input type="date" id="ptw-date" required>
+            </div>
+            <div class="form-group">
+              <label>신청부서 / 업체명</label>
+              <input type="text" id="ptw-company" placeholder="신청자 업체명 또는 부서명" required>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>직책</label>
+                <input type="text" id="ptw-position" placeholder="직책">
+              </div>
+              <div class="form-group">
+                <label>성명 <span class="sig-note">정자기입요망</span></label>
+                <input type="text" id="ptw-req-name" placeholder="신청자 서명" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>부서</label>
+              <input type="text" id="ptw-dept" placeholder="소속 부서">
+            </div>
+            <div class="form-group">
+              <label>작업기간 시작</label>
+              <input type="datetime-local" id="ptw-period-start" required>
+            </div>
+            <div class="form-group">
+              <label>작업기간 종료</label>
+              <input type="datetime-local" id="ptw-period-end" required>
+            </div>
+            <div class="form-group">
+              <label>작업내용</label>
+              <textarea id="ptw-work-name" rows="2" placeholder="작업내용을 기재하세요" required></textarea>
+            </div>
+            <div class="form-group">
+              <label>작업장소</label>
+              <input type="text" id="ptw-location" placeholder="작업 장소" required>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>작업인원</label>
+                <input type="text" id="ptw-workers" placeholder="명">
+              </div>
+              <div class="form-group">
+                <label>투입장비</label>
+                <input type="text" id="ptw-equipment" placeholder="장비명">
+              </div>
+            </div>
+
+            <!-- 안전 체크리스트 -->
+            <div class="ptw-section-title">✅ 유형별 안전 체크리스트</div>
+            <div id="ptw-checklists">
+              <p class="empty-state" style="padding:12px 0;font-size:13px">작업유형을 선택하면 체크리스트가 표시됩니다</p>
+            </div>
+
+            <!-- 신청 버튼 + 서명 -->
+            <div class="ptw-section-title">📝 요청사항 및 신청자 서명</div>
+            <div class="form-group">
+              <label>요청사항</label>
+              <textarea id="ptw-req-notes" rows="2" placeholder="비고 또는 요청사항 (선택)"></textarea>
+            </div>
+            <div class="form-group">
+              <label>신청자 서명 <span class="sig-note">정자기입요망</span></label>
+              <div class="signature-wrap">
+                <canvas id="ptw-req-canvas" class="signature-canvas"></canvas>
+                <button type="button" id="ptw-req-clear" class="btn-sig-clear">지우기</button>
+              </div>
+            </div>
+
+            <!-- 현장관리자 확인 -->
+            <div class="ptw-section-title">📋 현장관리자 확인</div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>소속</label>
+                <input type="text" id="ptw-chk-dept" placeholder="소속">
+              </div>
+              <div class="form-group">
+                <label>확인자</label>
+                <input type="text" id="ptw-chk-name" placeholder="성명">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>확인 결과</label>
+              <div class="ptw-radio-group">
+                <button type="button" class="ptw-radio-item" data-radio="ptw-chk-result" data-value="ok"
+                        onclick="PTW.selectRadio(this)">
+                  <span class="ptw-radio-dot"></span>
+                  ✅ 현장 확인 결과 이상없음
+                </button>
+                <button type="button" class="ptw-radio-item" data-radio="ptw-chk-result" data-value="conditional"
+                        onclick="PTW.selectRadio(this)">
+                  <span class="ptw-radio-dot"></span>
+                  ⚠️ 조건부 보완 후 작업
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>보완사항</label>
+              <textarea id="ptw-chk-memo" rows="2" placeholder="보완사항이 있을 경우 기재"></textarea>
+            </div>
+            <div class="form-group">
+              <label>확인자 서명 <span class="sig-note">정자기입요망</span></label>
+              <div class="signature-wrap">
+                <canvas id="ptw-chk-canvas" class="signature-canvas"></canvas>
+                <button type="button" id="ptw-chk-clear" class="btn-sig-clear">지우기</button>
+              </div>
+            </div>
+
+            <!-- 그림 -->
+            <div class="ptw-section-title">✍️ 허가 (안전보건 주의사항)</div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>소속</label>
+                <input type="text" id="ptw-apr-dept" placeholder="소속">
+              </div>
+              <div class="form-group">
+                <label>허가자</label>
+                <input type="text" id="ptw-apr-name" placeholder="성명">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>허가 조건 / 특이사항</label>
+              <textarea id="ptw-permit-content" rows="2" placeholder="허가 조건 및 비고"></textarea>
+            </div>
+            <div class="form-group">
+              <label>허가자 서명 <span class="sig-note">정자기입요망</span></label>
+              <div class="signature-wrap">
+                <canvas id="ptw-apr-canvas" class="signature-canvas"></canvas>
+                <button type="button" id="ptw-apr-clear" class="btn-sig-clear">지우기</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary">작업허가서 저장</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ====== 이력조회 ====== -->
+      <section id="page-history" class="page">
+        <div class="page-content">
+          <div class="history-filters">
+            <select id="history-type">
+              <option value="all">전체</option>
+              <option value="tbm">TBM</option>
+              <option value="risk">위험성평가</option>
+              <option value="checklist">안전점검</option>
+              <option value="workplan">작업계획서</option>
+              <option value="ptw">작업허가서</option>
+              <option value="nearmiss">아차사고</option>
+              <option value="accident">사고보고서</option>
+              <option value="proposal">안전제안</option>
+            </select>
+            <input type="date" id="history-date-from">
+            <input type="date" id="history-date-to">
+          </div>
+
+          <!-- 더보기 버튼 -->
+          <div class="export-bar">
+            <span class="export-bar-label" id="export-count-label">0건</span>
+            <div class="export-btn-group">
+              <button class="export-btn" id="btn-export-print" title="인쇄 / PDF 저장">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                미리보기·PDF
+              </button>
+              <button class="export-btn" id="btn-export-csv" title="내보내기(CSV) 다운로드">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                CSV
+              </button>
+            </div>
+          </div>
+
+          <div id="history-list" class="history-list">
+            <p class="empty-state">작업유형을 선택하면 체크리스트가 표시됩니다</p>
+          </div>
+
+          <div id="history-pager" class="history-pager"></div>
+
+          <!-- 미리보기 사용 시 안내 -->
+        </div>
+      </section>
+
+      <!-- ====== 사업장현황 ====== -->
+      <section id="page-workplaceinfo" class="page">
+        <div class="page-content">
+
+          <!-- 등록 폼 -->
+          <div class="wi-form-wrap">
+            <div class="wi-form-title">➕ 사업장 등록</div>
+            <form id="wi-form" class="form">
+              <div class="form-group">
+                <label>🏢 사업장명 <span style="color:var(--danger)">*</span></label>
+                <input type="text" id="wi-name" placeholder="사업장명을 입력하세요" required>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label>👤 대표자</label>
+                  <input type="text" id="wi-ceo" placeholder="대표자 성명">
+                </div>
+                <div class="form-group">
+                  <label>🔢 사업자등록번호</label>
+                  <input type="text" id="wi-bizno" placeholder="000-00-00000" maxlength="12">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>📍 사업장 소재지</label>
+                <input type="text" id="wi-address" placeholder="사업장 주소">
+              </div>
+              <div class="form-row-3">
+                <div class="form-group">
+                  <label>🏭 주생산품</label>
+                  <input type="text" id="wi-product" placeholder="예: 철골구조물">
+                </div>
+                <div class="form-group">
+                  <label>📂 업태</label>
+                  <input type="text" id="wi-biztype" placeholder="예: 제조업">
+                </div>
+                <div class="form-group">
+                  <label>📌 종목</label>
+                  <input type="text" id="wi-bizitem" placeholder="예: 건설기계">
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label>👷 정직원 인원수</label>
+                  <input type="number" id="wi-staff" placeholder="명" min="0">
+                </div>
+                <div class="form-group">
+                  <label>🔧 도급직 인원수</label>
+                  <input type="number" id="wi-contract" placeholder="명" min="0">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>📝 비고</label>
+                <textarea id="wi-note" rows="2" placeholder="기타 사항"></textarea>
+              </div>
+              <button type="submit" class="btn-primary" style="background:#0d9488">🏢 사업장 등록</button>
+            </form>
+          </div>
+
+          <!-- 목록 헤더 -->
+          <div class="wi-list-header">
+            <div class="wi-list-title">📋 등록된 사업장 목록</div>
+            <button class="btn-wi-print" onclick="WorkplaceInfo.print()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              출력
+            </button>
+          </div>
+          <div id="wi-list" class="wi-list">
+            <div class="wi-empty">등록된 사업장이 없습니다</div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ====== 제안 관리 ====== -->
+      <section id="page-proposals" class="page">
+        <div class="page-content">
+          <div class="proposals-filter-bar">
+            <button class="proposals-filter-tab active" data-filter="전체" onclick="ProposalsView.setFilter('전체')">전체 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab" data-filter="접수" onclick="ProposalsView.setFilter('접수')">접수 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab" data-filter="검토중" onclick="ProposalsView.setFilter('검토중')">검토중 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab" data-filter="완료" onclick="ProposalsView.setFilter('완료')">완료 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab" data-filter="반려" onclick="ProposalsView.setFilter('반려')">반려 <span class="tab-badge">0</span></button>
+          </div>
+          <div id="proposals-list" class="proposals-list"></div>
+        </div>
+      </section>
+
+      <!-- ====== 안전보건구축체계현황 ====== -->
+      <section id="page-safetyreport" class="page">
+        <div class="page-content sr-page">
+          <div class="sr-ctrl-bar">
+            <div class="sr-period-wrap">
+              <div class="sr-mode-tabs">
+                <button class="sr-mode-tab active" data-mode="month" onclick="SafetyReport.setMode('month')">월별</button>
+                <button class="sr-mode-tab" data-mode="quarter" onclick="SafetyReport.setMode('quarter')">분기별</button>
+                <button class="sr-mode-tab" data-mode="year" onclick="SafetyReport.setMode('year')">년별</button>
+              </div>
+              <div class="sr-input-area">
+                <input type="month" id="sr-month-input" class="sr-month-input sr-mode-input" data-for="month">
+                <div class="sr-quarter-wrap sr-mode-input" data-for="quarter" style="display:none">
+                  <select id="sr-quarter-year" class="sr-select"></select>
+                  <select id="sr-quarter-q" class="sr-select">
+                    <option value="1">1분기 (1~3월)</option>
+                    <option value="2">2분기 (4~6월)</option>
+                    <option value="3">3분기 (7~9월)</option>
+                    <option value="4">4분기 (10~12월)</option>
+                  </select>
+                </div>
+                <div class="sr-year-wrap sr-mode-input" data-for="year" style="display:none">
+                  <select id="sr-year-select" class="sr-select"></select>
+                </div>
+              </div>
+              <button class="btn-sr-query" onclick="SafetyReport.load()">조회</button>
+              <label class="sr-compare-label">
+                <input type="checkbox" id="sr-compare-toggle" onchange="SafetyReport.setCompare(this.checked)">
+                <span>전년대비</span>
+              </label>
+            </div>
+            <div class="sr-ctrl-right">
+              <button class="btn-sr-print" onclick="SafetyReport.print()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                출력
+              </button>
+            </div>
+          </div>
+          <div id="sr-content" class="sr-content">
+            <div class="sr-empty">월을 선택하고 조회를 누르세요</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== 상세보기 ====== -->
+      <section id="page-detail" class="page">
+        <div class="page-content">
+          <div id="detail-content"></div>
+          <div class="detail-actions">
+            <!-- 조회 모드 버튼 -->
+            <div id="detail-view-btns">
+              <div class="detail-actions-row">
+                <button id="btn-edit-record" class="btn-detail-action btn-detail-edit" onclick="App._startEdit()">
+                  <span class="detail-action-icon">✏️</span>
+                  <span class="detail-action-label">수정</span>
+                </button>
+                <button id="btn-capture-detail" class="btn-detail-action btn-detail-capture" onclick="App.captureDetail()">
+                  <span class="detail-action-icon">📸</span>
+                  <span class="detail-action-label">캡처·공유</span>
+                </button>
+                <button id="btn-print-detail" class="btn-detail-action btn-detail-print" onclick="App.printDetail()">
+                  <span class="detail-action-icon">🖨️</span>
+                  <span class="detail-action-label">인쇄·PDF</span>
+                </button>
+              </div>
+              <button id="btn-delete-record" class="btn-detail-delete">
+                <span>🗑️</span> 기록 삭제
+              </button>
+            </div>
+            <!-- 수정 모드 버튼 -->
+            <div id="detail-edit-btns" class="hidden">
+              <button id="btn-save-edit" class="btn-detail-save" onclick="App._saveEdit()">
+                <span>💾</span>  저장
+              </button>
+              <button id="btn-cancel-edit" class="btn-detail-cancel" onclick="App._cancelEdit()">
+                <span>✕</span> 취소
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-page="home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>홈</span>
+      </button>
+      <button class="nav-item nav-accident" data-page="accident">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>사고</span>
+      </button>
+      <button class="nav-item nav-ptw" data-page="ptw">
+        <span class="nav-ptw-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          <span id="ptw-nav-badge" class="ptw-nav-badge hidden">0</span>
+        </span>
+        <span>허가서</span>
+      </button>
+
+      <!-- TBM 중앙 FAB -->
+      <div class="nav-fab-slot">
+        <button class="nav-fab" data-page="tbm">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>TBM</span>
+        </button>
+      </div>
+
+      <button class="nav-item" data-page="workplan">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>계획서</span>
+      </button>
+      <button class="nav-item" data-page="history">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>이력</span>
+      </button>
+    </nav>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- 게스트 모드 배너 -->
+    <div id="guest-banner" class="guest-banner hidden">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span id="guest-banner-text">게스트 모드 제한적 사용</span>
+    </div>
+
+    <!-- 오프라인 배너 -->
+    <div id="offline-banner" class="offline-banner hidden">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      오프라인 — 저장된 데이터로 계속 사용 가능
+    </div>
+
+    <!-- ====== QR 코드 紐⑤떖 ====== -->
+    <div id="qr-modal" class="qr-modal-overlay hidden" onclick="QRModal.close(event)">
+      <div class="qr-modal-box">
+        <div class="qr-modal-header">
+          <div class="qr-modal-logo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div>
+            <div class="qr-modal-title">SAMHWA SafeOn</div>
+            <div class="qr-modal-subtitle" id="qr-modal-subtitle">QR 코드 스캔</div>
+          </div>
+          <button class="qr-close-btn" onclick="QRModal.close()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <!-- QR 탭 (게스트 모드에서도 표시) -->
+        <div class="qr-tabs" id="qr-tabs">
+          <button class="qr-tab active" data-tab="normal" onclick="QRModal.switchTab('normal')">📱 일반 접속</button>
+          <button class="qr-tab" data-tab="guest" onclick="QRModal.switchTab('guest')">🔒 게스트 QR</button>
+        </div>
+
+        <!-- 일반 접속 패널 -->
+        <div id="qr-panel-normal" class="qr-panel">
+          <div class="qr-code-wrap">
+            <div id="qr-code-img"></div>
+          </div>
+          <div class="qr-url-box">
+            <span id="qr-url-text" class="qr-url-text"></span>
+            <button class="qr-copy-btn" onclick="QRModal.copyUrl()" title="URL 복사">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+            <button class="qr-share-btn" onclick="QRModal.shareUrl()" title="URL 공유">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+          </div>
+          <div class="qr-action-row">
+            <button class="qr-full-share-btn" onclick="QRModal.shareUrl()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              주소 공유하기
+            </button>
+            <button id="btn-qr-refresh" class="qr-refresh-btn" onclick="QRModal.refresh()">
+              🔄 QR 새로고침
+            </button>
+          </div>
+          <p class="qr-hint"></p>
+          <div class="qr-ip-list" id="qr-ip-list"></div>
+        </div>
+
+        <!-- 게스트 QR 패널 -->
+        <div id="qr-panel-guest" class="qr-panel hidden">
+          <div class="guest-qr-config">
+            <div class="guest-qr-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              게스트가 사용할 메뉴 선택
+            </div>
+            <div class="guest-perm-grid">
+              <label class="guest-perm-item">
+                <input type="checkbox" name="guest-perm" value="workplan" checked>
+                <span class="guest-perm-icon">📋</span> 작업계획서              </label>
+              <label class="guest-perm-item">
+                <input type="checkbox" name="guest-perm" value="tbm">
+                <span class="guest-perm-icon">📝</span> TBM
+              </label>
+              <label class="guest-perm-item">
+                <input type="checkbox" name="guest-perm" value="risk">
+                <span class="guest-perm-icon">⚠️</span> 위험성평가
+              </label>
+              <label class="guest-perm-item">
+                <input type="checkbox" name="guest-perm" value="checklist">
+                <span class="guest-perm-icon">✅</span> 안전점검
+              </label>
+              <label class="guest-perm-item">
+                <input type="checkbox" name="guest-perm" value="ptw">
+                <span class="guest-perm-icon">🔑</span> 작업허가서              </label>
+              <label class="guest-perm-item">
+                <input type="checkbox" name="guest-perm" value="accident">
+                <span class="guest-perm-icon">🚨</span> 사고보고서              </label>
+            </div>
+            <div class="guest-mode-note">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              게스트는 <b>읽기 전용</b>으로 제한됩니다(데이터 저장 불가)
+            </div>
+            <button class="guest-gen-btn" onclick="QRModal.generateGuestQR()">
+              👥 게스트 QR 생성
+            </button>
+          </div>
+
+          <!-- 생성된 게스트 QR -->
+          <div id="guest-qr-result" class="hidden">
+            <div class="qr-code-wrap">
+              <div id="guest-qr-img"></div>
+            </div>
+            <div class="qr-url-box">
+              <span id="guest-qr-url-text" class="qr-url-text"></span>
+              <button class="qr-copy-btn" onclick="QRModal.copyGuestUrl()" title="URL 복사">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+            <button class="qr-full-share-btn" onclick="QRModal.shareGuestUrl()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              게스트 주소 공유하기
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== AI 추천 모달 (전역 공용 form 사용) ====== -->
+
+  <!-- 발생원인·방지 관련 AI 추천 (사고보고서) -->
+  <div id="prevention-modal" class="prevention-overlay hidden"
+       onclick="Accident.closePreventionModal(event)"
+       ontouchstart="Accident.closePreventionModal(event)">
+    <div class="prevention-sheet">
+      <div class="prevention-header">
+        <span class="prevention-title">🔍 재발방지대책 AI 추천</span>
+        <button type="button" class="prevention-close" onclick="Accident.closePreventionModal()">✕</button>
+      </div>
+      <p class="prevention-subtitle">원하는 항목을 선택 후 <strong>적용</strong>하세요 (복수선택 가능)</p>
+      <div id="prevention-categories" class="prevention-categories"></div>
+      <div class="prevention-footer">
+        <button type="button" class="btn-prevention-cancel" onclick="Accident.closePreventionModal()">취소</button>
+        <button type="button" class="btn-prevention-apply" onclick="Accident.applyPrevention()">선택 항목 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 안전 관련 AI 추천 (TBM) -->
+  <div id="tbm-suggest-modal" class="prevention-overlay hidden"
+       onclick="TBM.closeModal(event)"
+       ontouchstart="TBM.closeModal(event)">
+    <div class="prevention-sheet">
+      <div class="prevention-header">
+        <span class="prevention-title">🔍 안전대책 AI 추천</span>
+        <button type="button" class="prevention-close" onclick="TBM.closeModal()">✕</button>
+      </div>
+      <p class="prevention-subtitle">재해유형별 안전대책 — 원하는 항목을 선택 후 <strong>적용</strong>하세요</p>
+      <div id="tbm-suggest-categories" class="prevention-categories"></div>
+      <div class="prevention-footer">
+        <button type="button" class="btn-prevention-cancel" onclick="TBM.closeModal()">취소</button>
+        <button type="button" class="btn-prevention-apply" onclick="TBM.applyMeasures()">선택 항목 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 안전 관련 AI 추천 (위험성평가) -->
+  <div id="risk-suggest-modal" class="prevention-overlay hidden"
+       onclick="Risk.closeModal(event)"
+       ontouchstart="Risk.closeModal(event)">
+    <div class="prevention-sheet">
+      <div class="prevention-header">
+        <span class="prevention-title">🔍 안전대책 AI 추천</span>
+        <button type="button" class="prevention-close" onclick="Risk.closeModal()">✕</button>
+      </div>
+      <p class="prevention-subtitle">원하는 항목을 선택 후 <strong>적용</strong>하세요 (복수선택 가능)</p>
+      <div id="risk-suggest-categories" class="prevention-categories"></div>
+      <div class="prevention-footer">
+        <button type="button" class="btn-prevention-cancel" onclick="Risk.closeModal()">취소</button>
+        <button type="button" class="btn-prevention-apply" onclick="Risk.applyMeasures()">선택 항목 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 안전 관련 AI 추천 (작업계획서) -->
+  <div id="wp-suggest-modal" class="prevention-overlay hidden"
+       onclick="WorkPlan.closeModal(event)"
+       ontouchstart="WorkPlan.closeModal(event)">
+    <div class="prevention-sheet">
+      <div class="prevention-header">
+        <span class="prevention-title">🔍 안전대책 AI 추천</span>
+        <button type="button" class="prevention-close" onclick="WorkPlan.closeModal()">✕</button>
+      </div>
+      <p class="prevention-subtitle">원하는 항목을 선택 후 <strong>적용</strong>하세요 (복수선택 가능)</p>
+      <div id="wp-suggest-categories" class="prevention-categories"></div>
+      <div class="prevention-footer">
+        <button type="button" class="btn-prevention-cancel" onclick="WorkPlan.closeModal()">취소</button>
+        <button type="button" class="btn-prevention-apply" onclick="WorkPlan.applyMeasures()">선택 항목 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TBM 공유 QR 모달 -->
+  <div id="tbm-share-modal" class="tbm-share-overlay hidden"
+       onclick="TBM.closeShareModal(event)">
+    <div class="tbm-share-box">
+      <div class="tbm-share-header">
+        <span class="tbm-share-title">📋 TBM 공유 QR</span>
+        <button type="button" class="tbm-share-close" onclick="TBM.closeShareModal()">✕</button>
+      </div>
+      <p class="tbm-share-desc">언어를 선택하여 QR을 근로자에게 공유하세요</p>
+      <div class="tbm-share-lang-tabs">
+        <button class="tbm-share-lang-tab active" data-lang="ko" onclick="TBM.switchShareLang('ko')">🇰🇷 한국어</button>
+        <button class="tbm-share-lang-tab" data-lang="zh" onclick="TBM.switchShareLang('zh')">🇨🇳 中文</button>
+        <button class="tbm-share-lang-tab" data-lang="vi" onclick="TBM.switchShareLang('vi')">🇻🇳 VI</button>
+        <button class="tbm-share-lang-tab" data-lang="en" onclick="TBM.switchShareLang('en')">🇬🇧 EN</button>
+      </div>
+      <div id="tbm-share-qr-wrap" class="tbm-share-qr-wrap"></div>
+      <div id="tbm-share-url-text" class="tbm-share-url-text"></div>
+      <div class="tbm-share-actions">
+        <button type="button" class="tbm-share-btn" onclick="TBM.downloadShareQR()">💾 QR 저장</button>
+        <button type="button" class="tbm-share-btn" onclick="TBM.copyShareUrl()">🔗 URL 복사</button>
+        <button type="button" class="tbm-share-btn tbm-share-btn-primary" onclick="TBM.webShareUrl()">📤 공유</button>
+      </div>
+      <p class="tbm-share-hint">💡 QR을 인쇄하거나 화면으로 보여주세요</p>
+    </div>
+  </div>
+
+  <!-- TBM 공유 뷰어 (QR 스캔 시 표시) -->
+  <div id="tbm-shared-viewer" class="tbm-shared-viewer hidden">
+    <div class="tbm-viewer-top">
+      <div class="tbm-viewer-brand">🦺 SafeOn TBM</div>
+      <div class="tbm-viewer-lang-row">
+        <button class="tbm-viewer-lang-btn active" data-lang="ko" onclick="TBM.switchViewerLang('ko')">🇰🇷 한국어</button>
+        <button class="tbm-viewer-lang-btn" data-lang="zh" onclick="TBM.switchViewerLang('zh')">🇨🇳 中文</button>
+        <button class="tbm-viewer-lang-btn" data-lang="vi" onclick="TBM.switchViewerLang('vi')">🇻🇳 VI</button>
+        <button class="tbm-viewer-lang-btn" data-lang="en" onclick="TBM.switchViewerLang('en')">🇬🇧 EN</button>
+      </div>
+    </div>
+    <div id="tbm-viewer-body" class="tbm-viewer-body">
+      <p style="padding:40px;text-align:center;color:#aaa">로딩 중...</p>
+    </div>
+  </div>
+
+  <!-- App Scripts (순서 중요) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="js/html2canvas.min.js"></script>
+  <script src="js/qrcode.min.js"></script>
+  <!-- 제안 상세 모달 -->
+  <div id="proposal-detail-modal" class="proposal-detail-overlay hidden" onclick="if(event.target===this)ProposalsView.closeDetail()">
+    <div class="proposal-detail-sheet">
+      <div class="proposal-detail-header">
+        <span>제안 상세</span>
+        <button class="proposal-detail-close" onclick="ProposalsView.closeDetail()">✕</button>
+      </div>
+      <div id="proposal-detail-content" class="proposal-detail-content"></div>
+    </div>
+  </div>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/signature-canvas.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/tbm.js"></script>
+  <script src="js/risk.js"></script>
+  <script src="js/checklist.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/workplan.js"></script>
+  <script src="js/ptw.js"></script>
+  <script src="js/accident.js"></script>
+  <script src="js/qr-modal.js"></script>
+  <script src="js/notify.js"></script>
+  <script src="js/proposal.js"></script>
+  <script src="js/proposals-view.js"></script>
+  <script src="js/workplace-info.js"></script>
+  <script src="js/safety-report.js"></script>
+
+  <!-- ====== 전역 확인 모달 (앱 전역 공용) ====== -->
+  <div id="confirm-modal" class="confirm-overlay hidden" role="dialog" aria-modal="true">
+    <div class="confirm-box">
+      <div class="confirm-icon" id="confirm-icon">💾</div>
+      <div class="confirm-title" id="confirm-title">확인하시겠습니까?</div>
+      <div class="confirm-msg"   id="confirm-msg"></div>
+      <div class="confirm-btns">
+        <button class="confirm-btn-cancel" id="confirm-cancel">취소</button>
+        <button class="confirm-btn-ok"     id="confirm-ok">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 인쇄 전용 영역 — body 직속으로 배치해야 @media print 에서 표시됨 -->
+  <div id="print-area" class="print-area"></div>
+
+  <!-- PWA 설치 프롬프트 안전 처리 (load 보다 먼저 등록해야 함) -->
+  <script>
+  window._pwaInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    window._pwaInstallPrompt = e;
+    if (typeof App !== 'undefined') App._onInstallPromptAvailable();
+  });
+  window.addEventListener('appinstalled', function() {
+    window._pwaInstallPrompt = null;
+    if (typeof App !== 'undefined') App.dismissPWABanner(true);
+    console.log('[PWA] 홈 화면 설치 완료');
+  });
+
+  // API Base URL 설정 (로컬 개발 vs Vercel 배포)
+  window.API_BASE_URL = '';
+  </script>
+
+  <!-- Service Worker -->
+  <!-- 업데이트 알림 배너 -->
+  <div id="update-banner" class="update-banner hidden">
+    <span class="update-banner-text">새 버전이 업데이트됐습니다</span>
+    <button class="update-banner-btn" onclick="window.location.reload()">새로고침</button>
+  </div>
+
+  <script>
+  (function() {
+    if (!('serviceWorker' in navigator)) return;
+
+    // SW 등록 (sw.js?v=24 - 브라우저의 HTTP 캐시 강제 무효화)
+    const SW_URL = 'sw.js?v=25';
+
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register(SW_URL, { updateViaCache: 'none' })
+        .then(function(reg) {
+          console.log('[SW] 등록 완료:', reg.scope);
+
+          // 이미 waiting 중인 SW → 즉시 활성화
+          if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+
+          // 새 SW 발견 시 업데이트
+          reg.addEventListener('updatefound', function() {
+            var nw = reg.installing;
+            if (!nw) return;
+            nw.addEventListener('statechange', function() {
+              if (nw.state === 'installed') {
+                // 기존 SW가 없으면 즉시 교체
+                if (navigator.serviceWorker.controller) {
+                  nw.postMessage('SKIP_WAITING');
+                }
+              }
+            });
+          });
+
+          // 페이지 포커스 시 SW 업데이트 확인 (탭 전환·앱 재진입)
+          document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') reg.update();
+          });
+        })
+        .catch(function(e) { console.warn('[SW] 등록 실패:', e); });
+
+      // 새 SW 교체 완료 - 자동 리로드(최신 파일 반영)
+      var reloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (reloading) return;
+        reloading = true;
+        console.log('[SW] 새버전으로 교체됨 - 페이지 리로드');
+        window.location.reload();
+      });
+
+      // SW 메시지 수신
+      navigator.serviceWorker.addEventListener('message', function(event) {
+        var data = event.data;
+        if (data && data.type === 'CACHE_UPDATED') {
+          console.log('[SW] 캐시 업데이트:', data.version);
+          var banner = document.getElementById('update-banner');
+          if (banner) banner.classList.remove('hidden');
+        }
+        if (data === 'CACHE_REFRESHED') {
+          if (typeof App !== 'undefined') App.showToast('오프라인 캐시 갱신 완료');
+        }
+        // 캐시 준비완료 알림 (activate 후 / CACHE_REFRESH 후)
+        if (data && (data.type === 'CACHE_READY' || data.type === 'CACHE_STATUS')) {
+          if (typeof App !== 'undefined') App._onCacheStatus(data);
+        }
+      });
+    });
+  })();
+  </script>
+</body>
+</html>
+
