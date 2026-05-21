@@ -1,4 +1,4 @@
-// ===== SafetyReport — 안전보건구축체계현황 =====
+// ===== SafetyReport — 안전점검현황 =====
 const SafetyReport = {
   _data: null,
   _prevData: null,
@@ -109,15 +109,44 @@ const SafetyReport = {
     container.innerHTML = '<div class="sr-loading"><span class="sr-spinner"></span> 데이터 불러오는 중...</div>';
 
     const { from, to } = this._getPeriod();
+    const apiBase = window.API_BASE_URL || '';
+
+    // 제안 데이터 미리 요청 (Firebase와 병렬)
+    const _filterProposals = data => (data.proposals || []).filter(p =>
+      p.createdAt && p.createdAt.substring(0, 10) >= from && p.createdAt.substring(0, 10) <= to
+    );
+    const proposalPromise = fetch(`${apiBase}/api/proposals`)
+      .then(r => r.ok ? r.json() : { proposals: [] })
+      .catch(() => ({ proposals: [] }));
+
+    // Firebase 인증 완료 대기 (최대 6초)
+    try {
+      await Promise.race([authReadyPromise, new Promise(r => setTimeout(r, 6000))]);
+    } catch(e) { /* 인증 실패해도 공개 규칙이면 진행 */ }
+
+    const _withTimeout = (promise, ms = 12000) => Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase 연결 시간 초과. 네트워크를 확인하거나 잠시 후 다시 시도해주세요.')), ms))
+    ]);
+
+    const _empty = () => ({ tbm:[], risk:[], checklist:[], workplan:[], ptw:[], accident:[], proposals: [] });
+
+    const _query = (col, f, t) => {
+      try { return collections[col].where('date', '>=', f).where('date', '<=', t).get(); }
+      catch(e) { return Promise.reject(e); }
+    };
 
     try {
-      const [tbmSnap, riskSnap, checkSnap, wpSnap, ptwSnap, accSnap] = await Promise.all([
-        collections.tbm.where('date', '>=', from).where('date', '<=', to).get(),
-        collections.risk.where('date', '>=', from).where('date', '<=', to).get(),
-        collections.checklist.where('date', '>=', from).where('date', '<=', to).get(),
-        collections.workplan.where('date', '>=', from).where('date', '<=', to).get(),
-        collections.ptw.where('date', '>=', from).where('date', '<=', to).get(),
-        collections.accident.where('date', '>=', from).where('date', '<=', to).get(),
+      const [[tbmSnap, riskSnap, checkSnap, wpSnap, ptwSnap, accSnap], proposalData] = await Promise.all([
+        _withTimeout(Promise.all([
+          _query('tbm', from, to),
+          _query('risk', from, to),
+          _query('checklist', from, to),
+          _query('workplan', from, to),
+          _query('ptw', from, to),
+          _query('accident', from, to),
+        ])),
+        proposalPromise,
       ]);
 
       this._data = {
@@ -127,33 +156,54 @@ const SafetyReport = {
         workplan:  wpSnap.docs.map(d => d.data()),
         ptw:       ptwSnap.docs.map(d => d.data()),
         accident:  accSnap.docs.map(d => d.data()),
+        proposals: _filterProposals(proposalData),
       };
 
       if (this._compare) {
         const { from: pf, to: pt } = this._getPrevPeriod();
-        const [pt1, pr1, pc1, pw1, pp1, pa1] = await Promise.all([
-          collections.tbm.where('date', '>=', pf).where('date', '<=', pt).get(),
-          collections.risk.where('date', '>=', pf).where('date', '<=', pt).get(),
-          collections.checklist.where('date', '>=', pf).where('date', '<=', pt).get(),
-          collections.workplan.where('date', '>=', pf).where('date', '<=', pt).get(),
-          collections.ptw.where('date', '>=', pf).where('date', '<=', pt).get(),
-          collections.accident.where('date', '>=', pf).where('date', '<=', pt).get(),
-        ]);
-        this._prevData = {
-          tbm:       pt1.docs.map(d => d.data()),
-          risk:      pr1.docs.map(d => d.data()),
-          checklist: pc1.docs.map(d => d.data()),
-          workplan:  pw1.docs.map(d => d.data()),
-          ptw:       pp1.docs.map(d => d.data()),
-          accident:  pa1.docs.map(d => d.data()),
-        };
+        try {
+          const [pt1, pr1, pc1, pw1, pp1, pa1] = await _withTimeout(Promise.all([
+            _query('tbm', pf, pt),
+            _query('risk', pf, pt),
+            _query('checklist', pf, pt),
+            _query('workplan', pf, pt),
+            _query('ptw', pf, pt),
+            _query('accident', pf, pt),
+          ]));
+          this._prevData = {
+            tbm:       pt1.docs.map(d => d.data()),
+            risk:      pr1.docs.map(d => d.data()),
+            checklist: pc1.docs.map(d => d.data()),
+            workplan:  pw1.docs.map(d => d.data()),
+            ptw:       pp1.docs.map(d => d.data()),
+            accident:  pa1.docs.map(d => d.data()),
+          };
+        } catch(e) {
+          console.warn('[SafetyReport] 전년 데이터 조회 실패:', e.message);
+          this._prevData = null;
+        }
       } else {
         this._prevData = null;
       }
 
       container.innerHTML = this._buildHTML();
     } catch (err) {
-      container.innerHTML = `<div class="sr-error">⚠️ 데이터 조회 오류: ${App.escapeHtml(err.message)}</div>`;
+      console.error('[SafetyReport] load 오류:', err);
+      // Firebase 연결 불가 시 빈 데이터로 화면 표시
+      const isTimeout = err.message.includes('시간 초과');
+      const isPermission = err.code === 'permission-denied' || (err.message || '').includes('permission');
+      if (isTimeout || isPermission) {
+        const proposalData = await proposalPromise;
+        this._data = { ..._empty(), proposals: _filterProposals(proposalData) };
+        this._prevData = null;
+        container.innerHTML = `
+          <div class="sr-warn-banner">
+            ⚠️ ${isTimeout ? 'Firebase 연결 시간 초과' : '데이터 접근 권한 없음'} — 로컬 데이터가 없어 빈 화면으로 표시합니다.
+          </div>
+          ${this._buildHTML()}`;
+      } else {
+        container.innerHTML = `<div class="sr-error">⚠️ 데이터 조회 오류: ${App.escapeHtml(err.message)}</div>`;
+      }
     }
   },
 
@@ -242,7 +292,7 @@ const SafetyReport = {
       <div class="sr-report" id="sr-report-body">
         <!-- 리포트 헤더 -->
         <div class="sr-report-header">
-          <div class="sr-report-title">안전보건구축체계현황</div>
+          <div class="sr-report-title">안전점검현황</div>
           <div class="sr-report-period">${monthLabel} 종합 보고${pd ? ` (전년대비: ${prevLabel})` : ''}</div>
           <div class="sr-report-meta">SAMHWA SafeOn · 작성일: ${new Date().toLocaleDateString('ko-KR')}</div>
         </div>
@@ -361,9 +411,13 @@ const SafetyReport = {
               </table>
             </div>`}
 
+        <!-- ⑧ 안전제안 현황 -->
+        <div class="sr-section-title">💡 안전제안 현황</div>
+        ${this._buildProposalSection()}
+
         <!-- 리포트 푸터 -->
         <div class="sr-report-footer">
-          SAMHWA SafeOn · ${monthLabel} 안전보건구축체계현황 · 출력일: ${new Date().toLocaleDateString('ko-KR')}
+          SAMHWA SafeOn · ${monthLabel} 안전점검현황 · 출력일: ${new Date().toLocaleDateString('ko-KR')}
         </div>
       </div>`;
   },
@@ -383,7 +437,7 @@ const SafetyReport = {
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>안전보건구축체계현황 — ${monthLabel}</title>
+<title>안전점검현황 — ${monthLabel}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:11pt; color:#202124; background:#fff; padding:20mm 18mm; }
@@ -434,7 +488,7 @@ const SafetyReport = {
 <body>
 <div class="doc-header">
   <div class="doc-title-block">
-    <h1>안전보건구축체계현황</h1>
+    <h1>안전점검현황</h1>
     <div class="subtitle">${monthLabel} 종합 보고서</div>
     <div class="meta">SAMHWA SafeOn &nbsp;·&nbsp; 작성일: ${new Date().toLocaleDateString('ko-KR')}</div>
   </div>
@@ -609,7 +663,7 @@ ${d.workplan.length ? `
   </table>
 </div>` : ''}
 
-<div class="footer">SAMHWA SafeOn &nbsp;|&nbsp; ${monthLabel} 안전보건구축체계현황 &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</div>
+<div class="footer">SAMHWA SafeOn &nbsp;|&nbsp; ${monthLabel} 안전점검현황 &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</div>
 <script>window.onload = () => { window.print(); };<\/script>
 </body></html>`);
     win.document.close();
@@ -886,6 +940,39 @@ ${d.workplan.length ? `
         }).join('')}
       </tbody>
     </table>`;
+  },
+
+  _buildProposalSection() {
+    const proposals = (this._data && this._data.proposals) || [];
+    const total = proposals.length;
+    if (total === 0) return '<div class="sr-no-data">이 기간 안전제안 없음</div>';
+
+    const cnt = s => proposals.filter(p => (p.status || '접수') === s).length;
+    const 접수 = cnt('접수');
+    const 검토중 = cnt('검토중');
+    const 완료 = cnt('완료');
+    const 반려 = cnt('반려');
+    const 처리율 = Math.round((완료 + 반려) / total * 100);
+
+    const chip = (label, n, color) => `
+      <div class="sr-proposal-chip" style="border-top:3px solid ${color}">
+        <div class="sr-proposal-chip-count" style="color:${color}">${n}</div>
+        <div class="sr-proposal-chip-label">${label}</div>
+      </div>`;
+
+    return `
+      <div class="sr-proposal-grid">
+        ${chip('전체', total, '#5f6368')}
+        ${chip('접수', 접수, '#64b5f6')}
+        ${chip('검토중', 검토중, '#ffb74d')}
+        ${chip('완료', 완료, '#4caf50')}
+        ${chip('반려', 반려, '#ef5350')}
+      </div>
+      <div class="sr-proposal-rate">
+        처리율 <strong>${처리율}%</strong>
+        ${완료 > 0 ? `&nbsp;·&nbsp; <span style="color:#4caf50">완료 ${완료}건</span>` : ''}
+        ${접수 + 검토중 > 0 ? `&nbsp;·&nbsp; <span style="color:#ff9800">처리 대기 ${접수 + 검토중}건</span>` : ''}
+      </div>`;
   },
 
   _esc(s) {

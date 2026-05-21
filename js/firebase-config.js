@@ -15,8 +15,16 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Firestore 보안 규칙이 auth != null 일 때도 동작하도록 익명 로그인
-firebase.auth().signInAnonymously().catch(e => console.warn('[Auth] 익명 로그인 실패:', e.message));
+// 익명 로그인 완료를 기다릴 수 있는 Promise — history.js 등에서 await authReady() 로 사용
+var authReadyPromise = firebase.auth().signInAnonymously()
+  .then(result => {
+    console.log('[Auth] 익명 로그인 성공:', result.user.uid);
+    return result.user;
+  })
+  .catch(e => {
+    console.warn('[Auth] 익명 로그인 실패 (공개 접근 시도):', e.message);
+    return null;
+  });
 
 var collections = {
   tbm:           db.collection('tbm'),

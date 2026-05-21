@@ -76,10 +76,20 @@ const ProposalsView = {
         <div class="proposal-card-body">${App.escapeHtml(preview)}</div>
         <div class="proposal-card-footer">
           <span>${date}</span>
-          <div style="display:flex;gap:6px">
+          <div style="display:flex;gap:6px;align-items:center">
             ${p.note ? '<span class="proposal-has-photo">📝 비고</span>' : ''}
             ${p.hasImage ? '<span class="proposal-has-photo">📷 사진</span>' : ''}
           </div>
+        </div>
+        <div class="proposal-card-actions" onclick="event.stopPropagation()">
+          <button class="proposal-action-btn proposal-action-edit" onclick="ProposalsView.editProposal('${p.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            수정
+          </button>
+          <button class="proposal-action-btn proposal-action-delete" onclick="ProposalsView.deleteProposal('${p.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            삭제
+          </button>
         </div>
       </div>`;
   },
@@ -149,6 +159,69 @@ const ProposalsView = {
       this._render();
     } catch {
       App.showToast('상태 변경에 실패했습니다.');
+    }
+  },
+
+  editProposal(id) {
+    const p = this._proposals.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('edit-proposal-id').value  = id;
+    document.getElementById('edit-affiliation').value  = p.affiliation || '';
+    document.getElementById('edit-department').value   = p.department  || '';
+    document.getElementById('edit-name').value         = p.name        || '';
+    document.getElementById('edit-phone').value        = p.phone       || '';
+    document.getElementById('edit-suggestion').value   = p.suggestion  || '';
+    document.getElementById('proposal-edit-modal').classList.remove('hidden');
+  },
+
+  closeEdit() {
+    document.getElementById('proposal-edit-modal').classList.add('hidden');
+  },
+
+  async saveEdit() {
+    const id = document.getElementById('edit-proposal-id').value;
+    const body = {
+      affiliation: document.getElementById('edit-affiliation').value.trim(),
+      department:  document.getElementById('edit-department').value.trim(),
+      name:        document.getElementById('edit-name').value.trim(),
+      phone:       document.getElementById('edit-phone').value.trim(),
+      suggestion:  document.getElementById('edit-suggestion').value.trim(),
+    };
+    if (!body.suggestion) { App.showToast('제안 내용을 입력하세요.'); return; }
+    try {
+      const apiBase = window.API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/proposals/${id}/edit`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error('fail');
+      const p = this._proposals.find(x => x.id === id);
+      if (p) Object.assign(p, body);
+      App.showToast('✅ 수정되었습니다.');
+      this.closeEdit();
+      this._render();
+    } catch {
+      App.showToast('수정에 실패했습니다.');
+    }
+  },
+
+  async deleteProposal(id) {
+    const p = this._proposals.find(x => x.id === id);
+    const ok = await App.confirm(
+      `<b>${App.escapeHtml(p?.name || '제안')}</b>의 제안을 영구 삭제합니다.<br>삭제된 데이터는 복구할 수 없습니다.`,
+      { type: 'delete', title: '제안을 삭제하시겠습니까?' }
+    );
+    if (!ok) return;
+    try {
+      const apiBase = window.API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/proposals/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('fail');
+      this._proposals = this._proposals.filter(x => x.id !== id);
+      App.showToast('삭제되었습니다.');
+      this._render();
+    } catch {
+      App.showToast('삭제에 실패했습니다.');
     }
   },
 

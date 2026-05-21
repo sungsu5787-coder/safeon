@@ -32,12 +32,13 @@ const History = {
     this.listContainer.innerHTML = '<p class="empty-state">조회 중...</p>';
     this._results = [];
 
+    const apiBase = window.API_BASE_URL || '';
+
     try {
-      // 안전제안: API에서 별도 로드
+      // 안전제안: 별도 API
       const includeProposal = type === 'all' || type === 'proposal';
       if (includeProposal) {
         try {
-          const apiBase = window.API_BASE_URL || '';
           const res = await fetch(`${apiBase}/api/proposals`);
           if (res.ok) {
             const data = await res.json();
@@ -63,31 +64,19 @@ const History = {
         return;
       }
 
-      // 'nearmiss' = accident 컬렉션에서 accidentType === 'nearmiss' 필터 조회
-      const types = type === 'all'
-        ? ['tbm', 'risk', 'checklist', 'workplan', 'ptw', 'accident']
-        : [type];
+      // 서버 API로 Firestore 이력 조회 (Firebase JS SDK 우회)
+      const params = new URLSearchParams({ type });
+      if (dateFrom) params.set('dateFrom', dateFrom);
+      if (dateTo)   params.set('dateTo', dateTo);
 
-      const snaps = await Promise.all(types.map(t => {
-        const collName = t === 'nearmiss' ? 'accident' : t;
-        let query = collections[collName].orderBy('date', 'desc');
-        if (dateFrom) query = query.where('date', '>=', dateFrom);
-        if (dateTo)   query = query.where('date', '<=', dateTo);
-        return query.limit(50).get().then(snap => ({ snap, collName, t }));
-      }));
+      const res = await fetch(`${apiBase}/api/history?${params}`);
+      if (!res.ok) throw new Error(`서버 오류 ${res.status}`);
+      const data = await res.json();
 
-      snaps.forEach(({ snap, collName, t }) => {
-        snap.forEach(doc => {
-          const data = doc.data();
-          // 복합 인덱스 없이도 동작하도록 accidentType은 클라이언트에서 필터링
-          if (t === 'nearmiss' && data.accidentType !== 'nearmiss') return;
-          this._results.push({ ...data, id: doc.id, _collType: collName });
-        });
-      });
+      (data.records || []).forEach(r => this._results.push(r));
 
       this._results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-      // 건수 라벨 갱신
       if (this.countLabel) {
         this.countLabel.textContent = this._results.length + '건';
       }
@@ -100,8 +89,10 @@ const History = {
 
       this._renderPage(1);
     } catch (err) {
-      console.error('History load error:', err);
-      this.listContainer.innerHTML = '<p class="empty-state">데이터 조회 중 오류가 발생했습니다.</p>';
+      console.error('[History] load error:', err);
+      this.listContainer.innerHTML = `<p class="empty-state" style="color:#c5221f">⚠️ 데이터 조회 오류: ${err.message}</p>`;
+      if (this.countLabel) this.countLabel.textContent = '0건';
+      if (this.pagerContainer) this.pagerContainer.innerHTML = '';
     }
   },
 
@@ -309,6 +300,18 @@ const History = {
     return { title, sub };
   },
 
+  _getInspector(item) {
+    const t = item._collType;
+    if (t === 'tbm')       return item.supervisor   ? `감독자 ${item.supervisor}`   : '';
+    if (t === 'risk')      return item.assessor     ? `평가자 ${item.assessor}`     : '';
+    if (t === 'checklist') return item.inspector    ? `점검자 ${item.inspector}`    : '';
+    if (t === 'workplan')  return item.supervisor   ? `책임자 ${item.supervisor}`   : '';
+    if (t === 'ptw')       return item.requestorName? `신청자 ${item.requestorName}`: '';
+    if (t === 'accident')  return item.reporter     ? `보고자 ${item.reporter}`     : '';
+    if (t === 'proposal')  return '';
+    return '';
+  },
+
   _statusText(status) {
     const map = { submitted:'신청', reviewing:'검토중', approved:'승인', rejected:'반려' };
     return map[status] || status;
@@ -326,15 +329,17 @@ const History = {
     const statusBadge = (item.status && item.status !== 'draft')
       ? this.renderStatusBadge(item.status) : '';
 
-    const info     = this._getItemInfo(item);
-    const checkBar = this._renderCheckBar(item);
+    const info      = this._getItemInfo(item);
+    const checkBar  = this._renderCheckBar(item);
+    const inspector = this._getInspector(item);
 
     const cardClick = collType === 'proposal'
       ? `History._openProposal('${item.id}')`
       : `App.showDetail('${collType}', '${item.id}')`;
 
+    const cardId = `hc-${collType}-${item.id}`;
     return `
-      <div class="history-card" onclick="${cardClick}">
+      <div class="history-card" id="${cardId}" onclick="${cardClick}">
         <div class="history-card-header">
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <span class="history-type-badge ${badgeClass[displayType]||''}">${typeLabels[displayType]||displayType}</span>
@@ -344,17 +349,28 @@ const History = {
         </div>
         <div class="history-title">${App.escapeHtml(info.title)}</div>
         <div class="history-sub">${App.escapeHtml(info.sub)}</div>
+        ${inspector ? `<div class="history-inspector"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${App.escapeHtml(inspector)}</div>` : ''}
         <div class="history-card-footer">
           <div class="history-check-bar">${checkBar}</div>
-          <button class="btn-card-share" title="이 항목 공유"
-                  onclick="event.stopPropagation(); History.shareItem('${collType}','${item.id}')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-            </svg>
-            공유
-          </button>
+        </div>
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <div class="card-actions-row">
+            <button class="card-action-btn card-action-edit"
+                    onclick="History.editItem('${collType}','${item.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              수정
+            </button>
+            <button class="card-action-btn card-action-capture"
+                    onclick="History.captureShare('${collType}','${item.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              캡처·공유
+            </button>
+            <button class="card-action-btn card-action-delete"
+                    onclick="History.deleteItem('${collType}','${item.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              기록 삭제
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -466,6 +482,107 @@ const History = {
     const photos = await App._extractPhotosForShare(collType, item);   // 사진 File[] 비동기 추출
 
     await App._doShare({ title, text, photos });
+  },
+
+  // ── 수정 ──────────────────────────────────────────────────
+  editItem(collType, id) {
+    if (collType === 'proposal') {
+      this._openProposal(id);
+    } else {
+      App.showDetail(collType, id);
+    }
+  },
+
+  // ── 캡처·공유 ──────────────────────────────────────────────
+  async captureShare(collType, id) {
+    const cardEl = document.getElementById(`hc-${collType}-${id}`);
+    if (!cardEl) { App.showToast('카드를 찾을 수 없습니다.'); return; }
+    App.showToast('이미지 생성 중...');
+    try {
+      const canvas = await html2canvas(cardEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      canvas.toBlob(async (blob) => {
+        if (!blob) { App.showToast('이미지 생성 실패'); return; }
+        const file = new File([blob], 'safeon-record.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'SafeOn 기록' });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = 'safeon-record.png'; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          App.showToast('이미지를 저장했습니다.');
+        }
+      }, 'image/png');
+    } catch (e) {
+      console.error('[captureShare]', e);
+      App.showToast('캡처 중 오류가 발생했습니다.');
+    }
+  },
+
+  // ── 인쇄·PDF ──────────────────────────────────────────────
+  printItem(collType, id) {
+    const item = this._results.find(r => r.id === id && r._collType === collType);
+    if (!item) { App.showToast('항목을 찾을 수 없습니다.'); return; }
+    const typeLabels = { tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서', proposal:'안전제안' };
+    const info = this._getItemInfo(item);
+    const dType = (collType === 'accident' && item.accidentType === 'nearmiss') ? 'nearmiss' : collType;
+    const printArea = document.getElementById('print-area');
+    printArea.innerHTML = `
+      <div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;color:#202124;padding:24px;max-width:600px;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #1a73e8;padding-bottom:12px;margin-bottom:20px">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:9px;display:flex;align-items:center;justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:#0d47a1">SAMHWA SafeOn</div>
+            <div style="font-size:11px;color:#5f6368">${typeLabels[dType] || dType} 기록</div>
+          </div>
+          <div style="margin-left:auto;font-size:11px;color:#5f6368;text-align:right">
+            출력: ${new Date().toLocaleString('ko-KR')}
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;width:100px;border:1px solid #e0e0e0">구분</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${typeLabels[dType] || dType}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">일자</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${App.formatDate(item.date)}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">제목</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${App.escapeHtml(info.title)}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">세부내용</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${App.escapeHtml(info.sub)}</td></tr>
+          ${item.status ? `<tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">상태</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${this._statusText(item.status)}</td></tr>` : ''}
+        </table>
+        <div style="margin-top:20px;text-align:right;font-size:10px;color:#9aa0a6;border-top:1px solid #e8eaed;padding-top:8px">
+          SAMHWA SafeOn · 현장 안전보건 관리 시스템
+        </div>
+      </div>`;
+    App._setPrintOrientation(false);
+    App._applyPrintScale(printArea, false);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => { printArea.innerHTML = ''; printArea.style.cssText = ''; }, 1000);
+    }, 150);
+  },
+
+  // ── 기록 삭제 ──────────────────────────────────────────────
+  async deleteItem(collType, id) {
+    const typeLabels = { tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서', proposal:'안전제안' };
+    const ok = await App.confirm(
+      `<b>${typeLabels[collType] || '기록'}</b> 1건을 영구 삭제합니다.<br>삭제된 데이터는 복구할 수 없습니다.`,
+      { type: 'delete', title: '기록을 삭제하시겠습니까?' }
+    );
+    if (!ok) return;
+    try {
+      if (collType === 'proposal') {
+        const apiBase = window.API_BASE_URL || '';
+        const res = await fetch(`${apiBase}/api/proposals/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('서버 오류');
+      } else {
+        await collections[collType].doc(id).delete();
+      }
+      this._results = this._results.filter(r => !(r.id === id && r._collType === collType));
+      App.showToast('삭제되었습니다.');
+      this._renderPage(this._page);
+    } catch (e) {
+      console.error('[deleteItem]', e);
+      App.showToast('삭제 중 오류가 발생했습니다.');
+    }
   },
 
   renderStatusBadge(status) {

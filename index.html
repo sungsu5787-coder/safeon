@@ -139,6 +139,9 @@
                 <button class="access-url-toggle" onclick="App.toggleAccessUrl()" id="access-url-toggle-btn" title="접기/펼치기">
                   <svg id="access-url-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
                 </button>
+                <button class="access-url-hide-btn" onclick="App.hideAccessCard()" title="접속 정보 숨기기">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
               </div>
               <div id="access-url-stable-body">
                 <div class="access-url-value" id="access-url-stable">로딩 중...</div>
@@ -164,6 +167,12 @@
             </div>
 
           </div>
+
+          <!-- 접속 정보 숨김 시 표시되는 미니 버튼 -->
+          <button class="access-url-show-btn hidden" id="access-url-show-btn" onclick="App.showAccessCard()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            접속 정보 보기
+          </button>
 
           <div class="proposal-qr-card" id="proposal-qr-card">
             <div class="proposal-qr-card-header">
@@ -1177,7 +1186,7 @@
         </div>
       </section>
 
-      <!-- ====== 안전보건구축체계현황 ====== -->
+      <!-- ====== 안전점검현황 ====== -->
       <section id="page-safetyreport" class="page">
         <div class="page-content sr-page">
           <div class="sr-ctrl-bar">
@@ -1544,6 +1553,40 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="js/html2canvas.min.js"></script>
   <script src="js/qrcode.min.js"></script>
+  <!-- 제안 수정 모달 -->
+  <div id="proposal-edit-modal" class="proposal-detail-overlay hidden" onclick="if(event.target===this)ProposalsView.closeEdit()">
+    <div class="proposal-detail-sheet">
+      <div class="proposal-detail-header">
+        <span>✏️ 제안 수정</span>
+        <button class="proposal-detail-close" onclick="ProposalsView.closeEdit()">✕</button>
+      </div>
+      <div class="proposal-detail-content">
+        <input type="hidden" id="edit-proposal-id">
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">소속</label>
+          <input type="text" id="edit-affiliation" class="proposal-edit-input" placeholder="소속">
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">부서</label>
+          <input type="text" id="edit-department" class="proposal-edit-input" placeholder="부서">
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">이름</label>
+          <input type="text" id="edit-name" class="proposal-edit-input" placeholder="이름">
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">연락처</label>
+          <input type="text" id="edit-phone" class="proposal-edit-input" placeholder="연락처">
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">제안 내용</label>
+          <textarea id="edit-suggestion" class="proposal-note-textarea" rows="5" placeholder="제안 내용"></textarea>
+        </div>
+        <button class="btn-primary" style="width:100%;margin-top:8px" onclick="ProposalsView.saveEdit()">저장</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 제안 상세 모달 -->
   <div id="proposal-detail-modal" class="proposal-detail-overlay hidden" onclick="if(event.target===this)ProposalsView.closeDetail()">
     <div class="proposal-detail-sheet">

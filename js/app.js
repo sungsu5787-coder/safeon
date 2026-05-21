@@ -17,7 +17,7 @@ const App = {
     accident:     '사고보고서',
     history:      '이력조회',
     proposals:    '제안 관리',
-    safetyreport: '안전보건구축체계현황'
+    safetyreport: '안전점검현황'
   },
 
   async init() {
@@ -212,7 +212,7 @@ const App = {
       ptw:       '작업허가서 (PTW)',
       accident:  '안전사고 보고서',
       proposals:     '제안 관리',
-      safetyreport:  '안전보건구축체계현황',
+      safetyreport:  '안전점검현황',
       workplaceinfo: '사업장현황'
     };
     const brandEl = document.getElementById('header-brand');
@@ -2239,7 +2239,17 @@ const App = {
         cfRow.classList.add('hidden');
       }
     }
-    card.classList.remove('hidden');
+    // 사용자가 숨김 선택했으면 카드 대신 "보기" 버튼 표시
+    try {
+      const showBtn = document.getElementById('access-url-show-btn');
+      if (localStorage.getItem('accessCardHidden') === '1') {
+        card.classList.add('hidden');
+        if (showBtn) showBtn.classList.remove('hidden');
+      } else {
+        card.classList.remove('hidden');
+        if (showBtn) showBtn.classList.add('hidden');
+      }
+    } catch(e) { card.classList.remove('hidden'); }
   },
 
   // CF URL만 조용히 갱신 (30초마다)
@@ -2289,6 +2299,22 @@ const App = {
   // 하위 호환 (기존 호출 유지)
   copyAccessUrl() { this.copyUrl('access-url-stable'); },
 
+  hideAccessCard() {
+    const card    = document.getElementById('access-url-card');
+    const showBtn = document.getElementById('access-url-show-btn');
+    if (card)    card.classList.add('hidden');
+    if (showBtn) showBtn.classList.remove('hidden');
+    try { localStorage.setItem('accessCardHidden', '1'); } catch(e) {}
+  },
+
+  showAccessCard() {
+    const card    = document.getElementById('access-url-card');
+    const showBtn = document.getElementById('access-url-show-btn');
+    if (card)    card.classList.remove('hidden');
+    if (showBtn) showBtn.classList.add('hidden');
+    try { localStorage.setItem('accessCardHidden', '0'); } catch(e) {}
+  },
+
   toggleAccessUrl() {
     const body = document.getElementById('access-url-stable-body');
     const icon = document.getElementById('access-url-toggle-icon');
@@ -2309,6 +2335,18 @@ const App = {
         if (body) body.classList.add('collapsed');
         if (icon) icon.classList.add('rotated');
         if (copyBtn) copyBtn.style.display = 'none';
+      }
+      if (localStorage.getItem('accessCardHidden') === '1') {
+        // 카드가 표시된 뒤(_refreshAccessUrl 이후) 숨김 처리
+        const card    = document.getElementById('access-url-card');
+        const showBtn = document.getElementById('access-url-show-btn');
+        if (card && !card.classList.contains('hidden')) {
+          card.classList.add('hidden');
+          if (showBtn) showBtn.classList.remove('hidden');
+        } else if (showBtn) {
+          // 카드가 아직 hidden 상태면 나중에 _refreshAccessUrl 후 처리되도록 플래그만 유지
+          showBtn.classList.remove('hidden');
+        }
       }
     } catch(e) {}
   },

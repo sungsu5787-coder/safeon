@@ -1,3 +1,11 @@
+// Windows 한글 콘솔 출력 UTF-8 강제
+if (process.platform === 'win32') {
+  const { execSync } = require('child_process');
+  try { execSync('chcp 65001', { stdio: 'ignore' }); } catch(e) {}
+  process.stdout.setDefaultEncoding('utf8');
+  process.stderr.setDefaultEncoding('utf8');
+}
+
 const express = require('express');
 const path = require('path');
 const https = require('https');
@@ -395,6 +403,113 @@ app.post('/api/submit-proposal', async (req, res) => {
     apiResponse: { result_code: '00', result_message: 'SUCCESS', msg_id: recordId, success_cnt: 1, error_cnt: 0 } });
 });
 
+// ── Firestore 문서 파싱 (중첩 객체/배열 포함) ──────────────────
+function _fromFsDocDeep(doc) {
+  const id = doc.name.split('/').pop();
+  return { id, ...parseValue({ mapValue: { fields: doc.fields || {} } }) };
+}
+function parseValue(v) {
+  if ('stringValue'  in v) return v.stringValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('integerValue' in v) return parseInt(v.integerValue);
+  if ('doubleValue'  in v) return v.doubleValue;
+  if ('nullValue'    in v) return null;
+  if ('arrayValue'   in v) return (v.arrayValue.values || []).map(parseValue);
+  if ('mapValue'     in v) {
+    const obj = {};
+    for (const [k, val] of Object.entries(v.mapValue.fields || {})) obj[k] = parseValue(val);
+    return obj;
+  }
+  return null;
+}
+
+// ── 이력 조회 API ─────────────────────────────────────────────
+async function _fsQueryDateRange(col, dateFrom, dateTo) {
+  try {
+    if (firebaseReady) {
+      let q = db.collection(col);
+      if (dateFrom) q = q.where('date', '>=', dateFrom);
+      if (dateTo)   q = q.where('date', '<=', dateTo);
+      const snap = await q.get();
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+  } catch (e) { console.warn(`[History] Admin SDK ${col} 실패:`, e.message); }
+  // REST API 폴백: 전체 가져온 뒤 클라이언트 필터
+  const all = await _fsGetAll(col);
+  return all.filter(d => {
+    if (dateFrom && (d.date || '') < dateFrom) return false;
+    if (dateTo   && (d.date || '') > dateTo)   return false;
+    return true;
+  });
+}
+
+app.get('/api/history', async (req, res) => {
+  const { type = 'all', dateFrom = '', dateTo = '' } = req.query;
+  const COLS = ['tbm', 'risk', 'checklist', 'workplan', 'ptw', 'accident'];
+  const targets = (type === 'all' || type === 'nearmiss') ? COLS : (COLS.includes(type) ? [type] : []);
+
+  try {
+    const results = await Promise.all(targets.map(async col => {
+      const docs = await _fsQueryDateRange(col, dateFrom, dateTo);
+      return docs.map(d => ({ ...d, _collType: col }));
+    }));
+    let flat = results.flat();
+    if (type === 'nearmiss') flat = flat.filter(d => d.accidentType === 'nearmiss');
+    flat.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    res.json({ records: flat });
+  } catch (e) {
+    console.error('[History API]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── 제안 삭제 헬퍼 ───────────────────────────────────────────
+async function deleteProposalRecord(id) {
+  if (firebaseReady) {
+    try {
+      await db.collection(PROPOSALS_COLLECTION).doc(id).delete();
+      return true;
+    } catch (e) { console.warn('[Proposal] Firestore Admin 삭제 실패:', e.message); }
+  }
+  try {
+    const url = `${FIRESTORE_URL}/${PROPOSALS_COLLECTION}/${id}?key=${FIRESTORE_API_KEY}`;
+    const res = await fetch(url, { method: 'DELETE' });
+    if (res.ok) return true;
+  } catch (e) { console.warn('[Proposal] Firestore REST 삭제 실패:', e.message); }
+  const records = _readJsonFile();
+  const idx = records.findIndex(r => r.id === id);
+  if (idx === -1) return false;
+  records.splice(idx, 1);
+  _writeJsonFile(records);
+  return true;
+}
+
+// ── 제안 내용 수정 ────────────────────────────────────────────
+app.patch('/api/proposals/:id/edit', async (req, res) => {
+  const { id } = req.params;
+  const { suggestion, name, phone, affiliation, department } = req.body || {};
+  const records = await loadProposalRecords();
+  const idx = records.findIndex(r => r.id === id);
+  if (idx === -1) return res.status(404).json({ error: '제안을 찾을 수 없습니다.' });
+  const updates = {};
+  if (suggestion  !== undefined) updates.suggestion  = suggestion;
+  if (name        !== undefined) updates.name        = name;
+  if (phone       !== undefined) updates.phone       = phone;
+  if (affiliation !== undefined) updates.affiliation = affiliation;
+  if (department  !== undefined) updates.department  = department;
+  if (firebaseReady) {
+    try { await db.collection(PROPOSALS_COLLECTION).doc(id).update(updates); }
+    catch(e) { console.warn('[Proposal] Admin 수정 실패:', e.message); }
+  } else {
+    try { await _fsPatch(PROPOSALS_COLLECTION, id, updates, Object.keys(updates)); }
+    catch(e) {
+      records[idx] = { ...records[idx], ...updates };
+      _writeJsonFile(records);
+    }
+  }
+  res.json({ success: true });
+});
+
 // ── 제안 조회 ─────────────────────────────────────────────────
 app.get('/api/proposal-count', async (req, res) => {
   const records = await loadProposalRecords();
@@ -444,6 +559,13 @@ app.patch('/api/proposals/:id/note', async (req, res) => {
   records[idx].note = note;
   records[idx].noteUpdatedAt = now;
   _writeJsonFile(records);
+  res.json({ success: true });
+});
+
+app.delete('/api/proposals/:id', async (req, res) => {
+  const { id } = req.params;
+  const ok = await deleteProposalRecord(id);
+  if (!ok) return res.status(404).json({ error: '해당 기록을 찾을 수 없습니다.' });
   res.json({ success: true });
 });
 
