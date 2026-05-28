@@ -1,12 +1,26 @@
 {
   "version": 2,
   "builds": [
-    { "src": "backend/server.js", "use": "@vercel/node" }
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "index.html",
+          "migrate.html",
+          "proposal.html",
+          "qr-access.html",
+          "sw.js",
+          "manifest.json",
+          "css/**",
+          "js/**",
+          "icons/**",
+          "data/**"
+        ]
+      }
+    }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "backend/server.js" },
-    { "src": "/local-ip.txt", "dest": "backend/server.js" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "src": "/(.*)", "dest": "backend/server.js" }
   ]
 }
