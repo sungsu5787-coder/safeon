@@ -125,7 +125,7 @@ async function _fsGetAll(col) {
     const res = await fetch(url);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || 'Firestore REST error');
-    (data.documents || []).forEach(d => docs.push(_fromFsDoc(d)));
+    (data.documents || []).forEach(d => docs.push(_fromFsDocDeep(d)));
     pageToken = data.nextPageToken || null;
   } while (pageToken);
   return docs;
