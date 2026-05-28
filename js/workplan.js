@@ -75,7 +75,7 @@ const WorkPlan = {
   },
 
   // 단축버튼: 시작일로부터 N일 후를 종료일로 설정
-  setPeriodDays(days) {
+  setPeriodDays(days, btn) {
     const startEl = document.getElementById('wp-period-start');
     const endEl   = document.getElementById('wp-period-end');
     const dateEl  = document.getElementById('wp-date');
@@ -94,7 +94,7 @@ const WorkPlan = {
 
     // 버튼 활성화
     document.querySelectorAll('.wp-period-btn').forEach(b => b.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    if (btn) btn.classList.add('active');
   },
 
   // ── 투입인원 추가 ──────────────────────────────────────────
@@ -179,6 +179,11 @@ const WorkPlan = {
       try {
         const raw        = await this._fileToDataURL(file);
         const compressed = await this._compressImage(raw, 1200, 0.78);
+        const usedBytes  = this.photos.reduce((s, p) => s + p.data.length, 0);
+        if (usedBytes + compressed.length > 900 * 1024) {
+          App.showToast('사진 총 용량이 한도를 초과합니다. 일부 사진을 삭제하거나 더 작은 사진을 사용해주세요.');
+          break;
+        }
         this.photos.push({ name: file.name, data: compressed });
         added++;
       } catch {

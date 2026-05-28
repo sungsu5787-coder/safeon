@@ -16,7 +16,8 @@ const ProposalsView = {
       if (!res.ok) throw new Error('server error');
       const data = await res.json();
       this._proposals = data.proposals || [];
-      this._render();
+      if (this._filter === '순위') this._renderRank();
+      else this._render();
     } catch {
       if (listEl) listEl.innerHTML = '<div class="proposals-empty">데이터를 불러올 수 없습니다.<br>서버 연결을 확인하세요.</div>';
     }
@@ -27,7 +28,8 @@ const ProposalsView = {
     document.querySelectorAll('.proposals-filter-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.filter === filter);
     });
-    this._render();
+    if (filter === '순위') this._renderRank();
+    else this._render();
   },
 
   _filtered() {
@@ -61,6 +63,7 @@ const ProposalsView = {
 
   _cardHtml(p) {
     const status = p.status || '접수';
+    const apiBase = window.API_BASE_URL || '';
     const date = p.createdAt
       ? new Date(p.createdAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
       : '';
@@ -74,6 +77,7 @@ const ProposalsView = {
           <span class="proposal-status-badge" style="background:${this._statusColor(status)}">${status}</span>
         </div>
         <div class="proposal-card-body">${App.escapeHtml(preview)}</div>
+        ${p.hasImage && p.imageUrl ? `<div class="proposal-card-thumb"><img src="${apiBase}${p.imageUrl}" alt="첨부 사진" loading="lazy"></div>` : ''}
         <div class="proposal-card-footer">
           <span>${date}</span>
           <div style="display:flex;gap:6px;align-items:center">
@@ -244,5 +248,174 @@ const ProposalsView = {
     } catch {
       App.showToast('비고 저장에 실패했습니다.');
     }
+  },
+
+  // ── 제안자 순위 ──────────────────────────────────────────────
+  _computeRank() {
+    const map = {};
+    for (const p of this._proposals) {
+      const key = `${p.affiliation}||${p.department}||${p.name}`;
+      if (!map[key]) {
+        map[key] = {
+          affiliation: p.affiliation || '',
+          department:  p.department  || '',
+          name:        p.name        || '',
+          total: 0, 완료: 0, 검토중: 0, 접수: 0, 반려: 0,
+          lastDate: ''
+        };
+      }
+      const e = map[key];
+      e.total++;
+      const s = p.status || '접수';
+      e[s] = (e[s] || 0) + 1;
+      if (!e.lastDate || p.createdAt > e.lastDate) e.lastDate = p.createdAt;
+    }
+    return Object.values(map)
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'ko'));
+  },
+
+  _renderRank() {
+    const listEl = document.getElementById('proposals-list');
+    if (!listEl) return;
+    const ranked = this._computeRank();
+    if (!ranked.length) {
+      listEl.innerHTML = '<div class="proposals-empty">제안 데이터가 없습니다.</div>';
+      return;
+    }
+    const total     = this._proposals.length;
+    const completed = this._proposals.filter(p => p.status === '완료').length;
+    const rate      = total ? Math.round(completed / total * 100) : 0;
+    const MEDALS    = ['🥇', '🥈', '🥉'];
+    listEl.innerHTML = `
+      <div class="prop-rank-wrap">
+        <div class="prop-rank-topbar">
+          <div class="prop-rank-stats">
+            <span>총 제안 <b>${total}</b>건</span>
+            <span>제안자 <b>${ranked.length}</b>명</span>
+            <span>완료율 <b>${rate}%</b></span>
+          </div>
+          <button class="prop-rank-print-btn" onclick="ProposalsView.showPrintPreview()">🖨️ 보고서 출력</button>
+        </div>
+        <div class="prop-rank-table-wrap">
+          <table class="prop-rank-table">
+            <thead>
+              <tr>
+                <th>순위</th><th>소속</th><th>부서</th><th>이름</th>
+                <th>제안<br>건수</th><th>완료</th><th>검토중</th><th>접수</th><th>반려</th><th>최근 제출일</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ranked.map((r, i) => `
+                <tr class="${i < 3 ? 'prop-rank-top-row' : ''}">
+                  <td class="prop-rank-no">${MEDALS[i] || i + 1}</td>
+                  <td>${App.escapeHtml(r.affiliation)}</td>
+                  <td>${App.escapeHtml(r.department)}</td>
+                  <td class="prop-rank-name">${App.escapeHtml(r.name)}</td>
+                  <td class="prop-rank-total">${r.total}</td>
+                  <td class="prop-rank-done">${r.완료}</td>
+                  <td class="prop-rank-review">${r.검토중}</td>
+                  <td class="prop-rank-recv">${r.접수}</td>
+                  <td class="prop-rank-rej">${r.반려}</td>
+                  <td class="prop-rank-date">${r.lastDate ? new Date(r.lastDate).toLocaleDateString('ko-KR') : '-'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  },
+
+  // ── 보고서 미리보기 / 인쇄 ──────────────────────────────────
+  showPrintPreview() {
+    const ranked   = this._computeRank();
+    const modal    = document.getElementById('proposals-print-modal');
+    const content  = document.getElementById('proposals-print-content');
+    if (!modal || !content) return;
+
+    const today     = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+    const total     = this._proposals.length;
+    const completed = this._proposals.filter(p => p.status === '완료').length;
+    const rate      = total ? Math.round(completed / total * 100) : 0;
+    const MEDALS    = ['🥇', '🥈', '🥉'];
+
+    content.innerHTML = `
+      <div class="pv-report">
+        <div class="pv-doc-title">제&nbsp;&nbsp;안&nbsp;&nbsp;활&nbsp;&nbsp;동&nbsp;&nbsp;현&nbsp;&nbsp;황&nbsp;&nbsp;보&nbsp;&nbsp;고&nbsp;&nbsp;서</div>
+        <div class="pv-approval-wrap">
+          <table class="pv-approval-table">
+            <tr><td class="pv-appr-label">담당</td><td class="pv-appr-label">검토</td><td class="pv-appr-label">승인</td></tr>
+            <tr><td class="pv-appr-sign"></td><td class="pv-appr-sign"></td><td class="pv-appr-sign"></td></tr>
+          </table>
+        </div>
+        <div class="pv-meta-row">
+          <span>작성일: <b>${today}</b></span>
+          <span>총 제안: <b>${total}건</b></span>
+          <span>제안자: <b>${ranked.length}명</b></span>
+          <span>완료율: <b>${rate}%</b></span>
+        </div>
+        <div class="pv-section-title">■ 제안자 순위 현황</div>
+        <table class="pv-rank-table">
+          <thead>
+            <tr>
+              <th>순위</th><th>소속</th><th>부서</th><th>이름</th>
+              <th>제안건수</th><th>완료</th><th>검토중</th><th>접수</th><th>반려</th><th>최근 제출일</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ranked.map((r, i) => `
+              <tr${i < 3 ? ' class="pv-top-row"' : ''}>
+                <td style="text-align:center">${MEDALS[i] || i + 1}위</td>
+                <td>${App.escapeHtml(r.affiliation)}</td>
+                <td>${App.escapeHtml(r.department)}</td>
+                <td><b>${App.escapeHtml(r.name)}</b></td>
+                <td style="text-align:center;font-weight:700;color:#1a237e">${r.total}</td>
+                <td style="text-align:center;color:#2e7d32">${r.완료}</td>
+                <td style="text-align:center;color:#e65100">${r.검토중}</td>
+                <td style="text-align:center;color:#1565c0">${r.접수}</td>
+                <td style="text-align:center;color:#c62828">${r.반려}</td>
+                <td style="text-align:center">${r.lastDate ? new Date(r.lastDate).toLocaleDateString('ko-KR') : '-'}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="pv-footer-note">본 보고서는 SafeOn 현장 안전보건 관리 시스템에서 자동 생성되었습니다.</div>
+      </div>`;
+    modal.classList.remove('hidden');
+  },
+
+  closePrintPreview() {
+    const modal = document.getElementById('proposals-print-modal');
+    if (modal) modal.classList.add('hidden');
+  },
+
+  printReport() {
+    const content = document.getElementById('proposals-print-content');
+    if (!content) return;
+    const win = window.open('', '_blank', 'width=900,height=750');
+    win.document.write(`<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="UTF-8">
+<title>제안 활동 현황 보고서</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:12px;color:#222;padding:24px}
+.pv-doc-title{text-align:center;font-size:20px;font-weight:700;margin:0 0 16px;letter-spacing:4px}
+.pv-approval-wrap{display:flex;justify-content:flex-end;margin-bottom:16px}
+.pv-approval-table{border-collapse:collapse}
+.pv-approval-table td{border:1px solid #333;width:80px;text-align:center;vertical-align:middle;font-size:11px}
+.pv-appr-label{background:#f5f5f5;font-weight:600;height:22px;padding:2px 0}
+.pv-appr-sign{height:50px}
+.pv-meta-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;font-size:13px;border-bottom:1px solid #bbb;padding-bottom:10px}
+.pv-section-title{font-size:14px;font-weight:700;margin:14px 0 8px}
+.pv-rank-table{width:100%;border-collapse:collapse;font-size:12px}
+.pv-rank-table th{background:#263238;color:#fff;padding:7px 5px;border:1px solid #455a64;text-align:center}
+.pv-rank-table td{padding:6px 5px;border:1px solid #cfd8dc;vertical-align:middle}
+.pv-rank-table tr:nth-child(even) td{background:#f8f9fa}
+.pv-top-row td{background:#fffde7!important}
+.pv-footer-note{margin-top:20px;font-size:10px;color:#888;text-align:right}
+@media print{body{padding:10px}}
+</style>
+</head><body>${content.innerHTML}</body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
   }
 };

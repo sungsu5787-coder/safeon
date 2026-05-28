@@ -446,7 +446,7 @@ async function _fsQueryDateRange(col, dateFrom, dateTo) {
 app.get('/api/history', async (req, res) => {
   const { type = 'all', dateFrom = '', dateTo = '' } = req.query;
   const COLS = ['tbm', 'risk', 'checklist', 'workplan', 'ptw', 'accident'];
-  const targets = (type === 'all' || type === 'nearmiss') ? COLS : (COLS.includes(type) ? [type] : []);
+  const targets = type === 'all' ? COLS : type === 'nearmiss' ? ['accident'] : (COLS.includes(type) ? [type] : []);
 
   try {
     const results = await Promise.all(targets.map(async col => {

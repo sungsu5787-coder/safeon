@@ -443,6 +443,12 @@ const Risk = {
       try {
         const raw        = await this._fileToDataURL(file);
         const compressed = await this._compressImage(raw, 1200, 0.75);
+        const totalBytes = [...Object.values(this._itemPhotos.before), ...Object.values(this._itemPhotos.after)]
+          .flat().reduce((s, p) => s + p.data.length, 0);
+        if (totalBytes + compressed.length > 900 * 1024) {
+          App.showToast('전체 사진 총 용량이 한도를 초과합니다. 일부 사진을 삭제하거나 더 작은 사진을 사용해주세요.');
+          break;
+        }
         arr.push({ name: file.name, data: compressed });
         added++;
       } catch { App.showToast(`${file.name} 처리 실패`); }

@@ -2430,6 +2430,19 @@ main {
   line-height: 1.5;
   margin-bottom: 8px;
 }
+.proposal-card-thumb {
+  margin: 0 0 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 150px;
+  background: var(--gray-100);
+}
+.proposal-card-thumb img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+}
 .proposal-card-footer {
   display: flex;
   align-items: center;
@@ -2438,6 +2451,138 @@ main {
   color: var(--gray-400);
 }
 .proposal-has-photo { color: var(--primary); font-weight: 600; }
+.proposals-rank-tab { margin-left: auto; background: var(--gray-700) !important; color: #fff !important; border-radius: 20px; font-weight: 700; }
+.proposals-rank-tab.active { background: var(--primary) !important; }
+
+/* ── 제안자 순위 뷰 ────────────────────────────────────────── */
+.prop-rank-wrap { padding: 4px 0 16px; }
+.prop-rank-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.prop-rank-stats { display: flex; gap: 14px; font-size: 13px; color: var(--gray-700); }
+.prop-rank-stats b { color: var(--primary); }
+.prop-rank-print-btn {
+  padding: 7px 14px;
+  background: var(--gray-800);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.prop-rank-print-btn:active { background: var(--gray-900); }
+.prop-rank-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.prop-rank-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 600px;
+}
+.prop-rank-table th {
+  background: var(--gray-800);
+  color: #fff;
+  padding: 9px 8px;
+  border: 1px solid var(--gray-600);
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.prop-rank-table td {
+  padding: 8px 8px;
+  border: 1px solid var(--gray-200);
+  vertical-align: middle;
+}
+.prop-rank-table tr:nth-child(even) td { background: var(--gray-50); }
+.prop-rank-top-row td { background: #fffde7 !important; }
+.prop-rank-no { text-align: center; font-size: 18px; white-space: nowrap; }
+.prop-rank-name { font-weight: 600; }
+.prop-rank-total { text-align: center; font-weight: 700; color: var(--primary); font-size: 15px; }
+.prop-rank-done   { text-align: center; color: #2e7d32; font-weight: 600; }
+.prop-rank-review { text-align: center; color: #e65100; }
+.prop-rank-recv   { text-align: center; color: #1565c0; }
+.prop-rank-rej    { text-align: center; color: #c62828; }
+.prop-rank-date   { text-align: center; font-size: 12px; color: var(--gray-500); white-space: nowrap; }
+
+/* ── 보고서 미리보기 모달 ────────────────────────────────────── */
+.proposals-print-sheet {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 800px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.proposals-print-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gray-200);
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.prop-print-action-btn {
+  padding: 7px 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.proposals-print-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ── 보고서 본문 (미리보기 & 인쇄 공용) ──────────────────────── */
+.pv-report { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; color: #222; }
+.pv-doc-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  letter-spacing: 4px;
+}
+.pv-approval-wrap { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.pv-approval-table { border-collapse: collapse; }
+.pv-approval-table td { border: 1px solid #333; width: 80px; text-align: center; vertical-align: middle; font-size: 11px; }
+.pv-appr-label { background: #f5f5f5; font-weight: 600; height: 22px; padding: 2px 0; }
+.pv-appr-sign { height: 52px; }
+.pv-meta-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #bbb;
+  padding-bottom: 10px;
+}
+.pv-section-title { font-size: 14px; font-weight: 700; margin: 12px 0 8px; }
+.pv-rank-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pv-rank-table th {
+  background: #263238;
+  color: #fff;
+  padding: 7px 5px;
+  border: 1px solid #455a64;
+  text-align: center;
+}
+.pv-rank-table td { padding: 6px 5px; border: 1px solid #cfd8dc; vertical-align: middle; }
+.pv-rank-table tr:nth-child(even) td { background: #f8f9fa; }
+.pv-top-row td { background: #fffde7 !important; }
+.pv-footer-note { margin-top: 20px; font-size: 10px; color: #888; text-align: right; }
 
 /* 제안 카드 액션 버튼 */
 .proposal-card-actions {

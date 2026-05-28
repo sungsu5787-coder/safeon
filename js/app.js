@@ -9,15 +9,16 @@ const App = {
 
   // 페이지 → 표시명 매핑
   _PAGE_LABELS: {
-    workplan:     '작업계획서',
-    tbm:          'TBM',
-    risk:         '위험성평가',
-    checklist:    '안전점검',
-    ptw:          '작업허가서',
-    accident:     '사고보고서',
-    history:      '이력조회',
-    proposals:    '제안 관리',
-    safetyreport: '안전점검현황'
+    workplan:      '작업계획서',
+    tbm:           'TBM',
+    risk:          '위험성평가',
+    checklist:     '안전점검',
+    ptw:           '작업허가서',
+    accident:      '사고보고서',
+    history:       '이력조회',
+    proposals:     '제안 관리',
+    safetyreport:  '안전점검현황',
+    workplaceinfo: '사업장현황'
   },
 
   async init() {
@@ -283,7 +284,7 @@ const App = {
 
     const today = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[type="date"]').forEach(input => {
-      if (!input.value) input.value = today;
+      if (!input.value && input.id !== 'risk-complete-date') input.value = today;
     });
   },
 
@@ -750,7 +751,7 @@ const App = {
       tbm:      ['workName', 'date'],
       workplan: ['workName', 'date', 'company'],
       risk:     ['workName', 'date'],
-      accident: ['date', 'description'],
+      accident: ['date', 'location'],
       ptw:      ['workName', 'date'],
     };
     for (const field of (requiredMap[type] || [])) {

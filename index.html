@@ -749,11 +749,11 @@
                   </div>
                 </div>
                 <div class="wp-period-shortcuts">
-                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(1)">1일</button>
-                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(3)">3일</button>
-                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(7)">1주</button>
-                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(14)">2주</button>
-                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(30)">1개월</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(1, this)">1일</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(3, this)">3일</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(7, this)">1주</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(14, this)">2주</button>
+                  <button type="button" class="wp-period-btn" onclick="WorkPlan.setPeriodDays(30, this)">1개월</button>
                 </div>
                 <div id="wp-period-summary" class="wp-period-summary hidden"></div>
               </div>
@@ -1090,7 +1090,7 @@
           </div>
 
           <div id="history-list" class="history-list">
-            <p class="empty-state">작업유형을 선택하면 체크리스트가 표시됩니다</p>
+            <p class="empty-state">조회 기간과 유형을 선택하세요</p>
           </div>
 
           <div id="history-pager" class="history-pager"></div>
@@ -1181,6 +1181,7 @@
             <button class="proposals-filter-tab" data-filter="검토중" onclick="ProposalsView.setFilter('검토중')">검토중 <span class="tab-badge">0</span></button>
             <button class="proposals-filter-tab" data-filter="완료" onclick="ProposalsView.setFilter('완료')">완료 <span class="tab-badge">0</span></button>
             <button class="proposals-filter-tab" data-filter="반려" onclick="ProposalsView.setFilter('반려')">반려 <span class="tab-badge">0</span></button>
+            <button class="proposals-filter-tab proposals-rank-tab" data-filter="순위" onclick="ProposalsView.setFilter('순위')">📊 순위</button>
           </div>
           <div id="proposals-list" class="proposals-list"></div>
         </div>
@@ -1595,6 +1596,20 @@
         <button class="proposal-detail-close" onclick="ProposalsView.closeDetail()">✕</button>
       </div>
       <div id="proposal-detail-content" class="proposal-detail-content"></div>
+    </div>
+  </div>
+
+  <!-- 보고서 미리보기 모달 -->
+  <div id="proposals-print-modal" class="proposal-detail-overlay hidden" onclick="if(event.target===this)ProposalsView.closePrintPreview()">
+    <div class="proposals-print-sheet">
+      <div class="proposals-print-header">
+        <span>📄 보고서 미리보기</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="prop-print-action-btn" onclick="ProposalsView.printReport()">🖨️ 인쇄</button>
+          <button class="proposal-detail-close" onclick="ProposalsView.closePrintPreview()">✕</button>
+        </div>
+      </div>
+      <div id="proposals-print-content" class="proposals-print-content"></div>
     </div>
   </div>
 
