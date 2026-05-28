@@ -304,6 +304,13 @@ const WorkPlan = {
       // ────────────────────────────────────────────────────────
 
       App.showToast('✅ 작업계획서 저장 완료 — 작업허가서 연동 알림이 등록됐습니다');
+      Notify.addCompletion({
+        icon:     '📝',
+        title:    `작업계획서 저장됨 — ${workName || '작업명 미입력'}`,
+        sub:      `${date} · ${data.company || ''} · 인원 ${workers || '-'}명`.replace(/^ · | · $/g, ''),
+        collType: 'workplan',
+        docId:    docRef.id
+      });
       this.resetForm();
       App.updateDashboard();
     } catch (err) {

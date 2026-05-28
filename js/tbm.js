@@ -558,6 +558,13 @@ const TBM = {
       App.showToast(this.photos.length
         ? this._t('saved-with-photo')(this.photos.length)
         : this._t('toast-saved'));
+      Notify.addCompletion({
+        icon:     '📋',
+        title:    `TBM 저장됨 — ${workName || '작업명 미입력'}`,
+        sub:      `${date} · 참석자 ${this.participants.length}명`,
+        collType: 'tbm',
+        docId:    docRef.id
+      });
       this.resetForm();
       App.updateDashboard();
       setTimeout(() => TBM.openShareQR(docRef.id), 600);

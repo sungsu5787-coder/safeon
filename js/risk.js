@@ -710,8 +710,19 @@ const Risk = {
     };
 
     try {
-      await collections.risk.add(data);
+      const docRef = await collections.risk.add(data);
       App.showToast('✅ 위험성 평가가 저장되었습니다');
+      Notify.addCompletion({
+        icon:     highCount ? '🔴' : '⚠️',
+        title:    `위험성평가 저장됨 — ${workName || '작업명 미입력'}`,
+        sub:      `위험요인 ${items.length}건${highCount ? ' · 즉시개선 ' + highCount + '건' : ''}`,
+        collType: 'risk',
+        docId:    docRef.id
+      });
+      // 즉시개선 항목이 있거나 개선예정일이 설정된 경우 알림 갱신
+      if (highCount > 0 || planDate) {
+        setTimeout(() => Notify.refresh(), 600);
+      }
       this.resetForm();
       App.updateDashboard();
     } catch (err) {

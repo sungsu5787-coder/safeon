@@ -371,8 +371,20 @@ const PTW = {
     };
 
     try {
-      await collections.ptw.add(data);
+      const docRef = await collections.ptw.add(data);
       App.showToast(`✅ 작업허가서 저장 (${statusMsg[data.status]}) 완료`);
+      const statusIcon = { submitted: '📋', reviewing: '🔍', approved: '✅' };
+      Notify.addCompletion({
+        icon:     statusIcon[data.status] || '📋',
+        title:    `작업허가서 저장됨 — ${workName || '작업명 미입력'}`,
+        sub:      `${date} · ${typeLabels} · ${statusMsg[data.status]}`,
+        collType: 'ptw',
+        docId:    docRef.id
+      });
+      // 결재 대기 상태면 알림 패널도 즉시 갱신 (결재 대기 알림 표시용)
+      if (data.status === 'submitted') {
+        setTimeout(() => Notify.refresh(), 600);
+      }
       this.resetForm();
       App.updateDashboard();
     } catch (err) {

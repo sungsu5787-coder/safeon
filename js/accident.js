@@ -191,14 +191,38 @@ const Accident = {
     if (!navigator.onLine) {
       await this._savePending(data);
       App.showToast(`⚠️ 오프라인: 보고서가 기기에 저장되었습니다. 온라인 복구 시 자동 전송됩니다.`);
+      const iconMap = { nearmiss: '⚡', safety: '🩹', industrial: '🚨', serious: '🚨' };
+      Notify.addCompletion({
+        icon:     iconMap[type] || '🚨',
+        title:    `${this.TYPE_LABELS[type]} (오프라인 저장)`,
+        sub:      `${location} · ${date} — 온라인 복구 시 자동 전송`,
+        collType: 'accident',
+        docId:    ''
+      });
       this.resetForm();
       this._updateOfflineStatus();
       return;
     }
 
     try {
-      await collections.accident.add(data);
+      const docRef = await collections.accident.add(data);
       App.showToast(`✅ ${this.TYPE_LABELS[type]} 보고서 저장 완료`);
+
+      // 알림 패널 즉시 연동
+      const iconMap = { nearmiss: '⚡', safety: '🩹', industrial: '🚨', serious: '🚨' };
+      Notify.addCompletion({
+        icon:      iconMap[type] || '🚨',
+        title:     `${this.TYPE_LABELS[type]} 보고서 저장됨`,
+        sub:       `${location} · ${date}`,
+        collType:  'accident',
+        docId:     docRef.id
+      });
+
+      // 산업재해·중대재해는 알림 패널도 즉시 갱신 (고긴급도 알림 표시)
+      if (type === 'industrial' || type === 'serious') {
+        setTimeout(() => Notify.refresh(), 600);
+      }
+
       this.resetForm();
       this._updateOfflineStatus();
       App.updateDashboard();
@@ -796,9 +820,23 @@ const Accident = {
 
     for (const item of pending) {
       try {
-        await collections.accident.add(item.data);
+        const docRef = await collections.accident.add(item.data);
         await this._deletePending(item.id);
         App.showToast(`✅ 오프라인 저장된 ${item.data.accidentTypeLabel || '사고'} 보고서가 전송되었습니다.`);
+
+        const t = item.data.accidentType || '';
+        const iconMap = { nearmiss: '⚡', safety: '🩹', industrial: '🚨', serious: '🚨' };
+        Notify.addCompletion({
+          icon:     iconMap[t] || '🚨',
+          title:    `${item.data.accidentTypeLabel || '사고보고서'} 전송 완료`,
+          sub:      `${item.data.location || ''} · ${item.data.date || ''}`.replace(/^ · | · $/, ''),
+          collType: 'accident',
+          docId:    docRef.id
+        });
+        if (t === 'industrial' || t === 'serious') {
+          setTimeout(() => Notify.refresh(), 600);
+        }
+
         App.updateDashboard();
       } catch (err) {
         console.warn('[Accident] sync failed', err);

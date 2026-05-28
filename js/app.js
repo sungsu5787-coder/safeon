@@ -682,14 +682,21 @@ const App = {
         crew,
       };
     } else if (type === 'risk') {
+      const _planDate     = v('[data-edit="planDate"]');
+      const _completeDate = v('[data-edit="completeDate"]');
+      const _today        = new Date().toISOString().split('T')[0];
+      let _improveStatus  = '미설정';
+      if (_completeDate)       _improveStatus = _completeDate <= _today ? '완료' : '완료예정';
+      else if (_planDate)      _improveStatus = _planDate < _today ? '지연' : '진행중';
       updates = {
-        date:        v('[data-edit="date"]'),
-        workName:    v('[data-edit="workName"]'),
-        location:    v('[data-edit="location"]'),
-        department:  v('[data-edit="department"]'),
-        assessor:    v('[data-edit="assessor"]'),
-        planDate:    v('[data-edit="planDate"]'),
-        completeDate:v('[data-edit="completeDate"]'),
+        date:         v('[data-edit="date"]'),
+        workName:     v('[data-edit="workName"]'),
+        location:     v('[data-edit="location"]'),
+        department:   v('[data-edit="department"]'),
+        assessor:     v('[data-edit="assessor"]'),
+        planDate:     _planDate     || null,
+        completeDate: _completeDate || null,
+        improveStatus: _improveStatus,
       };
     } else if (type === 'checklist') {
       // 기본 필드 수집
@@ -782,6 +789,7 @@ const App = {
       container.innerHTML = html;
       this.showToast('✅ 수정이 저장됐습니다');
       History.loadHistory();
+      App.updateDashboard();
     } catch (err) {
       console.error(err);
       this.showToast('저장 오류: ' + err.message);
