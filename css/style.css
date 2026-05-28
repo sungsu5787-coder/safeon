@@ -1148,6 +1148,41 @@ main {
   border-radius: 10px;
 }
 
+/* ── 이력 카드 사진 스트립 ── */
+.hc-photo-strip {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.hc-photo-thumb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: zoom-in;
+  background: var(--gray-100);
+}
+.hc-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.hc-photo-more {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.52);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.5px;
+}
+
 /* ── 이력 카드 푸터 (체크바 + 공유버튼) ── */
 .history-card-footer {
   display: flex;

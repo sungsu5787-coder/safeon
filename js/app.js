@@ -1320,12 +1320,22 @@ const App = {
   },
 
   renderChecklistDetail(d) {
-    const resultsHtml = Object.entries(d.results||{}).map(([key,val]) => {
-      const txt   = val==='pass'?'양호':val==='fail'?'불량':'해당없음';
-      const color = val==='pass'?'var(--success)':val==='fail'?'var(--danger)':'var(--gray-500)';
+    const _statusLabel = v => v==='pass'?'양호':v==='fail'?'불량':v==='na'?'해당없음':'미확인';
+    const _statusColor = v => v==='pass'?'var(--success)':v==='fail'?'var(--danger)':v==='na'?'var(--gray-500)':'var(--gray-400)';
+    // results가 비어있으면 typeCode 기반 템플릿으로 항목 목록 구성
+    let entries = Object.entries(d.results || {});
+    if (!entries.length && d.typeCode && typeof Checklist !== 'undefined') {
+      const tmpl = Checklist.templates[d.typeCode];
+      if (tmpl) {
+        Object.values(tmpl.categories).forEach(items =>
+          items.forEach(item => entries.push([item, 'unchecked']))
+        );
+      }
+    }
+    const resultsHtml = entries.map(([key, val]) => {
       return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)">
         <span>${this.escapeHtml(key)}</span>
-        <span style="color:${color};font-weight:600">${txt}</span>
+        <span style="color:${_statusColor(val)};font-weight:600">${_statusLabel(val)}</span>
       </div>`;
     }).join('');
     const photosHtml = (d.photos && d.photos.length) ? `

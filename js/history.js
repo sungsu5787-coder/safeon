@@ -329,9 +329,11 @@ const History = {
     const statusBadge = (item.status && item.status !== 'draft')
       ? this.renderStatusBadge(item.status) : '';
 
-    const info      = this._getItemInfo(item);
-    const checkBar  = this._renderCheckBar(item);
-    const inspector = this._getInspector(item);
+    const info       = this._getItemInfo(item);
+    const checkBar   = this._renderCheckBar(item);
+    const inspector  = this._getInspector(item);
+    const cardPhotos = this._getCardPhotos(item);
+    const photoStrip = cardPhotos.length ? this._renderPhotoStrip(cardPhotos, collType, item.id) : '';
 
     const cardClick = collType === 'proposal'
       ? `History._openProposal('${item.id}')`
@@ -350,6 +352,7 @@ const History = {
         <div class="history-title">${App.escapeHtml(info.title)}</div>
         <div class="history-sub">${App.escapeHtml(info.sub)}</div>
         ${inspector ? `<div class="history-inspector"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${App.escapeHtml(inspector)}</div>` : ''}
+        ${photoStrip}
         <div class="history-card-footer">
           <div class="history-check-bar">${checkBar}</div>
         </div>
@@ -426,15 +429,25 @@ const History = {
     }
 
     if (t === 'checklist') {
-      const res    = Object.values(item.results || {});
-      const pass   = res.filter(v => v === 'pass').length;
-      const fail   = res.filter(v => v === 'fail').length;
-      const na     = res.filter(v => v === 'na').length;
+      const res       = Object.values(item.results || {});
+      const pass      = res.filter(v => v === 'pass').length;
+      const fail      = res.filter(v => v === 'fail').length;
+      const na        = res.filter(v => v === 'na').length;
+      const unchecked = res.filter(v => !v || v === 'unchecked').length;
       const parts  = [];
       if (pass) parts.push(`<span class="hc-chip hc-pass">✅ 양호 ${pass}</span>`);
       if (fail) parts.push(`<span class="hc-chip hc-fail">❌ 불량 ${fail}</span>`);
       if (na)   parts.push(`<span class="hc-chip hc-none">— 해당없음 ${na}</span>`);
-      if (!parts.length) parts.push(`<span class="hc-chip hc-none">점검항목 없음</span>`);
+      if (!pass && !fail && !na) {
+        // 저장된 항목이 있으나 모두 미선택인 경우 총 항목 수 표시
+        const total = res.length || (() => {
+          const tmpl = (typeof Checklist !== 'undefined') && item.typeCode && Checklist.templates[item.typeCode];
+          if (!tmpl) return 0;
+          return Object.values(tmpl.categories).reduce((s, arr) => s + arr.length, 0);
+        })();
+        if (total > 0) parts.push(`<span class="hc-chip hc-neutral">📋 총 ${total}건</span>`);
+        else           parts.push(`<span class="hc-chip hc-none">점검항목 없음</span>`);
+      }
       if ((item.photos||[]).length) parts.push(`<span class="hc-chip hc-neutral">📷 ${item.photos.length}장</span>`);
       return parts.join('');
     }
@@ -583,6 +596,38 @@ const History = {
       console.error('[deleteItem]', e);
       App.showToast('삭제 중 오류가 발생했습니다.');
     }
+  },
+
+  // ── 카드 사진 추출 ─────────────────────────────────────────
+  _getCardPhotos(item) {
+    if (item._collType === 'proposal') return [];
+    if (item.photos && item.photos.length) return item.photos;
+    if (item.tbmPhoto) return [item.tbmPhoto];
+    return [];
+  },
+
+  _renderPhotoStrip(photos, collType, id) {
+    const MAX   = 3;
+    const shown = photos.slice(0, MAX);
+    const extra = photos.length - MAX;
+    const thumbs = shown.map((_, i) => {
+      const isLast = i === MAX - 1 && extra > 0;
+      const click  = isLast
+        ? `event.stopPropagation();App.showDetail('${collType}','${id}')`
+        : `event.stopPropagation();History._viewCardPhoto('${collType}','${id}',${i})`;
+      return `<div class="hc-photo-thumb" onclick="${click}">
+        <img src="${photos[i]}" alt="사진${i + 1}" loading="lazy">
+        ${isLast ? `<div class="hc-photo-more">+${extra + 1}</div>` : ''}
+      </div>`;
+    });
+    return `<div class="hc-photo-strip" onclick="event.stopPropagation()">${thumbs.join('')}</div>`;
+  },
+
+  _viewCardPhoto(collType, id, idx) {
+    const item = this._results.find(r => r._collType === collType && r.id === id);
+    if (!item) return;
+    const photos = this._getCardPhotos(item);
+    if (photos[idx]) App._viewPhoto(photos[idx]);
   },
 
   renderStatusBadge(status) {
