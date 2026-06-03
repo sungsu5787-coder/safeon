@@ -14,7 +14,7 @@
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v39';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v40';                              // 이 값(V) 수정 시 처리됩니다
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -128,6 +128,28 @@
               <button class="pwa-install-btn" id="pwa-install-btn" onclick="App.triggerPWAInstall()">추가</button>
               <button class="pwa-install-close" onclick="App.dismissPWABanner()" aria-label="닫기">✕</button>
             </div>
+          </div>
+
+          <!-- 핵심지표 위젯 -->
+          <div id="home-kpi" class="home-kpi hidden">
+            <button class="home-kpi-card kpi-safe" data-page="accident" onclick="App.navigateTo('accident')">
+              <span class="home-kpi-icon">🏆</span>
+              <span class="home-kpi-value" id="kpi-safe-days">—</span>
+              <span class="home-kpi-label">무사고 연속일수</span>
+              <span class="home-kpi-sub" id="kpi-safe-sub"></span>
+            </button>
+            <button class="home-kpi-card kpi-risk" data-page="risk" onclick="App.navigateTo('risk')">
+              <span class="home-kpi-icon">⚠️</span>
+              <span class="home-kpi-value" id="kpi-risk-open">—</span>
+              <span class="home-kpi-label">미결 위험요인</span>
+              <span class="home-kpi-sub" id="kpi-risk-sub"></span>
+            </button>
+            <button class="home-kpi-card kpi-ptw" data-page="ptw" onclick="App.navigateTo('ptw')">
+              <span class="home-kpi-icon">🔑</span>
+              <span class="home-kpi-value" id="kpi-ptw-pending">—</span>
+              <span class="home-kpi-label">승인대기 PTW</span>
+              <span class="home-kpi-sub" id="kpi-ptw-sub"></span>
+            </button>
           </div>
 
           <!-- 접속 주소 카드 -->
@@ -1729,8 +1751,8 @@
   (function() {
     if (!('serviceWorker' in navigator)) return;
 
-    // SW 등록 (sw.js?v=39 - 브라우저의 HTTP 캐시 강제 무효화)
-    const SW_URL = 'sw.js?v=39';
+    // SW 등록 (sw.js?v=40 - 브라우저의 HTTP 캐시 강제 무효화)
+    const SW_URL = 'sw.js?v=40';
 
     window.addEventListener('load', function() {
       navigator.serviceWorker.register(SW_URL, { updateViaCache: 'none' })

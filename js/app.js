@@ -35,6 +35,7 @@ const App = {
     }
     this.renderProposalQR();
     this.loadVersionBadge();
+    this.loadHomeMetrics();
     this.updatePTWBadge();
     this.setupOfflineDetection();
     if (!this.guestMode) this.setupPWAInstall();
@@ -322,6 +323,50 @@ const App = {
     } catch (e) {
       console.warn('[App] 버전 배지 로드 실패', e);
     }
+  },
+
+  // ── 홈 핵심지표 위젯 (무사고 연속일수 / 미결 위험요인 / 승인대기 PTW) ──
+  async loadHomeMetrics() {
+    const widget = document.getElementById('home-kpi');
+    if (!widget || typeof collections === 'undefined') return;
+    try {
+      await Promise.race([authReadyPromise, new Promise(r => setTimeout(r, 6000))]);
+    } catch (e) { /* 공개 규칙이면 진행 */ }
+
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+    // 무사고 연속일수 — 최근 사고일 기준 경과일
+    try {
+      const snap = await collections.accident.orderBy('date', 'desc').limit(1).get();
+      if (snap.empty) {
+        setText('kpi-safe-days', '—');
+        setText('kpi-safe-sub', '사고 기록 없음');
+      } else {
+        const last = snap.docs[0].data().date;
+        const days = Math.floor((new Date() - new Date(last)) / 86400000);
+        setText('kpi-safe-days', `${Math.max(days, 0)}일`);
+        setText('kpi-safe-sub', `최근 사고 ${last}`);
+      }
+    } catch (e) { console.warn('[KPI] 무사고 집계 실패', e); }
+
+    // 미결 위험요인 — improveStatus 지연 + 진행중 (복합 인덱스 회피 위해 == 두 번)
+    try {
+      const [delayed, inProgress] = await Promise.all([
+        collections.risk.where('improveStatus', '==', '지연').limit(200).get(),
+        collections.risk.where('improveStatus', '==', '진행중').limit(200).get()
+      ]);
+      setText('kpi-risk-open', `${delayed.size + inProgress.size}건`);
+      setText('kpi-risk-sub', `지연 ${delayed.size} · 진행중 ${inProgress.size}`);
+    } catch (e) { console.warn('[KPI] 위험요인 집계 실패', e); }
+
+    // 승인대기 PTW — status submitted
+    try {
+      const snap = await collections.ptw.where('status', '==', 'submitted').limit(200).get();
+      setText('kpi-ptw-pending', `${snap.size}건`);
+      setText('kpi-ptw-sub', snap.size ? '승인 처리 필요' : '대기 없음');
+    } catch (e) { console.warn('[KPI] PTW 집계 실패', e); }
+
+    widget.classList.remove('hidden');
   },
 
   // ── PTW 네비 배지 업데이트 ────────────────────────────────

@@ -33,3 +33,11 @@
 ## 2단계 (남은 과제)
 - [ ] 진짜 사용자 계정·역할(RBAC) 관리
 - [ ] 제안관리 등 변경 API에 서버 인증 적용
+
+---
+# 홈 상단 핵심지표 위젯 — 체크리스트
+- [x] index.html: 그리팅 아래 KPI 카드 3종 마크업 추가 (무사고 연속일수 / 미결 위험요인 / 승인대기 PTW)
+- [x] css/style.css: `.home-kpi-*` 스타일 추가
+- [x] app.js: `loadHomeMetrics()` 추가 + `init()`에서 호출
+- [x] 검증: 헤드리스 모바일 스크린샷으로 3종 값 렌더 확인 (무사고 6일·미결 3건·PTW 0건, 오버플로 없음)
+- [x] 버전 v39→v40 / 1.3.0→1.4.0 (index.html V·SW_URL, sw.js CACHE_VER, package.json, changelog.json)

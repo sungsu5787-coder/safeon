@@ -6056,3 +6056,53 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   flex: 1;
   min-width: 0;
 }
+
+/* 홈 핵심지표 위젯 */
+.home-kpi {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.home-kpi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 6px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-top: 3px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.home-kpi-card:active { transform: scale(0.97); }
+.home-kpi-card.kpi-safe { border-top-color: var(--success); }
+.home-kpi-card.kpi-risk { border-top-color: #f9ab00; }
+.home-kpi-card.kpi-ptw  { border-top-color: #7b1fa2; }
+.home-kpi-icon { font-size: 1.1rem; line-height: 1; }
+.home-kpi-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--gray-800);
+  line-height: 1.2;
+}
+.kpi-safe .home-kpi-value { color: var(--success); }
+.kpi-risk .home-kpi-value { color: #f9ab00; }
+.kpi-ptw  .home-kpi-value { color: #7b1fa2; }
+.home-kpi-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+.home-kpi-sub {
+  font-size: 0.62rem;
+  color: var(--gray-400);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}

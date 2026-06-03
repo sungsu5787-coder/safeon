@@ -34,6 +34,14 @@
 - **수정**: ① sw.js CACHE_VER v35→v39 + 누락 5종 precache 추가 + 헤더 주석 v39. ② index.html SW_URL `sw.js?v=25`→`v=39`(새 SW 바이트 강제 재등록).
 - **검증 결과**: 캐시 `safeon-v39-static`, 32개 precache, 신규 5종 누락 0. 모바일 렌더 정상 유지.
 
+## 홈 핵심지표 위젯 (2026-06-03)
+- 그리팅 바로 아래 KPI 카드 3종. 클릭 시 각 페이지로 이동(accident/risk/ptw), data-page로 게스트 자동 숨김.
+- **무사고 연속일수**: `accident` orderBy(date desc) 1건 → 오늘-최근사고일. 사고 없으면 "사고 기록 없음".
+- **미결 위험요인**: `risk` improveStatus가 지연+진행중인 doc 수. 결정 — "이번 달"이 아니라 현재 미결 전체. 이유 ① 지난달 생성도 미결이면 조치 필요 ② improveStatus+date 복합조건은 Firestore 복합 인덱스 필요한데 notify.js가 의도적으로 회피(==쿼리 2회 패턴 재사용).
+- **승인대기 PTW**: `ptw` status=='submitted' doc 수(기간 무관).
+- 구현 위치: app.js `loadHomeMetrics()` (init에서 loadVersionBadge 다음 호출), index.html `#home-kpi`, css `.home-kpi-*`.
+- 검증: 헤드리스 390px → 무사고 6일/미결 3건(진행중3)/PTW 0건, 오버플로 없음, 예외 없음.
+
 ## 미해결/2단계
 - 진짜 사용자 계정·역할(RBAC).
 - 제안관리 등 변경 API 서버 인증 적용.
