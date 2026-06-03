@@ -25,6 +25,15 @@
 - changelog.json 배열의 첫 항목이 "현재 버전"으로 표시됨. type 값은 feat/fix/chore (배지 색 구분).
 - data/**는 vercel.json includeFiles에 포함돼 배포본에서도 서빙됨.
 
+## 모바일 안전점검현황 미표시 — 원인과 수정 (2026-06-03)
+- **증상**: 폰에서 안전점검현황(safetyreport)이 구현 안 됨.
+- **검증**: 헤드리스 Chrome 모바일 에뮬(360·390px)로 실제 메뉴카드 클릭 흐름 재현 → 정상 렌더(리포트 본문 7.7KB, 가로 오버플로 없음, SafetyReport 정의됨). 즉 렌더링/JS 버그 아님.
+- **원인**: 설치형 PWA의 stale Service Worker. 두 가지 실제 결함.
+  - sw.js `PRECACHE_FILES`에 신규 JS 5종 누락: safety-report.js, proposals-view.js, admin.js, notify.js, workplace-info.js. → 오프라인/구캐시에서 신규 페이지 깨짐.
+  - `CACHE_VER='safeon-v35'`가 앱 버전 v39와 어긋남. staleWhileRevalidate가 구 index.html을 우선 반환하면 index.html 내 V 버전체크가 무력화되는 PWA 고전 함정.
+- **수정**: ① sw.js CACHE_VER v35→v39 + 누락 5종 precache 추가 + 헤더 주석 v39. ② index.html SW_URL `sw.js?v=25`→`v=39`(새 SW 바이트 강제 재등록).
+- **검증 결과**: 캐시 `safeon-v39-static`, 32개 precache, 신규 5종 누락 0. 모바일 렌더 정상 유지.
+
 ## 미해결/2단계
 - 진짜 사용자 계정·역할(RBAC).
 - 제안관리 등 변경 API 서버 인증 적용.
