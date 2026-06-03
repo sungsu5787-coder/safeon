@@ -50,7 +50,13 @@ let firebaseInitDetail = { step: 'start' }; // [임시 진단] 확인 후 제거
       project: process.env.VERCEL_PROJECT_NAME || null,
       repo: `${process.env.VERCEL_GIT_REPO_OWNER || '?'}/${process.env.VERCEL_GIT_REPO_SLUG || '?'}`,
       ref: process.env.VERCEL_GIT_COMMIT_REF || null,
-      sha: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null
+      sha: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
+      // [임시 진단] 키 존재/길이만 노출 (값 내용 제외). 확인 후 제거 예정
+      diag: {
+        hasKey: 'FIREBASE_SERVICE_ACCOUNT' in process.env,
+        rawLen: (process.env.FIREBASE_SERVICE_ACCOUNT || '').length,
+        fireKeys: Object.keys(process.env).filter(k => /fire/i.test(k))
+      }
     };
   }
 
