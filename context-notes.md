@@ -17,6 +17,14 @@
 - 컬렉션별 총 건수: tbm, risk, checklist, ptw, accident, workplan, proposals.
 - 세부: proposals 상태별, risk improveStatus별(지연/진행중/완료), accident accidentType별.
 
+## 버전 변경 내역 (changelog) — 결정
+- **정적 파일 방식 채택**: `data/changelog.json`을 직접 큐레이션해 admin 대시보드 하단 "버전 내역" 섹션에 렌더링.
+  - 근거: 사용자 친화적 한국어 설명, 백엔드/네트워크 의존 없음, 기존 수동 버전 워크플로(`V`, package.json)와 자연스럽게 연결.
+  - git 로그 자동 추출은 배포본(Vercel)에 `.git`이 없어 제외. GitHub Releases API는 외부 의존·릴리스 생성 부담으로 제외.
+- **버전 올릴 때 절차**: ① package.json `version` ② index.html 캐시 `V` ③ `data/changelog.json` 맨 앞에 항목 추가. (이번에 1.2.0/v37 → 1.3.0/v38)
+- changelog.json 배열의 첫 항목이 "현재 버전"으로 표시됨. type 값은 feat/fix/chore (배지 색 구분).
+- data/**는 vercel.json includeFiles에 포함돼 배포본에서도 서빙됨.
+
 ## 미해결/2단계
 - 진짜 사용자 계정·역할(RBAC).
 - 제안관리 등 변경 API 서버 인증 적용.

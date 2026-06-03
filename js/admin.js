@@ -26,6 +26,7 @@ const Admin = {
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-dashboard').classList.remove('hidden');
     this.loadStats();
+    this.loadChangelog();
   },
 
   async login() {
@@ -111,6 +112,45 @@ const Admin = {
       block('제안 상태', data.proposalsByStatus) +
       block('위험성평가 개선', data.riskByStatus) +
       block('사고 유형', data.accidentByType);
+  },
+
+  async loadChangelog() {
+    const box = document.getElementById('admin-changelog');
+    box.innerHTML = '<div class="admin-loading">불러오는 중…</div>';
+    try {
+      const apiBase = window.API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/data/changelog.json?t=${Date.now()}`);
+      if (!res.ok) throw new Error('changelog load failed');
+      const list = await res.json();
+      this._renderChangelog(list);
+    } catch (e) {
+      box.innerHTML = '<div class="admin-loading">버전 내역을 불러오지 못했습니다.</div>';
+    }
+  },
+
+  _renderChangelog(list) {
+    const TYPE = {
+      feat: { label: '기능', cls: 'feat' },
+      fix:  { label: '수정', cls: 'fix' },
+      chore:{ label: '관리', cls: 'chore' }
+    };
+    const curVer = document.getElementById('admin-cur-ver');
+    if (curVer && list.length) curVer.textContent = `현재 v${list[0].version}`;
+
+    const box = document.getElementById('admin-changelog');
+    box.innerHTML = list.map(entry => {
+      const t = TYPE[entry.type] || { label: '변경', cls: 'chore' };
+      const items = (entry.changes || []).map(c => `<li>${c}</li>`).join('');
+      return `
+        <div class="admin-cl-entry">
+          <div class="admin-cl-head">
+            <span class="admin-cl-ver">v${entry.version}</span>
+            <span class="admin-cl-badge admin-cl-${t.cls}">${t.label}</span>
+            <span class="admin-cl-date">${entry.date || ''}</span>
+          </div>
+          <ul class="admin-cl-list">${items}</ul>
+        </div>`;
+    }).join('');
   },
 
   async openGuestPerm() {

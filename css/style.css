@@ -5970,3 +5970,89 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   font-size: 0.75rem;
   color: var(--gray-500);
 }
+
+.admin-cur-ver {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-left: 6px;
+}
+.admin-changelog {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-cl-entry {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.admin-cl-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.admin-cl-ver {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.admin-cl-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.admin-cl-feat  { background: var(--success-light); color: var(--success); }
+.admin-cl-fix   { background: var(--danger-light);  color: var(--danger); }
+.admin-cl-chore { background: var(--gray-100);       color: var(--gray-700); }
+.admin-cl-date {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+.admin-cl-list {
+  margin: 0;
+  padding-left: 18px;
+}
+.admin-cl-list li {
+  font-size: 0.85rem;
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
+/* ── 홈 상단 버전 배지 ──────────────────────────── */
+.home-version-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.home-version-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.home-version-new {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--success);
+  background: var(--success-light);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.home-version-note {
+  font-size: 0.76rem;
+  color: var(--gray-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}

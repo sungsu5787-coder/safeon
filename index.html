@@ -14,7 +14,7 @@
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v37';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v39';                              // 이 값(V) 수정 시 처리됩니다
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -93,6 +93,11 @@
       <!-- ====== HOME ====== -->
       <section id="page-home" class="page active">
         <div class="dashboard">
+          <div id="home-version-bar" class="home-version-bar hidden">
+            <span class="home-version-badge" id="home-version-badge">v—</span>
+            <span class="home-version-new hidden" id="home-version-new">업데이트됨</span>
+            <span class="home-version-note" id="home-version-note"></span>
+          </div>
           <div class="greeting">
             <div class="greeting-row">
               <div class="greeting-texts">
@@ -1214,6 +1219,9 @@
                 <span class="admin-action-desc">QR 발급 · 메뉴 권한</span>
               </button>
             </div>
+
+            <div class="admin-section-title">🗒️ 버전 내역 <span id="admin-cur-ver" class="admin-cur-ver"></span></div>
+            <div id="admin-changelog" class="admin-changelog"></div>
           </div>
         </div>
       </section>

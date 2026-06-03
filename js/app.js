@@ -34,6 +34,7 @@ const App = {
       }
     }
     this.renderProposalQR();
+    this.loadVersionBadge();
     this.updatePTWBadge();
     this.setupOfflineDetection();
     if (!this.guestMode) this.setupPWAInstall();
@@ -288,6 +289,39 @@ const App = {
     document.querySelectorAll('input[type="date"]').forEach(input => {
       if (!input.value && input.id !== 'risk-complete-date') input.value = today;
     });
+  },
+
+  // ── 홈 상단 버전 배지 ─────────────────────────────────────
+  async loadVersionBadge() {
+    const bar = document.getElementById('home-version-bar');
+    if (!bar) return;
+    try {
+      const apiBase = window.API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/data/changelog.json?t=${Date.now()}`);
+      if (!res.ok) return;
+      const list = await res.json();
+      if (!Array.isArray(list) || !list.length) return;
+
+      const latest = list[0];
+      const ver = latest.version;
+      document.getElementById('home-version-badge').textContent = `v${ver}`;
+
+      const note = document.getElementById('home-version-note');
+      const changes = latest.changes || [];
+      if (note) note.textContent = changes.length ? changes[0] : '';
+
+      // 직전에 본 버전과 다르면 "업데이트됨" 강조
+      const KEY = 'sfo_app_ver';
+      const prev = localStorage.getItem(KEY);
+      const newTag = document.getElementById('home-version-new');
+      if (prev && prev !== ver) newTag.classList.remove('hidden');
+      else newTag.classList.add('hidden');
+      localStorage.setItem(KEY, ver);
+
+      bar.classList.remove('hidden');
+    } catch (e) {
+      console.warn('[App] 버전 배지 로드 실패', e);
+    }
   },
 
   // ── PTW 네비 배지 업데이트 ────────────────────────────────
