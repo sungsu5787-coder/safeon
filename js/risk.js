@@ -716,7 +716,7 @@ const Risk = {
     };
 
     try {
-      const docRef = await collections.risk.add(data);
+      const docRef = await collections.risk.add(App.stampAuthor(data));
       App.showToast('✅ 위험성 평가가 저장되었습니다');
       Notify.addCompletion({
         icon:     highCount ? '🔴' : '⚠️',

@@ -78,6 +78,14 @@
 - [ ] Vercel 환경변수 `FIREBASE_SERVICE_ACCOUNT` 설정 확인 (Admin SDK = 계정 보안 전제)
 - [ ] Firestore 보안 규칙: `users` 컬렉션 클라이언트 read/write 차단 (Firebase 콘솔)
 
-## 다음 단계 (MVP 이후)
-- [ ] 작성자 자동기록: 각 모듈 저장 시 `createdBy:{uid,name}` 첨부 (로그인 시)
-- [ ] 사람별 히스토리: 사용자관리 탭에서 createdBy 필터 조회
+## 2단계 — 작성자 기록 + 히스토리 (v1.7.0)
+- [x] `App.stampAuthor(data)` 헬퍼 (로그인 시 createdById/createdByName 첨부, 미로그인 익명)
+- [x] 6개 모듈 저장에 적용 (tbm·risk·ptw·checklist·workplan·accident)
+- [x] 백엔드 `GET /api/admin/users/:id/history` (createdById 집계 + 최근 20건)
+- [x] 사용자관리: 계정 행 탭 → 작업내역 모달 (종류별 건수·최근 작업)
+- [x] 버전 v43→v44 / 1.6.0→1.7.0, 전체 구문 검증 통과
+- [ ] 검증: 실서버에서 로그인→작성→내역 집계 확인 (사용자 확인 필요)
+
+## 다음 개선 후보
+- [ ] 로그인 진입을 홈/헤더로 노출 (부사수가 작업 전 쉽게 로그인 → 작성자 기록 실효성↑)
+- [ ] 기존 무작성자 데이터 표시 처리

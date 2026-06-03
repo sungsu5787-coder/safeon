@@ -210,7 +210,7 @@ const Accident = {
     }
 
     try {
-      const docRef = await collections.accident.add(data);
+      const docRef = await collections.accident.add(App.stampAuthor(data));
       App.showToast(`✅ ${this.TYPE_LABELS[type]} 보고서 저장 완료`);
 
       // 알림 패널 즉시 연동

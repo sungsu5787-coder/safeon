@@ -221,19 +221,59 @@ const Admin = {
     box.innerHTML = users.map(u => {
       const isMe = me && me.uid === u.uid;
       const roleLabel = u.role === 'admin' ? '관리자' : '부사수';
+      const safeName = (u.name || '').replace(/'/g, "\\'");
       return `
         <div class="admin-user-row ${u.active ? '' : 'inactive'}">
-          <div class="admin-user-main">
+          <div class="admin-user-main" onclick="Admin.viewUserHistory('${u.uid}','${safeName}')">
             <span class="admin-user-name">${u.name}${isMe ? ' <span class="admin-user-me">나</span>' : ''}</span>
-            <span class="admin-user-id">@${u.username}</span>
+            <span class="admin-user-id">@${u.username} · 작업내역 보기</span>
           </div>
           <span class="admin-user-role role-${u.role}">${roleLabel}</span>
           <div class="admin-user-acts">
-            <button class="admin-user-act" onclick="Admin.resetUserPassword('${u.uid}','${(u.name || '').replace(/'/g, "\\'")}')">비번변경</button>
-            <button class="admin-user-act ${u.active ? 'deact' : 'act'}" onclick="Admin.toggleUserActive('${u.uid}',${u.active})">${u.active ? '비활성화' : '활성화'}</button>
+            <button class="admin-user-act" onclick="Admin.resetUserPassword('${u.uid}','${safeName}')">비번</button>
+            <button class="admin-user-act ${u.active ? 'deact' : 'act'}" onclick="Admin.toggleUserActive('${u.uid}',${u.active})">${u.active ? '비활성' : '활성'}</button>
           </div>
         </div>`;
     }).join('');
+  },
+
+  async viewUserHistory(uid, name) {
+    const modal = document.getElementById('admin-history-modal');
+    const title = document.getElementById('admin-history-title');
+    const body  = document.getElementById('admin-history-body');
+    title.textContent = `${name} 작업 내역`;
+    body.innerHTML = '<div class="admin-loading">불러오는 중…</div>';
+    modal.classList.remove('hidden');
+    try {
+      const res = await this._authFetch(`/api/admin/users/${uid}/history`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || '내역을 불러오지 못했습니다.');
+      this._renderHistory(data);
+    } catch (e) {
+      if (e.message !== 'unauthorized') body.innerHTML = `<div class="admin-loading">${e.message}</div>`;
+    }
+  },
+
+  closeHistory() {
+    document.getElementById('admin-history-modal').classList.add('hidden');
+  },
+
+  _renderHistory(data) {
+    const LABELS = { tbm: 'TBM', risk: '위험성평가', checklist: '안전점검', ptw: '작업허가서', accident: '사고보고', workplan: '작업계획서' };
+    const body = document.getElementById('admin-history-body');
+    if (!data.total) {
+      body.innerHTML = '<div class="admin-loading">기록된 작업이 없습니다.<br><small>로그인 후 작성한 문서부터 집계됩니다.</small></div>';
+      return;
+    }
+    const counts = Object.entries(LABELS).map(([k, label]) =>
+      `<div class="admin-hist-stat"><span class="admin-hist-num">${data.counts[k] || 0}</span><span class="admin-hist-label">${label}</span></div>`).join('');
+    const recent = (data.recent || []).map(r =>
+      `<div class="admin-hist-row"><span class="admin-hist-type">${LABELS[r.type] || r.type}</span><span class="admin-hist-date">${r.date || '-'}</span></div>`).join('');
+    body.innerHTML = `
+      <div class="admin-hist-total">총 <b>${data.total}</b>건</div>
+      <div class="admin-hist-stats">${counts}</div>
+      <div class="admin-hist-recent-title">최근 작업</div>
+      <div class="admin-hist-recent">${recent || '<div class="admin-loading">-</div>'}</div>`;
   },
 
   showAddUser() {

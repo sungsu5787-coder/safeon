@@ -559,7 +559,7 @@ const TBM = {
     };
 
     try {
-      const docRef = await collections.tbm.add(data);
+      const docRef = await collections.tbm.add(App.stampAuthor(data));
       App.showToast(this.photos.length
         ? this._t('saved-with-photo')(this.photos.length)
         : this._t('toast-saved'));

@@ -393,7 +393,7 @@ const Checklist = {
     };
 
     try {
-      const ref = await collections.checklist.add(data);
+      const ref = await collections.checklist.add(App.stampAuthor(data));
       App.showToast('✅ 점검 결과가 저장되었습니다');
       Notify.addCompletion({
         icon: '✅', title: `${data.type} 완료`,

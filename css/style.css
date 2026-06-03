@@ -6310,3 +6310,51 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
 }
 .admin-user-act.deact { color: var(--danger); border-color: #FECACA; }
 .admin-user-act.act { color: var(--success); border-color: #BBF7D0; }
+
+/* 작업내역 모달 */
+.admin-user-main { cursor: pointer; }
+.admin-history-modal {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(15,23,42,0.5);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.admin-history-modal.hidden { display: none; }
+.admin-history-card {
+  background: #fff;
+  width: 100%; max-width: 480px;
+  border-radius: 16px 16px 0 0;
+  max-height: 80vh;
+  display: flex; flex-direction: column;
+  animation: histUp 0.2s ease;
+}
+@keyframes histUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.admin-history-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px; border-bottom: 1px solid var(--gray-200);
+}
+.admin-history-title { font-size: 16px; font-weight: 800; color: #1E293B; }
+.admin-history-close {
+  border: none; background: none; font-size: 18px; color: #94A3B8; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 8px;
+}
+.admin-history-close:active { background: var(--gray-100); }
+.admin-history-body { padding: 16px; overflow-y: auto; }
+.admin-hist-total { font-size: 14px; color: #475569; margin-bottom: 12px; }
+.admin-hist-total b { color: var(--primary); font-size: 18px; }
+.admin-hist-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;
+}
+.admin-hist-stat {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 4px; background: #F8FAFC; border: 1px solid var(--gray-200); border-radius: 10px;
+}
+.admin-hist-num { font-size: 18px; font-weight: 800; color: #1E293B; }
+.admin-hist-label { font-size: 11px; color: #64748B; }
+.admin-hist-recent-title { font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; }
+.admin-hist-recent { display: flex; flex-direction: column; gap: 6px; }
+.admin-hist-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: #fff; border: 1px solid var(--gray-200); border-radius: 8px;
+}
+.admin-hist-type { font-size: 13px; font-weight: 600; color: #334155; }
+.admin-hist-date { font-size: 12px; color: #94A3B8; }

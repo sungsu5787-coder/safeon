@@ -371,7 +371,7 @@ const PTW = {
     };
 
     try {
-      const docRef = await collections.ptw.add(data);
+      const docRef = await collections.ptw.add(App.stampAuthor(data));
       App.showToast(`✅ 작업허가서 저장 (${statusMsg[data.status]}) 완료`);
       const statusIcon = { submitted: '📋', reviewing: '🔍', approved: '✅' };
       Notify.addCompletion({

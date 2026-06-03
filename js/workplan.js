@@ -284,7 +284,7 @@ const WorkPlan = {
     };
 
     try {
-      const docRef = await collections.workplan.add(data);
+      const docRef = await collections.workplan.add(App.stampAuthor(data));
 
       // ── PTW 연동 알림 등록 ──────────────────────────────────
       const notice = {

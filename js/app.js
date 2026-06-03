@@ -326,6 +326,15 @@ const App = {
   },
 
   // ── 홈 핵심지표 위젯 (무사고 연속일수 / 미결 위험요인 / 승인대기 PTW) ──
+  // 로그인 상태면 문서에 작성자 정보를 첨부 (미로그인 시 익명 유지)
+  stampAuthor(data) {
+    try {
+      const u = window.Admin && Admin.currentUser;
+      if (u && u.uid) { data.createdById = u.uid; data.createdByName = u.name || ''; }
+    } catch (e) {}
+    return data;
+  },
+
   async loadHomeMetrics() {
     const widget = document.getElementById('home-kpi');
     if (!widget || typeof collections === 'undefined') return;

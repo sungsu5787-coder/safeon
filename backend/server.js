@@ -670,6 +670,33 @@ app.patch('/api/admin/users/:id', requireAdmin, requireRole('admin'), async (req
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 사용자별 작업 내역 (createdById 기준 — 각 컬렉션 집계 + 최근 항목)
+app.get('/api/admin/users/:id/history', requireAdmin, requireRole('admin'), async (req, res) => {
+  if (!firebaseReady) return res.status(503).json({ error: 'Admin SDK가 설정되지 않았습니다.' });
+  const { id } = req.params;
+  const COLS = ['tbm', 'risk', 'checklist', 'ptw', 'accident', 'workplan'];
+  try {
+    const results = await Promise.all(COLS.map(c =>
+      db.collection(c).where('createdById', '==', id).get()
+        .then(s => s.docs.map(d => ({ id: d.id, ...d.data() })))
+        .catch(() => [])
+    ));
+    const counts = {};
+    let recent = [];
+    COLS.forEach((c, i) => {
+      counts[c] = results[i].length;
+      results[i].forEach(d => recent.push({
+        type: c, id: d.id,
+        date: d.date || (d.createdAt || '').slice(0, 10),
+        createdAt: d.createdAt || ''
+      }));
+    });
+    recent.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    res.json({ counts, recent: recent.slice(0, 20), total });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 async function _fetchAll(col) {
   if (firebaseReady) {
     try {
