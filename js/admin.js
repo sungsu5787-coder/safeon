@@ -1,11 +1,21 @@
 // 관리자 종합관리 페이지 — 로그인 게이트 및 통계 대시보드를 담당하는 모듈
 const Admin = {
   TOKEN_KEY: 'safeon_admin_token',
+  USER_KEY:  'safeon_admin_user',
 
   get token() { return sessionStorage.getItem(this.TOKEN_KEY) || ''; },
   set token(v) {
     if (v) sessionStorage.setItem(this.TOKEN_KEY, v);
     else sessionStorage.removeItem(this.TOKEN_KEY);
+  },
+
+  get currentUser() {
+    try { return JSON.parse(sessionStorage.getItem(this.USER_KEY) || 'null'); }
+    catch { return null; }
+  },
+  set currentUser(v) {
+    if (v) sessionStorage.setItem(this.USER_KEY, JSON.stringify(v));
+    else sessionStorage.removeItem(this.USER_KEY);
   },
 
   onPageShow() {
@@ -18,33 +28,58 @@ const Admin = {
     document.getElementById('admin-dashboard').classList.add('hidden');
     const err = document.getElementById('admin-login-error');
     if (err) err.classList.add('hidden');
-    const input = document.getElementById('admin-password');
-    if (input) { input.value = ''; setTimeout(() => input.focus(), 100); }
+    const uInput = document.getElementById('admin-username');
+    const pInput = document.getElementById('admin-password');
+    if (pInput) pInput.value = '';
+    if (uInput) { uInput.value = ''; setTimeout(() => uInput.focus(), 100); }
   },
 
   _showDashboard() {
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-dashboard').classList.remove('hidden');
+    this._renderUserBadge();
+    this.switchTab('stats');
     this.loadStats();
     this.loadChangelog();
   },
 
+  // 로그인 사용자 표시 + 사용자관리 탭은 admin 역할만 노출
+  _renderUserBadge() {
+    const u = this.currentUser;
+    const badge = document.getElementById('admin-user-badge');
+    if (badge) badge.textContent = u ? `${u.name} · ${u.role === 'admin' ? '관리자' : '부사수'}` : '';
+    const usersTab = document.getElementById('admin-subtab-users');
+    if (usersTab) usersTab.classList.toggle('hidden', !(u && u.role === 'admin'));
+  },
+
+  switchTab(tab) {
+    const isUsers = tab === 'users';
+    document.getElementById('admin-tab-stats').classList.toggle('hidden', isUsers);
+    document.getElementById('admin-tab-users').classList.toggle('hidden', !isUsers);
+    document.getElementById('admin-subtab-stats').classList.toggle('active', !isUsers);
+    document.getElementById('admin-subtab-users').classList.toggle('active', isUsers);
+    if (isUsers) this.loadUsers();
+  },
+
   async login() {
-    const input = document.getElementById('admin-password');
-    const err = document.getElementById('admin-login-error');
-    const password = (input.value || '').trim();
-    if (!password) { this._showError('비밀번호를 입력하세요.'); return; }
+    const uInput = document.getElementById('admin-username');
+    const pInput = document.getElementById('admin-password');
+    const username = (uInput.value || '').trim();
+    const password = (pInput.value || '').trim();
+    if (!username || !password) { this._showError('아이디와 비밀번호를 입력하세요.'); return; }
 
     try {
       const apiBase = window.API_BASE_URL || '';
-      const res = await fetch(`${apiBase}/api/admin/login`, {
+      const res = await fetch(`${apiBase}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ username, password })
       });
-      if (!res.ok) { this._showError('비밀번호가 올바르지 않습니다.'); return; }
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { this._showError(data.error || '로그인에 실패했습니다.'); return; }
       this.token = data.token;
+      this.currentUser = data.user;
+      const err = document.getElementById('admin-login-error');
       err && err.classList.add('hidden');
       this._showDashboard();
     } catch (e) {
@@ -54,6 +89,7 @@ const Admin = {
 
   logout() {
     this.token = '';
+    this.currentUser = null;
     this._showLogin();
     App.showToast('로그아웃되었습니다.');
   },
@@ -151,6 +187,113 @@ const Admin = {
           <ul class="admin-cl-list">${items}</ul>
         </div>`;
     }).join('');
+  },
+
+  // ── 사용자 계정 관리 (admin 역할) ──────────────────────────
+  async _authFetch(url, opts = {}) {
+    const apiBase = window.API_BASE_URL || '';
+    const res = await fetch(`${apiBase}${url}`, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}`, ...(opts.headers || {}) }
+    });
+    if (res.status === 401) { this.token = ''; this.currentUser = null; this._showLogin(); throw new Error('unauthorized'); }
+    return res;
+  },
+
+  async loadUsers() {
+    const box = document.getElementById('admin-users-list');
+    box.innerHTML = '<div class="admin-loading">불러오는 중…</div>';
+    try {
+      const res = await this._authFetch('/api/admin/users');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || '목록을 불러오지 못했습니다.');
+      this._renderUsers(data.users || []);
+    } catch (e) {
+      if (e.message !== 'unauthorized')
+        box.innerHTML = `<div class="admin-loading">계정 목록을 불러오지 못했습니다.<br><small>${e.message}</small></div>`;
+    }
+  },
+
+  _renderUsers(users) {
+    const box = document.getElementById('admin-users-list');
+    if (!users.length) { box.innerHTML = '<div class="admin-loading">등록된 계정이 없습니다.</div>'; return; }
+    const me = this.currentUser;
+    box.innerHTML = users.map(u => {
+      const isMe = me && me.uid === u.uid;
+      const roleLabel = u.role === 'admin' ? '관리자' : '부사수';
+      return `
+        <div class="admin-user-row ${u.active ? '' : 'inactive'}">
+          <div class="admin-user-main">
+            <span class="admin-user-name">${u.name}${isMe ? ' <span class="admin-user-me">나</span>' : ''}</span>
+            <span class="admin-user-id">@${u.username}</span>
+          </div>
+          <span class="admin-user-role role-${u.role}">${roleLabel}</span>
+          <div class="admin-user-acts">
+            <button class="admin-user-act" onclick="Admin.resetUserPassword('${u.uid}','${(u.name || '').replace(/'/g, "\\'")}')">비번변경</button>
+            <button class="admin-user-act ${u.active ? 'deact' : 'act'}" onclick="Admin.toggleUserActive('${u.uid}',${u.active})">${u.active ? '비활성화' : '활성화'}</button>
+          </div>
+        </div>`;
+    }).join('');
+  },
+
+  showAddUser() {
+    document.getElementById('admin-user-form').classList.remove('hidden');
+    document.getElementById('nu-username').value = '';
+    document.getElementById('nu-name').value = '';
+    document.getElementById('nu-password').value = '';
+    document.getElementById('nu-role').value = 'staff';
+    const err = document.getElementById('admin-user-form-error');
+    if (err) err.classList.add('hidden');
+    setTimeout(() => document.getElementById('nu-username').focus(), 50);
+  },
+
+  hideAddUser() {
+    document.getElementById('admin-user-form').classList.add('hidden');
+  },
+
+  async addUser() {
+    const username = document.getElementById('nu-username').value.trim();
+    const name     = document.getElementById('nu-name').value.trim();
+    const password = document.getElementById('nu-password').value;
+    const role     = document.getElementById('nu-role').value;
+    const err = document.getElementById('admin-user-form-error');
+    const showErr = (m) => { if (err) { err.textContent = m; err.classList.remove('hidden'); } };
+
+    if (!username || !name || !password) { showErr('아이디·이름·비밀번호를 모두 입력하세요.'); return; }
+    if (password.length < 6) { showErr('비밀번호는 6자 이상이어야 합니다.'); return; }
+
+    try {
+      const res = await this._authFetch('/api/admin/users', { method: 'POST', body: JSON.stringify({ username, name, password, role }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showErr(data.error || '추가에 실패했습니다.'); return; }
+      this.hideAddUser();
+      App.showToast(`✅ ${name} 계정이 추가되었습니다.`);
+      this.loadUsers();
+    } catch (e) { if (e.message !== 'unauthorized') showErr(e.message); }
+  },
+
+  async toggleUserActive(uid, active) {
+    const next = !active;
+    if (!next && !(await App.confirm('이 계정을 비활성화하면 로그인할 수 없게 됩니다. 계속할까요?', { type: 'warning', title: '계정 비활성화', icon: '🔒' }))) return;
+    try {
+      const res = await this._authFetch(`/api/admin/users/${uid}`, { method: 'PATCH', body: JSON.stringify({ active: next }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { App.showToast('⚠️ ' + (data.error || '변경에 실패했습니다.')); return; }
+      App.showToast(next ? '✅ 활성화되었습니다.' : '🔒 비활성화되었습니다.');
+      this.loadUsers();
+    } catch (e) { if (e.message !== 'unauthorized') App.showToast('⚠️ ' + e.message); }
+  },
+
+  async resetUserPassword(uid, name) {
+    const pw = window.prompt(`${name} 계정의 새 비밀번호 (6자 이상)`);
+    if (pw == null) return;
+    if (pw.trim().length < 6) { App.showToast('⚠️ 비밀번호는 6자 이상이어야 합니다.'); return; }
+    try {
+      const res = await this._authFetch(`/api/admin/users/${uid}`, { method: 'PATCH', body: JSON.stringify({ password: pw.trim() }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { App.showToast('⚠️ ' + (data.error || '변경에 실패했습니다.')); return; }
+      App.showToast('✅ 비밀번호가 변경되었습니다.');
+    } catch (e) { if (e.message !== 'unauthorized') App.showToast('⚠️ ' + e.message); }
   },
 
   async openGuestPerm() {

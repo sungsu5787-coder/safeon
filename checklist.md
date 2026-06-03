@@ -58,17 +58,21 @@
 결정: 작성자=로그인 후 자동기록, 범위=MVP부터. 작성자 자동기록·사람별 히스토리는 다음 단계.
 
 ## 백엔드 (backend/server.js) — Admin SDK 전용
-- [ ] 비번 해시 유틸: `hashPassword`(scrypt+salt) / `verifyPassword`(timingSafe)
-- [ ] 세션 토큰: `signSession(payload)` / `verifySession` (payload= uid·username·name·role·exp, HMAC 서명)
-- [ ] `requireAdmin` 세션 기반으로 업그레이드(+레거시 토큰 하위호환), `requireRole('admin')` 추가
-- [ ] `POST /api/auth/login` {username,password} — 검증 + 부트스트랩(users 비면 admin/ADMIN_PASSWORD로 첫 관리자 생성)
-- [ ] `GET /api/admin/users` (목록, 해시 제외) / `POST` (추가) / `PATCH /:id` (활성토글·비번재설정·마지막관리자 보호)
+- [x] 비번 해시 유틸: `hashPassword`(scrypt+salt) / `verifyPassword`(timingSafe)
+- [x] 세션 토큰: `signSession(payload)` / `verifySession` (payload= uid·username·name·role·exp, HMAC 서명)
+- [x] `requireAdmin` 세션 기반으로 업그레이드(+레거시 토큰 하위호환), `requireRole('admin')` 추가
+- [x] `POST /api/auth/login` {username,password} — 검증 + 부트스트랩(users 비면 admin/ADMIN_PASSWORD로 첫 관리자 생성)
+- [x] `GET /api/admin/users` (목록, 해시 제외) / `POST` (추가) / `PATCH /:id` (활성토글·비번재설정·마지막관리자 보호)
+- [x] 검증: 구문 + 해시/세션 단위테스트(정상·거부·변조) PASS
 
-## 프론트 (admin.js / index.html / css) — 다음 단계
-- [ ] 로그인 폼 username+password 화 (현재 password만)
-- [ ] admin 서브탭 `[통계현황] [사용자관리]`
-- [ ] 사용자관리 UI: 목록·추가폼·활성토글
-- [ ] 로그인 사용자 정보 localStorage 저장·표시
+## 프론트 (admin.js / index.html / css)
+- [x] 로그인 폼 username+password 화 (Enter 키 이동/제출 포함)
+- [x] admin 서브탭 `[통계현황] [사용자관리]` (사용자관리는 admin 역할만 노출)
+- [x] 사용자관리 UI: 목록·추가폼·활성토글·비번변경(마지막관리자 보호는 서버측)
+- [x] 로그인 사용자 정보 sessionStorage 저장·헤더 배지 표시
+- [x] css: 서브탭·계정목록·추가폼·역할배지 스타일
+- [x] 버전 v42→v43 / 1.5.1→1.6.0
+- [ ] 검증: 실서버에서 로그인→계정추가→재로그인 동작 확인 (사용자 확인 필요)
 
 ## 인프라 (사용자 액션)
 - [ ] Vercel 환경변수 `FIREBASE_SERVICE_ACCOUNT` 설정 확인 (Admin SDK = 계정 보안 전제)

@@ -1,9 +1,9 @@
 // ============================================================
-//  SAMHWA SafeOn - Service Worker  v42
+//  SAMHWA SafeOn - Service Worker  v43
 //  동적 BASE_PATH: localhost / GitHub Pages 모두 지원
 //  /api/* 캐시 금지 (Firebase 직접 통신)
 // ============================================================
-const CACHE_VER    = 'safeon-v42';
+const CACHE_VER    = 'safeon-v43';
 const CACHE_STATIC = CACHE_VER + '-static';
 
 // 서비스워커 위치 기준으로 base 경로 자동 계산

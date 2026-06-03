@@ -6192,3 +6192,121 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
 }
 .home-utility-body .access-url-card,
 .home-utility-body .proposal-qr-card { margin-bottom: 0; }
+
+/* ===== 사용자 계정 관리 (admin 서브탭) ===== */
+.admin-user-badge {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  text-align: right;
+  margin-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 서브탭 */
+.admin-subtabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--gray-200);
+}
+.admin-subtab {
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: #94A3B8;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  -webkit-tap-highlight-color: transparent;
+}
+.admin-subtab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* 계정 추가 버튼 */
+.admin-user-add-btn {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px solid rgba(26,115,232,0.25);
+  border-radius: 16px;
+  cursor: pointer;
+}
+.admin-user-add-btn:active { background: rgba(26,115,232,0.18); }
+
+/* 계정 추가 폼 */
+.admin-user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: #F8FAFC;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+}
+.admin-user-input {
+  padding: 9px 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--gray-800);
+}
+.admin-user-input:focus { border-color: var(--primary); outline: none; }
+.admin-user-form-actions { display: flex; gap: 8px; }
+.admin-user-save, .admin-user-cancel {
+  flex: 1;
+  padding: 9px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+.admin-user-save { background: var(--primary); color: #fff; }
+.admin-user-save:active { background: var(--primary-dark); }
+.admin-user-cancel { background: var(--gray-100); color: var(--gray-700); }
+.admin-user-form-error { font-size: 12px; color: var(--danger); margin-top: 2px; }
+
+/* 계정 목록 */
+.admin-users-list { display: flex; flex-direction: column; gap: 8px; }
+.admin-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.admin-user-row.inactive { opacity: 0.55; }
+.admin-user-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.admin-user-name { font-size: 14px; font-weight: 700; color: #1E293B; }
+.admin-user-me {
+  font-size: 10px; font-weight: 700; color: var(--primary);
+  background: var(--primary-light); padding: 1px 6px; border-radius: 8px; margin-left: 4px;
+}
+.admin-user-id { font-size: 12px; color: #94A3B8; }
+.admin-user-role {
+  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; flex-shrink: 0;
+}
+.admin-user-role.role-admin { background: #FEF3C7; color: #B45309; }
+.admin-user-role.role-staff { background: #E0E7FF; color: #4338CA; }
+.admin-user-acts { display: flex; gap: 6px; flex-shrink: 0; }
+.admin-user-act {
+  padding: 5px 9px; font-size: 11px; font-weight: 700;
+  border: 1px solid var(--gray-300); border-radius: 8px;
+  background: #fff; color: var(--gray-700); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.admin-user-act.deact { color: var(--danger); border-color: #FECACA; }
+.admin-user-act.act { color: var(--success); border-color: #BBF7D0; }
