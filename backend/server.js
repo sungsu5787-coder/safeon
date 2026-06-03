@@ -44,9 +44,14 @@ let firebaseInitDetail = { step: 'start' }; // [임시 진단] 확인 후 제거
       console.warn('[Firebase] FIREBASE_SERVICE_ACCOUNT 파싱 실패:', e.message);
     }
   } else {
-    const all = Object.keys(process.env);
-    const fireKeys = all.filter(k => /FIRE/i.test(k)).map(k => ({ name: JSON.stringify(k), len: (process.env[k] || '').length }));
-    firebaseInitDetail = { source: 'none', allKeyCount: all.length, fireKeys };
+    firebaseInitDetail = {
+      source: 'none',
+      targetEnv: process.env.VERCEL_TARGET_ENV || null,
+      project: process.env.VERCEL_PROJECT_NAME || null,
+      repo: `${process.env.VERCEL_GIT_REPO_OWNER || '?'}/${process.env.VERCEL_GIT_REPO_SLUG || '?'}`,
+      ref: process.env.VERCEL_GIT_COMMIT_REF || null,
+      sha: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null
+    };
   }
 
   // 2. 로컬 파일 (개발 환경)
