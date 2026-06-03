@@ -14,7 +14,7 @@
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v41';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v42';                              // 이 값(V) 수정 시 처리됩니다
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -135,7 +135,7 @@
             <button class="home-kpi-card kpi-safe" data-page="accident" onclick="App.navigateTo('accident')">
               <span class="home-kpi-icon">🏆</span>
               <span class="home-kpi-value" id="kpi-safe-days">—</span>
-              <span class="home-kpi-label">무사고 연속일수</span>
+              <span class="home-kpi-label">무재해 연속일수</span>
               <span class="home-kpi-sub" id="kpi-safe-sub"></span>
             </button>
             <button class="home-kpi-card kpi-risk" data-page="risk" onclick="App.navigateTo('risk')">
@@ -1758,8 +1758,8 @@
   (function() {
     if (!('serviceWorker' in navigator)) return;
 
-    // SW 등록 (sw.js?v=41 - 브라우저의 HTTP 캐시 강제 무효화)
-    const SW_URL = 'sw.js?v=41';
+    // SW 등록 (sw.js?v=42 - 브라우저의 HTTP 캐시 강제 무효화)
+    const SW_URL = 'sw.js?v=42';
 
     window.addEventListener('load', function() {
       navigator.serviceWorker.register(SW_URL, { updateViaCache: 'none' })

@@ -335,19 +335,26 @@ const App = {
 
     const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
-    // 무사고 연속일수 — 최근 사고일 기준 경과일
+    // 무사고 연속일수 — 산업재해·중대재해 발생일 기준 (아차사고·안전사고 제외)
+    // 복합 인덱스 회피: 최근 사고를 date desc로 받아 클라이언트에서 재해만 필터
     try {
-      const snap = await collections.accident.orderBy('date', 'desc').limit(1).get();
-      if (snap.empty) {
+      const snap = await collections.accident.orderBy('date', 'desc').limit(100).get();
+      const SEVERE = ['industrial', 'serious'];
+      let lastSevere = null;
+      snap.forEach(doc => {
+        if (lastSevere) return;
+        const d = doc.data();
+        if (SEVERE.includes(d.accidentType)) lastSevere = d.date;
+      });
+      if (!lastSevere) {
         setText('kpi-safe-days', '—');
-        setText('kpi-safe-sub', '사고 기록 없음');
+        setText('kpi-safe-sub', '재해 기록 없음');
       } else {
-        const last = snap.docs[0].data().date;
-        const days = Math.floor((new Date() - new Date(last)) / 86400000);
+        const days = Math.floor((new Date() - new Date(lastSevere)) / 86400000);
         setText('kpi-safe-days', `${Math.max(days, 0)}일`);
-        setText('kpi-safe-sub', `최근 사고 ${last}`);
+        setText('kpi-safe-sub', `최근 재해 ${lastSevere}`);
       }
-    } catch (e) { console.warn('[KPI] 무사고 집계 실패', e); }
+    } catch (e) { console.warn('[KPI] 무재해 집계 실패', e); }
 
     // 미결 위험요인 — improveStatus 지연 + 진행중 (복합 인덱스 회피 위해 == 두 번)
     try {

@@ -36,7 +36,7 @@
 
 ## 홈 핵심지표 위젯 (2026-06-03)
 - 그리팅 바로 아래 KPI 카드 3종. 클릭 시 각 페이지로 이동(accident/risk/ptw), data-page로 게스트 자동 숨김.
-- **무사고 연속일수**: `accident` orderBy(date desc) 1건 → 오늘-최근사고일. 사고 없으면 "사고 기록 없음".
+- **무사고 연속일수**: `accident` orderBy(date desc) 1건 → 오늘-최근사고일. 사고 없으면 "사고 기록 없음". → v1.5.1에서 **무재해 기준으로 변경**(아래 참고).
 - **미결 위험요인**: `risk` improveStatus가 지연+진행중인 doc 수. 결정 — "이번 달"이 아니라 현재 미결 전체. 이유 ① 지난달 생성도 미결이면 조치 필요 ② improveStatus+date 복합조건은 Firestore 복합 인덱스 필요한데 notify.js가 의도적으로 회피(==쿼리 2회 패턴 재사용).
 - **승인대기 PTW**: `ptw` status=='submitted' doc 수(기간 무관).
 - 구현 위치: app.js `loadHomeMetrics()` (init에서 loadVersionBadge 다음 호출), index.html `#home-kpi`, css `.home-kpi-*`.
@@ -49,6 +49,13 @@
 - **결정 — 새 순서**: 버전바 → greeting → KPI → [바로가기] Featured 4 → [안전관리] 메뉴 6 → 대시보드 → [접속·QR] details(기본 접힘). 매일 보는 정보 위로, 설정성 정보 아래로.
 - **결정 — 접속/QR 접힘은 `<details>` 네이티브 요소로.** localStorage 토글(accessCardHidden) 메커니즘을 새로 손대지 않고 `<details>`(open 없음=기본 닫힘)로 감싸 JS 변경 최소화(CLAUDE.md 단순성). 기존 `access-url-show-btn`/`hide-btn`은 details가 역할 대체 → 마크업에서 제거. 단 JS의 hideAccessCard/showAccessCard/_restore… 는 null 가드가 있어 버튼 제거해도 에러 없음, 함수 자체는 보존(회귀 회피).
 - **유지**: 접속카드 내부 `access-url-toggle`(고정주소 본문 접기)와 _refreshAccessUrl/_refreshCfUrl 로직은 그대로. CF URL 30초 자동갱신도 유지.
+
+## 무재해 연속일수 기준 변경 (2026-06-03, v1.5.1)
+- **요구**: 무사고 연속일수를 산업재해(`industrial`)·중대재해(`serious`) 발생 시에만 리셋. 아차사고(`nearmiss`)·안전사고(`safety`)는 일수에 영향 없게.
+- **근거**: ① "무사고/무재해"는 통상 인명피해 동반 재해 기준. ② 아차사고는 장려할 예방활동인데 보고 때마다 일수가 0이 되면 보고를 위축시킴(역효과). 분리가 맞음.
+- **구현**: app.js `loadHomeMetrics` 무사고 블록. 사고유형 필드명은 `accidentType`(accident.js:177). Firestore 복합 인덱스 회피 위해 `orderBy('date','desc').limit(100)`로 최근 사고를 받아 **클라이언트에서 `['industrial','serious']`만 필터**해 최신 재해일 산출. (where in + orderBy 다른 필드 = 복합 인덱스 필요하므로 회피.)
+- **라벨**: "무사고 연속일수" → **"무재해 연속일수"**(index.html). 정식 용어이자 기준을 라벨이 직접 드러냄. KPI 카드가 좁아(≈100px) sub에 기준 문구를 넣으면 잘리므로 라벨로 해결. sub는 `최근 재해 {date}` / 재해 없으면 `재해 기록 없음`.
+- **한계**: limit 100. 최근 사고 100건이 전부 경미사고면 그 이전 재해를 놓침(현실적으로 재해는 드물어 상위권에 노출, 사고 누적도 적어 안전). 정밀 필요 시 복합 인덱스 + where 쿼리로 전환.
 
 ## 미해결/2단계
 - 진짜 사용자 계정·역할(RBAC).
