@@ -5785,3 +5785,188 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   padding: 6px 4px 2px;
   text-align: center;
 }
+
+/* ── 종합관리 (admin) ───────────────────────────── */
+.admin-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 20px;
+}
+.admin-login-card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 32px 24px;
+  text-align: center;
+}
+.admin-login-icon {
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.admin-login-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 6px;
+}
+.admin-login-desc {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin: 0 0 20px;
+}
+.admin-login-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+.admin-login-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.admin-login-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.admin-login-btn:active { background: var(--primary-dark); }
+.admin-login-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 12px 0 0;
+}
+
+.admin-dash-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.admin-dash-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.admin-logout-btn {
+  padding: 6px 12px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+}
+.admin-stat-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+}
+.admin-stat-icon { font-size: 1.3rem; }
+.admin-stat-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1.1;
+}
+.admin-stat-label {
+  font-size: 0.78rem;
+  color: var(--gray-600);
+}
+.admin-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--gray-500);
+  padding: 24px 0;
+  font-size: 0.9rem;
+}
+.admin-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 22px 0 10px;
+}
+.admin-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-bd-block {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.admin-bd-title {
+  font-size: 0.82rem;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+.admin-bd-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-bd-item {
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  color: var(--gray-700);
+}
+.admin-bd-item b {
+  color: var(--gray-900);
+  font-weight: 600;
+  margin-right: 4px;
+}
+.admin-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.admin-action-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.admin-action-card:active { background: var(--gray-50); }
+.admin-action-icon { font-size: 1.6rem; }
+.admin-action-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+.admin-action-desc {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}

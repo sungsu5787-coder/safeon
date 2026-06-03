@@ -214,7 +214,8 @@ const App = {
       accident:  '안전사고 보고서',
       proposals:     '제안 관리',
       safetyreport:  '안전점검현황',
-      workplaceinfo: '사업장현황'
+      workplaceinfo: '사업장현황',
+      admin:         '종합관리'
     };
     const brandEl = document.getElementById('header-brand');
     const titleEl = document.getElementById('page-title');
@@ -244,6 +245,7 @@ const App = {
     if (page === 'proposals')    ProposalsView.onPageShow();
     if (page === 'safetyreport')  SafetyReport.onPageShow();
     if (page === 'workplaceinfo') WorkplaceInfo.onPageShow();
+    if (page === 'admin')         Admin.onPageShow();
 
     window.scrollTo(0, 0);
   },

@@ -12,6 +12,7 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const admin = require('firebase-admin');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -73,6 +74,36 @@ let storageBucket = null;
 })();
 
 const firebaseReady = db !== null;
+
+// ── 관리자 인증 (서버 비밀번호 + stateless HMAC 토큰) ─────────
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'safeon-admin';
+const ADMIN_TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // 8시간
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn('[Admin] ADMIN_PASSWORD 미설정 → 로컬 기본값 사용 (배포 시 반드시 환경변수 설정)');
+}
+
+function signAdminToken() {
+  const exp = Date.now() + ADMIN_TOKEN_TTL_MS;
+  const sig = crypto.createHmac('sha256', ADMIN_PASSWORD).update(String(exp)).digest('hex');
+  return `${exp}.${sig}`;
+}
+
+function verifyAdminToken(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return false;
+  const [expStr, sig] = token.split('.');
+  const exp = parseInt(expStr, 10);
+  if (!exp || Date.now() > exp) return false;
+  const expected = crypto.createHmac('sha256', ADMIN_PASSWORD).update(expStr).digest('hex');
+  const a = Buffer.from(sig, 'hex'), b = Buffer.from(expected, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function requireAdmin(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!verifyAdminToken(token)) return res.status(401).json({ error: '인증이 필요합니다.' });
+  next();
+}
 
 // ── 로컬 JSON 폴백 ────────────────────────────────────────────
 const PROPOSAL_RECORDS_FILE = path.join(__dirname, 'uploads', 'proposals', 'records.json');
@@ -459,6 +490,58 @@ app.get('/api/history', async (req, res) => {
     res.json({ records: flat });
   } catch (e) {
     console.error('[History API]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── 관리자 로그인 / 통계 ──────────────────────────────────────
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body || {};
+  if (!password || password !== ADMIN_PASSWORD)
+    return res.status(401).json({ error: '비밀번호가 올바르지 않습니다.' });
+  const token = signAdminToken();
+  res.json({ token, expiresAt: Date.now() + ADMIN_TOKEN_TTL_MS });
+});
+
+async function _fetchAll(col) {
+  if (firebaseReady) {
+    try {
+      const snap = await db.collection(col).get();
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) { console.warn(`[Stats] Admin SDK ${col} 실패:`, e.message); }
+  }
+  try { return await _fsGetAll(col); }
+  catch (e) { console.warn(`[Stats] REST ${col} 실패:`, e.message); return []; }
+}
+
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
+  const COLS = ['tbm', 'risk', 'checklist', 'ptw', 'accident', 'workplan'];
+  try {
+    const [colData, proposals] = await Promise.all([
+      Promise.all(COLS.map(_fetchAll)),
+      loadProposalRecords()
+    ]);
+
+    const totals = {};
+    COLS.forEach((c, i) => { totals[c] = colData[i].length; });
+    totals.proposals = proposals.length;
+
+    const riskDocs = colData[COLS.indexOf('risk')];
+    const accDocs  = colData[COLS.indexOf('accident')];
+
+    const countBy = (arr, key) => arr.reduce((m, d) => {
+      const k = d[key] || '미분류'; m[k] = (m[k] || 0) + 1; return m;
+    }, {});
+
+    res.json({
+      totals,
+      proposalsByStatus: countBy(proposals.map(p => ({ status: p.status || '접수' })), 'status'),
+      riskByStatus:      countBy(riskDocs, 'improveStatus'),
+      accidentByType:    countBy(accDocs, 'accidentType'),
+      generatedAt: new Date().toISOString()
+    });
+  } catch (e) {
+    console.error('[Stats API]', e.message);
     res.status(500).json({ error: e.message });
   }
 });

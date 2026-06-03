@@ -1,0 +1,35 @@
+<!-- admin 종합관리 페이지(1단계) 작업 체크리스트 -->
+# admin 종합관리 페이지 — 1단계 체크리스트
+
+## 백엔드 (backend/server.js)
+- [x] `crypto` 모듈 require 추가
+- [x] `ADMIN_PASSWORD` 환경변수 로드 (미설정 시 로컬용 기본값 + 경고)
+- [x] stateless 토큰 서명/검증 함수 (`signAdminToken` / `verifyAdminToken`, HMAC + 만료)
+- [x] `requireAdmin` 미들웨어 (Authorization: Bearer 검증, 401)
+- [x] `POST /api/admin/login` — 비밀번호 검증 후 토큰 발급
+- [x] `GET /api/admin/stats` (보호됨) — 컬렉션별 집계 통계
+- [x] 컬렉션 전체 로드 헬퍼 (`_fetchAll`: Admin SDK 우선, REST 폴백)
+
+## 프론트엔드
+- [x] 하단 네비 "이력" 버튼 → "관리"(`data-page="admin"`), 아이콘 교체 (index.html)
+- [x] `titles` 맵에 `admin: '종합관리'` 추가 (app.js)
+- [x] `navigateTo` 후처리에 `if (page === 'admin') Admin.onPageShow();` 추가 (app.js)
+- [x] `<section id="page-admin">` 추가 — 로그인 게이트 + 대시보드
+- [x] `js/admin.js` 신규 — Admin 모듈 (login/logout/onPageShow/통계 렌더)
+- [x] index.html에 `<script src="js/admin.js">` 추가
+- [x] css/style.css에 admin 스타일 추가 (로그인 박스, 통계 카드 그리드)
+- [x] 캐시 버전 v36 → v37 (새 자산 강제 반영)
+
+## 환경/문서
+- [x] `.env.example`에 `ADMIN_PASSWORD` 추가
+
+## 검증
+- [x] 서버 재시작 후 `/api/admin/login` 정상/오류 비밀번호 동작 확인 (정답 토큰 발급, 오답 401)
+- [x] `/api/admin/stats` 토큰 없이 401, 토큰 있을 때 데이터 반환 확인
+- [x] 변경된 정적 자산(admin 버튼·섹션·admin.js) 서버 서빙 확인
+- [ ] 브라우저에서 관리 탭 → 로그인 → 통계 표시 → 제안관리/게스트권한 이동 확인 (사용자 육안 확인 필요)
+- [ ] 게스트 모드 URL에서 관리 버튼 미노출 확인 (사용자 육안 확인 필요)
+
+## 2단계 (남은 과제)
+- [ ] 진짜 사용자 계정·역할(RBAC) 관리
+- [ ] 제안관리 등 변경 API에 서버 인증 적용

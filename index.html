@@ -14,7 +14,7 @@
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v36';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v37';                              // 이 값(V) 수정 시 처리됩니다
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -1173,6 +1173,51 @@
       </section>
 
       <!-- ====== 제안 관리 ====== -->
+      <!-- ====== 종합관리 (admin) ====== -->
+      <section id="page-admin" class="page">
+        <div class="page-content">
+          <!-- 로그인 게이트 -->
+          <div id="admin-login" class="admin-login">
+            <div class="admin-login-card">
+              <div class="admin-login-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              </div>
+              <h2 class="admin-login-title">관리자 로그인</h2>
+              <p class="admin-login-desc">종합관리 화면은 관리자 전용입니다.</p>
+              <input type="password" id="admin-password" class="admin-login-input" placeholder="비밀번호" autocomplete="current-password">
+              <button id="admin-login-btn" class="admin-login-btn" onclick="Admin.login()">로그인</button>
+              <p id="admin-login-error" class="admin-login-error hidden"></p>
+            </div>
+          </div>
+
+          <!-- 대시보드 -->
+          <div id="admin-dashboard" class="admin-dashboard hidden">
+            <div class="admin-dash-head">
+              <span class="admin-dash-title">📊 통계 현황</span>
+              <button class="admin-logout-btn" onclick="Admin.logout()">로그아웃</button>
+            </div>
+            <div id="admin-stats" class="admin-stats-grid"></div>
+
+            <div class="admin-section-title">📋 상태별 현황</div>
+            <div id="admin-breakdown" class="admin-breakdown"></div>
+
+            <div class="admin-section-title">⚙️ 관리 메뉴</div>
+            <div class="admin-actions">
+              <button class="admin-action-card" onclick="App.navigateTo('proposals')">
+                <span class="admin-action-icon">💡</span>
+                <span class="admin-action-label">제안 관리</span>
+                <span class="admin-action-desc">접수 · 상태변경 · 순위</span>
+              </button>
+              <button class="admin-action-card" onclick="Admin.openGuestPerm()">
+                <span class="admin-action-icon">👥</span>
+                <span class="admin-action-label">게스트 권한</span>
+                <span class="admin-action-desc">QR 발급 · 메뉴 권한</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="page-proposals" class="page">
         <div class="page-content">
           <div class="proposals-filter-bar">
@@ -1301,9 +1346,9 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         <span>계획서</span>
       </button>
-      <button class="nav-item" data-page="history">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span>이력</span>
+      <button class="nav-item" data-page="admin">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>관리</span>
       </button>
     </nav>
 
@@ -1627,6 +1672,7 @@
   <script src="js/notify.js"></script>
   <script src="js/proposal.js"></script>
   <script src="js/proposals-view.js"></script>
+  <script src="js/admin.js"></script>
   <script src="js/workplace-info.js"></script>
   <script src="js/safety-report.js"></script>
 
