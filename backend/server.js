@@ -28,25 +28,16 @@ const PROPOSALS_COLLECTION = 'proposals';
 // ── Firebase Admin SDK 초기화 ────────────────────────────────
 let db = null;
 let storageBucket = null;
-let firebaseInitDetail = { probe: 'v2' }; // [임시 진단] 원인 확인 후 제거 예정 — 비밀값은 노출 안 함
 
 (function initFirebase() {
   let serviceAccount = null;
-  const rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
-
-  // [임시 진단] 키 존재/길이/이름만 노출 (값 내용 제외)
-  firebaseInitDetail.hasKey = 'FIREBASE_SERVICE_ACCOUNT' in process.env;
-  firebaseInitDetail.rawLen = (rawEnv || '').length;
-  firebaseInitDetail.firstChar = (rawEnv || '').trim().slice(0, 1) || null;
-  firebaseInitDetail.fireKeys = Object.keys(process.env).filter(k => /fire/i.test(k));
 
   // 1. 환경변수 (Railway / 클라우드)
-  if (rawEnv) {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     try {
-      const raw = rawEnv.trim();
+      const raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
       serviceAccount = JSON.parse(raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8'));
     } catch (e) {
-      firebaseInitDetail.parseError = e.message;
       console.warn('[Firebase] FIREBASE_SERVICE_ACCOUNT 파싱 실패:', e.message);
     }
   }
@@ -62,7 +53,6 @@ let firebaseInitDetail = { probe: 'v2' }; // [임시 진단] 원인 확인 후 �
   }
 
   if (!serviceAccount) {
-    firebaseInitDetail.result = 'no-credentials';
     console.warn('[Firebase] 서비스 계정 키 없음 → 클라이언트 모드 (로컬 JSON 폴백)');
     return;
   }
@@ -77,11 +67,8 @@ let firebaseInitDetail = { probe: 'v2' }; // [임시 진단] 원인 확인 후 �
     }
     db = admin.firestore();
     try { storageBucket = admin.storage().bucket(); } catch (_) { /* Storage 미설정 무시 */ }
-    firebaseInitDetail.result = 'ok';
     console.log(`[Firebase] Admin SDK 초기화 완료 (Firestore${storageBucket ? ' + Storage' : ''})`);
   } catch (err) {
-    firebaseInitDetail.initError = err.message;
-    firebaseInitDetail.result = 'init-failed';
     console.warn('[Firebase] Admin SDK 초기화 실패:', err.message);
   }
 })();
@@ -353,7 +340,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(STATIC_ROOT, { extensions: ['html'] }));
 
 // ── 기본 엔드포인트 ───────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ status: 'ok', firebase: firebaseReady, detail: firebaseInitDetail }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', firebase: firebaseReady }));
 
 app.get('/local-ip.txt', (req, res) => {
   const ip = getLocalIPv4();

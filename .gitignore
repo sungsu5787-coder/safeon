@@ -67,3 +67,9 @@ backend/.env
 
 # Vercel CLI 인증 데이터 (절대 커밋 금지)
 Userskss57AppDataRoaming/
+
+# Firebase 서비스 계정 키 / 디버그 로그 (절대 커밋 금지)
+*firebase-adminsdk*.json
+firebase-service-account.json
+firebase-debug.log
+.firebase/

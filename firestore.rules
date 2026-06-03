@@ -1,0 +1,16 @@
+// Firestore 보안 규칙 — users(비밀번호 보관함)는 서버(Admin SDK)만, 그 외는 앱이 직접 접근
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 비밀번호 해시가 든 users는 외부(공개키·클라이언트) 완전 차단. 서버 Admin SDK는 규칙을 우회하므로 정상 동작.
+    match /users/{doc=**} {
+      allow read, write: if false;
+    }
+
+    // 그 외 컬렉션(tbm·risk·checklist·ptw·accident·workplan·workplaceinfo 등)은 기존처럼 허용
+    match /{coll}/{doc=**} {
+      allow read, write: if coll != 'users';
+    }
+  }
+}
