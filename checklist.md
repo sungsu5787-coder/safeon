@@ -41,3 +41,14 @@
 - [x] app.js: `loadHomeMetrics()` 추가 + `init()`에서 호출
 - [x] 검증: 헤드리스 모바일 스크린샷으로 3종 값 렌더 확인 (무사고 6일·미결 3건·PTW 0건, 오버플로 없음)
 - [x] 버전 v39→v40 / 1.3.0→1.4.0 (index.html V·SW_URL, sw.js CACHE_VER, package.json, changelog.json)
+
+---
+# 홈 화면 가독성 리디자인 (v1.5.0) — 체크리스트
+- [x] index.html: 홈 블록 순서 재배치 (KPI → 바로가기 → 안전관리 → 대시보드 → 접속·QR)
+- [x] index.html: 섹션 타이틀 `.home-section-title` 2종 추가 (바로가기 / 안전관리)
+- [x] index.html: 접속주소+제안QR을 하단 `<details class="home-utility">`로 묶어 기본 접힘 처리
+- [x] index.html: 불필요해진 `access-url-show-btn`/`access-url-hide-btn` 정리 (JS 호출부도 제거, 함수 본체는 null-가드 보존)
+- [x] css/style.css: `.home-section-title`, `.home-utility` 스타일 추가 + `.home-kpi`/여백 리듬 강화
+- [x] 버전 v40→v41 / 1.4.0→1.5.0 (index.html V·SW_URL, sw.js CACHE_VER, package.json, changelog.json)
+- [x] 검증: node --check(app.js)·JSON 유효성·태그 균형(details 1/1, section 13/13) 통과
+- [ ] 검증: 브라우저(모바일 폭)에서 순서·접힘·섹션 구분 육안 확인 (사용자 확인 필요)

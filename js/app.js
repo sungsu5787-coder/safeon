@@ -2285,7 +2285,6 @@ const App = {
   _accessUrlTimer: null,
 
   async loadAccessUrl() {
-    this._restoreAccessUrlToggle();
     await this._refreshAccessUrl();
     // CF URL은 서버 재시작마다 바뀌므로 30초마다 자동 갱신
     if (this._accessUrlTimer) clearInterval(this._accessUrlTimer);
@@ -2339,17 +2338,7 @@ const App = {
         cfRow.classList.add('hidden');
       }
     }
-    // 사용자가 숨김 선택했으면 카드 대신 "보기" 버튼 표시
-    try {
-      const showBtn = document.getElementById('access-url-show-btn');
-      if (localStorage.getItem('accessCardHidden') === '1') {
-        card.classList.add('hidden');
-        if (showBtn) showBtn.classList.remove('hidden');
-      } else {
-        card.classList.remove('hidden');
-        if (showBtn) showBtn.classList.add('hidden');
-      }
-    } catch(e) { card.classList.remove('hidden'); }
+    // 접속 정보는 홈 하단 <details class="home-utility">가 접힘을 담당 (기본 접힘)
   },
 
   // CF URL만 조용히 갱신 (30초마다)

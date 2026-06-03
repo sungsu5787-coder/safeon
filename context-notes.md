@@ -42,6 +42,14 @@
 - 구현 위치: app.js `loadHomeMetrics()` (init에서 loadVersionBadge 다음 호출), index.html `#home-kpi`, css `.home-kpi-*`.
 - 검증: 헤드리스 390px → 무사고 6일/미결 3건(진행중3)/PTW 0건, 오버플로 없음, 예외 없음.
 
+## 홈 화면 가독성 리디자인 (2026-06-03, v1.5.0)
+- **요구**: 홈 화면 가독성 개선. 강도 = "비주얼까지 리디자인", 접속/QR 카드 = "기본 접힘".
+- **진단**: 홈에 블록 9개가 비슷한 무게로 쌓여 위계 부재. 황금영역(상단)을 설정성 정보(접속주소·QR + 경고문구)가 차지. 진입점 10개(Featured 4 + 메뉴 6)가 평면 나열.
+- **결정 — 색 팔레트는 유지.** 기존 Material(#1a73e8)+Slate+의미색 톤이 이미 단정. 전면 교체는 전체 앱 통일성 깨고 회귀 위험. 가독성 체감은 ① 순서 재배치 ② 섹션 타이틀 위계 ③ 여백 리듬 ④ KPI 강화에서 나온다고 판단.
+- **결정 — 새 순서**: 버전바 → greeting → KPI → [바로가기] Featured 4 → [안전관리] 메뉴 6 → 대시보드 → [접속·QR] details(기본 접힘). 매일 보는 정보 위로, 설정성 정보 아래로.
+- **결정 — 접속/QR 접힘은 `<details>` 네이티브 요소로.** localStorage 토글(accessCardHidden) 메커니즘을 새로 손대지 않고 `<details>`(open 없음=기본 닫힘)로 감싸 JS 변경 최소화(CLAUDE.md 단순성). 기존 `access-url-show-btn`/`hide-btn`은 details가 역할 대체 → 마크업에서 제거. 단 JS의 hideAccessCard/showAccessCard/_restore… 는 null 가드가 있어 버튼 제거해도 에러 없음, 함수 자체는 보존(회귀 회피).
+- **유지**: 접속카드 내부 `access-url-toggle`(고정주소 본문 접기)와 _refreshAccessUrl/_refreshCfUrl 로직은 그대로. CF URL 30초 자동갱신도 유지.
+
 ## 미해결/2단계
 - 진짜 사용자 계정·역할(RBAC).
 - 제안관리 등 변경 API 서버 인증 적용.

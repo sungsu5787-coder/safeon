@@ -14,7 +14,7 @@
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v40';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v41';                              // 이 값(V) 수정 시 처리됩니다
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -152,67 +152,8 @@
             </button>
           </div>
 
-          <!-- 접속 주소 카드 -->
-          <div class="access-url-card hidden" id="access-url-card">
-
-            <!-- 고정 주소 (Wi-Fi / Tailscale) — 이것만 북마크 -->
-            <div class="access-url-row access-url-row-stable">
-              <div class="access-url-row-header">
-                <span class="access-url-badge badge-stable">📶 고정 주소</span>
-                <span class="access-url-badge-hint">재시작해도 절대 안 바뀜</span>
-                <button class="access-url-copy" onclick="App.copyUrl('access-url-stable')" title="복사" id="access-url-copy-btn">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>복사
-                </button>
-                <button class="access-url-toggle" onclick="App.toggleAccessUrl()" id="access-url-toggle-btn" title="접기/펼치기">
-                  <svg id="access-url-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-                </button>
-                <button class="access-url-hide-btn" onclick="App.hideAccessCard()" title="접속 정보 숨기기">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-              </div>
-              <div id="access-url-stable-body">
-                <div class="access-url-value" id="access-url-stable">로딩 중...</div>
-                <div class="access-url-bookmark-hint">
-                  ⭐ <strong>이 주소를 홈화면에 추가하세요</strong> — 아래 QR 버튼 또는 브라우저 메뉴 → 홈 화면에 추가
-                </div>
-              </div>
-            </div>
-
-            <!-- Cloudflare 외부 주소 — 북마크 절대 금지 -->
-            <div class="access-url-row access-url-cf-row hidden" id="access-url-cf-row">
-              <div class="access-url-row-header">
-                <span class="access-url-badge badge-cf">🌐 외부 접속 (임시)</span>
-                <button class="access-url-copy" onclick="App.copyUrl('access-url-cf')" title="복사">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>복사
-                </button>
-              </div>
-              <div class="access-url-value access-url-cf-value" id="access-url-cf">로딩 중...</div>
-              <div class="access-url-hint access-url-hint-danger">
-                ❌ <strong>북마크 금지</strong> — 서버 재시작마다 주소가 바뀝니다<br>
-                접속할 때마다 위 QR 버튼으로 현재 주소를 확인하세요 (앱이 자동 갱신)
-              </div>
-            </div>
-
-          </div>
-
-          <!-- 접속 정보 숨김 시 표시되는 미니 버튼 -->
-          <button class="access-url-show-btn hidden" id="access-url-show-btn" onclick="App.showAccessCard()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            접속 정보 보기
-          </button>
-
-          <div class="proposal-qr-card" id="proposal-qr-card">
-            <div class="proposal-qr-card-header">
-              <div>
-                <span class="proposal-qr-badge">📢</span>
-                <strong>안전보건 제안 QR</strong>
-              </div>
-              <button class="btn-small" type="button" onclick="App.copyProposalUrl()">주소 복사</button>
-            </div>
-            <div id="proposal-qr-wrap" class="proposal-qr-preview"></div>
-            <div id="proposal-url-text" class="proposal-qr-url"></div>
-            <div class="proposal-qr-note">근로자가 QR을 스캔하면 제안 폼으로 이동합니다. (동일 Wi-Fi/터널 URL로 모바일 접속 지원)</div>
-          </div>
+          <!-- 바로가기 섹션 -->
+          <div class="home-section-title">바로가기</div>
 
           <!-- Featured: 안전사고발생보고서 (TBM 위) -->
           <button class="menu-card-featured menu-card-accident" data-page="accident">
@@ -279,6 +220,9 @@
             </div>
             <svg class="featured-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
+
+          <!-- 안전관리 섹션 -->
+          <div class="home-section-title">안전관리</div>
 
           <!-- 나머지 메뉴 카드 (2×2) -->
           <div class="menu-grid">
@@ -404,6 +348,69 @@
               </div>
             </div>
           </div>
+
+          <!-- 접속·배포 정보 (기본 접힘) -->
+          <details class="home-utility">
+            <summary class="home-utility-summary">
+              <svg class="home-utility-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+              <span class="home-utility-title">접속 주소 · 제안 QR</span>
+              <span class="home-utility-hint">서버 접속 · 근로자 제안용</span>
+              <svg class="home-utility-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="home-utility-body">
+
+              <!-- 접속 주소 카드 -->
+              <div class="access-url-card" id="access-url-card">
+
+                <!-- 고정 주소 (Wi-Fi / Tailscale) -->
+                <div class="access-url-row access-url-row-stable">
+                  <div class="access-url-row-header">
+                    <span class="access-url-badge badge-stable">📶 고정 주소</span>
+                    <span class="access-url-badge-hint">재시작해도 안 바뀜</span>
+                    <button class="access-url-copy" onclick="App.copyUrl('access-url-stable')" title="복사" id="access-url-copy-btn">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>복사
+                    </button>
+                  </div>
+                  <div id="access-url-stable-body">
+                    <div class="access-url-value" id="access-url-stable">로딩 중...</div>
+                    <div class="access-url-bookmark-hint">
+                      ⭐ <strong>이 주소를 홈화면에 추가하세요</strong> — QR 또는 브라우저 메뉴 → 홈 화면에 추가
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cloudflare 외부 주소 -->
+                <div class="access-url-row access-url-cf-row hidden" id="access-url-cf-row">
+                  <div class="access-url-row-header">
+                    <span class="access-url-badge badge-cf">🌐 외부 접속 (임시)</span>
+                    <button class="access-url-copy" onclick="App.copyUrl('access-url-cf')" title="복사">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>복사
+                    </button>
+                  </div>
+                  <div class="access-url-value access-url-cf-value" id="access-url-cf">로딩 중...</div>
+                  <div class="access-url-hint access-url-hint-danger">
+                    ❌ <strong>북마크 금지</strong> — 재시작마다 주소가 바뀝니다. 접속 시 QR로 현재 주소 확인.
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- 제안 QR -->
+              <div class="proposal-qr-card" id="proposal-qr-card">
+                <div class="proposal-qr-card-header">
+                  <div>
+                    <span class="proposal-qr-badge">📢</span>
+                    <strong>안전보건 제안 QR</strong>
+                  </div>
+                  <button class="btn-small" type="button" onclick="App.copyProposalUrl()">주소 복사</button>
+                </div>
+                <div id="proposal-qr-wrap" class="proposal-qr-preview"></div>
+                <div id="proposal-url-text" class="proposal-qr-url"></div>
+                <div class="proposal-qr-note">근로자가 QR을 스캔하면 제안 폼으로 이동합니다.</div>
+              </div>
+
+            </div>
+          </details>
         </div>
       </section>
 
@@ -1751,8 +1758,8 @@
   (function() {
     if (!('serviceWorker' in navigator)) return;
 
-    // SW 등록 (sw.js?v=40 - 브라우저의 HTTP 캐시 강제 무효화)
-    const SW_URL = 'sw.js?v=40';
+    // SW 등록 (sw.js?v=41 - 브라우저의 HTTP 캐시 강제 무효화)
+    const SW_URL = 'sw.js?v=41';
 
     window.addEventListener('load', function() {
       navigator.serviceWorker.register(SW_URL, { updateViaCache: 'none' })

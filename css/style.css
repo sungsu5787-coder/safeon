@@ -6106,3 +6106,89 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   white-space: nowrap;
   max-width: 100%;
 }
+
+/* ===== 홈 가독성 리디자인 (v1.5.0) ===== */
+
+/* KPI 카드 강화 — 더 시원한 숫자·여백 */
+.home-kpi { gap: 10px; margin-bottom: 22px; }
+.home-kpi-card {
+  padding: 16px 8px 13px;
+  gap: 4px;
+  border-radius: var(--radius-md);
+}
+.home-kpi-value { font-size: 1.55rem; }
+.home-kpi-label { font-size: 0.74rem; }
+
+/* 섹션 구분 타이틀 — 좌측 컬러 액센트 + 굵은 라벨 */
+.home-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #475569;
+  margin: 4px 2px 12px;
+}
+.home-section-title::before {
+  content: "";
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+/* Featured 카드 다음 섹션 타이틀은 위 간격 확보 */
+.menu-card-featured + .home-section-title { margin-top: 22px; }
+
+/* 대시보드는 메뉴와 시각적으로 분리 */
+.today-summary { margin-top: 22px; }
+
+/* 접속·배포 정보 — 하단 접이식 그룹 (기본 접힘) */
+.home-utility {
+  margin-top: 24px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.home-utility-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  color: #334155;
+  font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+}
+.home-utility-summary::-webkit-details-marker { display: none; }
+.home-utility-summary::marker { content: ""; }
+.home-utility-ico { color: var(--primary); flex-shrink: 0; }
+.home-utility-title { font-size: 14px; }
+.home-utility-hint {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94A3B8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-utility-chev {
+  color: #94A3B8;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.home-utility[open] .home-utility-chev { transform: rotate(180deg); }
+.home-utility[open] .home-utility-summary { border-bottom: 1px solid var(--gray-100); }
+.home-utility-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.home-utility-body .access-url-card,
+.home-utility-body .proposal-qr-card { margin-bottom: 0; }
