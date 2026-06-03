@@ -72,3 +72,20 @@
 ## 미해결/2단계
 - 제안관리 등 변경 API 서버 인증 적용.
 - 작성자 자동기록(createdBy) + 사람별 히스토리 (RBAC 2단계).
+
+## FIREBASE_SERVICE_ACCOUNT 미적용 — 원인 확정 (2026-06-04)
+- **증상**: RBAC users 기능이 503. 여러 번 재배포해도 Admin SDK가 안 켜짐.
+- **확정 방법**: /api/health에 임시 진단 필드 추가 후 라이브(safeon0526.vercel.app) 호출.
+  - 결과: `firebase:false, detail.diag={hasKey:false, rawLen:0, fireKeys:[]}, result:"no-credentials"`.
+  - 배포 메타데이터는 정상(project:safeon0526, repo:sungsu5787-coder/safeon, ref:main). 즉 **올바른 프로젝트가 배포 중인데 환경변수 자체가 Production 런타임에 부재**.
+- **결론**: 코드 문제 아님. `FIREBASE_SERVICE_ACCOUNT`가 Vercel `safeon0526` 프로젝트의 Production 스코프에 저장돼 있지 않음(또는 다른 스코프/다른 프로젝트에 저장). `fire` 포함 env가 0개라 어떤 형태로도 안 들어옴.
+- **주의**: `safeon.vercel.app`은 전혀 다른 앱(포르투갈어 React)이 서빙됨 → 사용자가 여러 Vercel 프로젝트를 혼동해 엉뚱한 프로젝트에 env를 넣었을 가능성. 정답 도메인은 `safeon0526.vercel.app`.
+- **조치**: 787dcc7에서 진단 코드 제거(=8a7f650 클린 상태로 환원). /api/health는 `{status, firebase}`만 반환.
+- **남은 일(사용자 dashboard 작업 — 에이전트가 대신 못 함)**: ① Firebase 콘솔에서 서비스 계정 키 JSON 발급 ② Vercel `safeon0526` → Settings → Environment Variables에 `FIREBASE_SERVICE_ACCOUNT` = (JSON 원문 또는 base64), **Production 체크** ③ 재배포 ④ /api/health에서 `firebase:true` 확인. (배포 전 Firestore 규칙에서 users 클라 차단 먼저.)
+
+## 사용자관리 503 오류 → 안내 패널 (2026-06-04, v1.7.3)
+- **증상**: 관리 탭 사용자관리에서 "계정목록을 불러오지 못했습니다. Admin SDK가 설정되지 않았습니다" 빨간 오류.
+- **원인**: FIREBASE_SERVICE_ACCOUNT 미설정 → /api/admin/users가 503 반환. 프론트가 503 메시지를 그대로 오류로 노출(admin.js loadUsers).
+- **수정**: admin.js loadUsers에 `if (res.status===503)` 분기 추가 → `_renderUsersSetupNeeded()`가 친절한 안내 패널 렌더 + 작동 안 하는 "계정 추가" 버튼 숨김. css `.admin-setup-needed` 스타일 추가. 근본 활성화(서비스계정)는 별개로 사용자 dashboard 작업 필요.
+- **검증**: ① 로컬 서버(Firebase 미설정 모드) → /api/health `{firebase:false}`, 레거시 admin 로그인 role=admin, /api/admin/users HTTP 503 재현 확인. ② DOM 스텁으로 admin.js loadUsers 503 분기 실행 → 안내 패널 렌더·오류문구 미노출·추가버튼 숨김 5/5 PASS.
+- 캐시 v46→v47, 1.7.2→1.7.3, changelog 항목 추가.

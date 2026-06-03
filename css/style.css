@@ -6241,6 +6241,28 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
 }
 .admin-user-add-btn:active { background: rgba(26,115,232,0.18); }
 
+/* Admin SDK 미설정 안내 패널 */
+.admin-setup-needed {
+  text-align: center;
+  padding: 28px 18px;
+  background: var(--gray-50, #f8f9fa);
+  border: 1px dashed var(--gray-300, #dadce0);
+  border-radius: 12px;
+}
+.admin-setup-icon { font-size: 28px; margin-bottom: 8px; }
+.admin-setup-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0 0 6px;
+}
+.admin-setup-desc {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--gray-600, #5f6368);
+  margin: 0;
+}
+
 /* 계정 추가 폼 */
 .admin-user-form {
   display: flex;

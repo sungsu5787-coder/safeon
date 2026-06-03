@@ -1810,8 +1810,8 @@
   (function() {
     if (!('serviceWorker' in navigator)) return;
 
-    // SW 등록 (sw.js?v=46 - 브라우저의 HTTP 캐시 강제 무효화)
-    const SW_URL = 'sw.js?v=46';
+    // SW 등록 (sw.js?v=47 - 브라우저의 HTTP 캐시 강제 무효화)
+    const SW_URL = 'sw.js?v=47';
 
     window.addEventListener('load', function() {
       navigator.serviceWorker.register(SW_URL, { updateViaCache: 'none' })

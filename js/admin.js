@@ -208,12 +208,27 @@ const Admin = {
     try {
       const res = await this._authFetch('/api/admin/users');
       const data = await res.json().catch(() => ({}));
+      if (res.status === 503) { this._renderUsersSetupNeeded(); return; }
       if (!res.ok) throw new Error(data.error || '목록을 불러오지 못했습니다.');
       this._renderUsers(data.users || []);
     } catch (e) {
       if (e.message !== 'unauthorized')
         box.innerHTML = `<div class="admin-loading">계정 목록을 불러오지 못했습니다.<br><small>${e.message}</small></div>`;
     }
+  },
+
+  // Admin SDK 미설정(503) 시 — 빨간 오류 대신 안내 패널 + 작동 안 하는 계정추가 버튼 숨김
+  _renderUsersSetupNeeded() {
+    const addBtn = document.querySelector('.admin-user-add-btn');
+    if (addBtn) addBtn.classList.add('hidden');
+    this.hideAddUser();
+    const box = document.getElementById('admin-users-list');
+    box.innerHTML = `
+      <div class="admin-setup-needed">
+        <div class="admin-setup-icon">🔧</div>
+        <p class="admin-setup-title">직원별 계정 기능은 준비 중이에요.</p>
+        <p class="admin-setup-desc">지금은 <b>관리자 비밀번호 한 개</b>로 로그인하는 단순 모드로 동작하고 있어요. Firebase 관리자 설정을 마치면 직원마다 아이디·비밀번호를 만들고, 누가 어떤 작업을 했는지도 볼 수 있어요.</p>
+      </div>`;
   },
 
   _renderUsers(users) {
