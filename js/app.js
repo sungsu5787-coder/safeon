@@ -36,6 +36,7 @@ const App = {
     this.renderProposalQR();
     this.loadVersionBadge();
     this.loadHomeMetrics();
+    this.renderLoginChip();
     this.updatePTWBadge();
     this.setupOfflineDetection();
     if (!this.guestMode) this.setupPWAInstall();
@@ -326,6 +327,31 @@ const App = {
   },
 
   // ── 홈 핵심지표 위젯 (무사고 연속일수 / 미결 위험요인 / 승인대기 PTW) ──
+  // 홈 로그인 칩 — 현재 로그인 상태 표시 / 로그인·로그아웃 진입
+  renderLoginChip() {
+    const chip = document.getElementById('home-login-chip');
+    if (!chip) return;
+    const u = window.Admin && Admin.currentUser;
+    if (u && u.uid) {
+      chip.innerHTML = `👤 <b>${u.name}</b> · ${u.role === 'admin' ? '관리자' : '부사수'}<span class="hlc-act">로그아웃</span>`;
+      chip.classList.add('on');
+    } else {
+      chip.innerHTML = `🔓 로그인하면 <b>작성 기록이 남아요</b><span class="hlc-act">로그인</span>`;
+      chip.classList.remove('on');
+    }
+    chip.classList.remove('hidden');
+  },
+
+  onLoginChipClick() {
+    const u = window.Admin && Admin.currentUser;
+    if (u && u.uid) {
+      if (window.Admin && Admin.logout) Admin.logout();
+      else this.renderLoginChip();
+    } else {
+      this.navigateTo('admin');
+    }
+  },
+
   // 로그인 상태면 문서에 작성자 정보를 첨부 (미로그인 시 익명 유지)
   stampAuthor(data) {
     try {

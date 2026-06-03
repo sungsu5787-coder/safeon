@@ -41,6 +41,7 @@ const Admin = {
     this.switchTab('stats');
     this.loadStats();
     this.loadChangelog();
+    if (window.App && App.renderLoginChip) App.renderLoginChip();
   },
 
   // 로그인 사용자 표시 + 사용자관리 탭은 admin 역할만 노출
@@ -91,6 +92,7 @@ const Admin = {
     this.token = '';
     this.currentUser = null;
     this._showLogin();
+    if (window.App && App.renderLoginChip) App.renderLoginChip();
     App.showToast('로그아웃되었습니다.');
   },
 

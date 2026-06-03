@@ -6358,3 +6358,34 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
 }
 .admin-hist-type { font-size: 13px; font-weight: 600; color: #334155; }
 .admin-hist-date { font-size: 12px; color: #94A3B8; }
+
+/* 홈 로그인 칩 */
+.home-login-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 10px 0 4px;
+  padding: 9px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  background: var(--white);
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+  -webkit-tap-highlight-color: transparent;
+}
+.home-login-chip.hidden { display: none; }
+.home-login-chip b { color: #1E293B; font-weight: 700; }
+.home-login-chip.on { background: #F0F9FF; border-color: #BAE6FD; }
+.home-login-chip.on b { color: var(--primary); }
+.hlc-act {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.home-login-chip.on .hlc-act { color: #64748B; }
