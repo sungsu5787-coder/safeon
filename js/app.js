@@ -335,9 +335,10 @@ const App = {
 
     const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
-    // 무사고 연속일수 — 산업재해·중대재해 발생일 기준 (아차사고·안전사고 제외)
-    // 복합 인덱스 회피: 최근 사고를 date desc로 받아 클라이언트에서 재해만 필터
+    // 무재해 연속일수 — 2026-01-01 집계 시작, 산업재해·중대재해 발생 시 그날부터 재계산
+    // (아차사고·안전사고는 일수에 영향 없음). 복합 인덱스 회피: date desc 100건 클라 필터
     try {
+      const BASE_START = '2026-01-01';
       const snap = await collections.accident.orderBy('date', 'desc').limit(100).get();
       const SEVERE = ['industrial', 'serious'];
       let lastSevere = null;
@@ -346,14 +347,12 @@ const App = {
         const d = doc.data();
         if (SEVERE.includes(d.accidentType)) lastSevere = d.date;
       });
-      if (!lastSevere) {
-        setText('kpi-safe-days', '—');
-        setText('kpi-safe-sub', '재해 기록 없음');
-      } else {
-        const days = Math.floor((new Date() - new Date(lastSevere)) / 86400000);
-        setText('kpi-safe-days', `${Math.max(days, 0)}일`);
-        setText('kpi-safe-sub', `최근 재해 ${lastSevere}`);
-      }
+      // 기준일 = 집계 시작일과 최근 재해일 중 더 나중 (YYYY-MM-DD는 사전식=시간순)
+      const hasSevere = lastSevere && lastSevere > BASE_START;
+      const startStr  = hasSevere ? lastSevere : BASE_START;
+      const days = Math.floor((new Date() - new Date(startStr)) / 86400000);
+      setText('kpi-safe-days', `${Math.max(days, 0)}일`);
+      setText('kpi-safe-sub', hasSevere ? `최근 재해 ${lastSevere}` : '2026.1.1부터 무재해');
     } catch (e) { console.warn('[KPI] 무재해 집계 실패', e); }
 
     // 미결 위험요인 — improveStatus 지연 + 진행중 (복합 인덱스 회피 위해 == 두 번)
