@@ -28,18 +28,23 @@ const PROPOSALS_COLLECTION = 'proposals';
 // ── Firebase Admin SDK 초기화 ────────────────────────────────
 let db = null;
 let storageBucket = null;
+let firebaseInitDetail = { step: 'start' }; // [임시 진단] 확인 후 제거 예정
 
 (function initFirebase() {
   let serviceAccount = null;
 
   // 1. 환경변수 (Railway / 클라우드)
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+    firebaseInitDetail = { source: 'env', len: raw.length, head: raw.slice(0, 1) };
     try {
-      const raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
       serviceAccount = JSON.parse(raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8'));
     } catch (e) {
+      firebaseInitDetail.parseError = e.message;
       console.warn('[Firebase] FIREBASE_SERVICE_ACCOUNT 파싱 실패:', e.message);
     }
+  } else {
+    firebaseInitDetail = { source: 'none' };
   }
 
   // 2. 로컬 파일 (개발 환경)
@@ -53,6 +58,7 @@ let storageBucket = null;
   }
 
   if (!serviceAccount) {
+    firebaseInitDetail.result = 'no-credentials';
     console.warn('[Firebase] 서비스 계정 키 없음 → 클라이언트 모드 (로컬 JSON 폴백)');
     return;
   }
@@ -67,8 +73,11 @@ let storageBucket = null;
     }
     db = admin.firestore();
     try { storageBucket = admin.storage().bucket(); } catch (_) { /* Storage 미설정 무시 */ }
+    firebaseInitDetail.result = 'ok';
     console.log(`[Firebase] Admin SDK 초기화 완료 (Firestore${storageBucket ? ' + Storage' : ''})`);
   } catch (err) {
+    firebaseInitDetail.initError = err.message;
+    firebaseInitDetail.result = 'init-failed';
     console.warn('[Firebase] Admin SDK 초기화 실패:', err.message);
   }
 })();
@@ -340,7 +349,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(STATIC_ROOT, { extensions: ['html'] }));
 
 // ── 기본 엔드포인트 ───────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ status: 'ok', firebase: firebaseReady }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', firebase: firebaseReady, detail: firebaseInitDetail }));
 
 app.get('/local-ip.txt', (req, res) => {
   const ip = getLocalIPv4();
