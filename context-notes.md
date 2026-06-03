@@ -65,7 +65,9 @@
 - **보안 핵심 결정**: `users` 컬렉션은 **Admin SDK 전용**. passwordHash가 들어있어 REST 공개키/클라 접근 시 노출되므로, 모든 users 라우트는 `firebaseReady`(Admin SDK) 없으면 503 반환. 사용자 액션 2개 전제 — ⓐ Vercel `FIREBASE_SERVICE_ACCOUNT` 설정 ⓑ Firestore 규칙에서 users 클라 차단.
 - **백엔드 구현(완료)**: scrypt+salt 해시(`hashPassword`/`verifyPassword`), base64url payload + HMAC(키=ADMIN_PASSWORD) 세션 토큰(`signSession`/`verifySession`, uid·username·name·role·exp). `requireAdmin`은 세션 우선 + 레거시 단일비번 토큰 하위호환, `requireRole('admin')`. 라우트: `POST /api/auth/login`(부트스트랩: users 비면 admin/ADMIN_PASSWORD로 첫 관리자 자동생성), `GET/POST /api/admin/users`, `PATCH /api/admin/users/:id`(활성토글·비번재설정, 마지막 관리자 보호).
 - **역할**: `admin`(계정관리 가능) / `staff`(부사수, 작업만). 계정 삭제 대신 active=false 비활성화(작성 이력 보존 목적).
-- **다음(프론트)**: admin.js 로그인 username화, admin 서브탭 [통계현황][사용자관리], 사용자관리 UI, 로그인정보 localStorage.
+- **다음(프론트)**: admin.js 로그인 username화, admin 서브탭 [통계현황][사용자관리], 사용자관리 UI, 로그인정보 localStorage. → 완료(v1.6.0).
+- **안전 폴백(중요)**: `/api/auth/login`은 `firebaseReady`(Admin SDK) 없으면 **레거시 단일관리자 모드**로 동작 — `admin`+ADMIN_PASSWORD면 role=admin 세션 발급(uid='legacy-admin'). 이유: FIREBASE_SERVICE_ACCOUNT 미설정 환경에 배포해도 기존 통계 로그인이 안 깨지게(회귀 방지). 이 모드에선 `/api/admin/users`가 503 → 계정 추가/목록만 잠김. 인프라 갖추면 자동으로 정식 계정 모드 전환.
+- **안전 배포 순서(사용자 안내)**: ① Firestore 규칙에 users 차단 추가 → ② Vercel FIREBASE_SERVICE_ACCOUNT 설정 → ③ 그 후 첫 admin 로그인(해시 저장). 규칙을 해시 저장보다 먼저 둬야 노출 위험 0.
 
 ## 미해결/2단계
 - 제안관리 등 변경 API 서버 인증 적용.

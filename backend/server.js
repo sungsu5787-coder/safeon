@@ -564,8 +564,15 @@ app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password)
     return res.status(400).json({ error: '아이디와 비밀번호를 입력하세요.' });
-  if (!firebaseReady)
-    return res.status(503).json({ error: '서버 계정 저장소(Admin SDK)가 설정되지 않았습니다. FIREBASE_SERVICE_ACCOUNT를 확인하세요.' });
+
+  // Admin SDK 미설정 → 레거시 단일 관리자 모드 (계정 기능만 잠금, 통계 등 기존 기능 유지)
+  if (!firebaseReady) {
+    if (username === 'admin' && password === ADMIN_PASSWORD) {
+      const profile = { uid: 'legacy-admin', username: 'admin', name: '관리자', role: 'admin' };
+      return res.json({ token: signSession(profile), user: profile, expiresAt: Date.now() + SESSION_TTL_MS });
+    }
+    return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+  }
 
   try {
     let user = await findUserByUsername(username);
