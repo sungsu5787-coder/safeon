@@ -52,3 +52,28 @@
 - [x] 버전 v40→v41 / 1.4.0→1.5.0 (index.html V·SW_URL, sw.js CACHE_VER, package.json, changelog.json)
 - [x] 검증: node --check(app.js)·JSON 유효성·태그 균형(details 1/1, section 13/13) 통과
 - [ ] 검증: 브라우저(모바일 폭)에서 순서·접힘·섹션 구분 육안 확인 (사용자 확인 필요)
+
+---
+# 사용자 계정·권한 시스템 (RBAC 1단계 MVP) — 체크리스트
+결정: 작성자=로그인 후 자동기록, 범위=MVP부터. 작성자 자동기록·사람별 히스토리는 다음 단계.
+
+## 백엔드 (backend/server.js) — Admin SDK 전용
+- [ ] 비번 해시 유틸: `hashPassword`(scrypt+salt) / `verifyPassword`(timingSafe)
+- [ ] 세션 토큰: `signSession(payload)` / `verifySession` (payload= uid·username·name·role·exp, HMAC 서명)
+- [ ] `requireAdmin` 세션 기반으로 업그레이드(+레거시 토큰 하위호환), `requireRole('admin')` 추가
+- [ ] `POST /api/auth/login` {username,password} — 검증 + 부트스트랩(users 비면 admin/ADMIN_PASSWORD로 첫 관리자 생성)
+- [ ] `GET /api/admin/users` (목록, 해시 제외) / `POST` (추가) / `PATCH /:id` (활성토글·비번재설정·마지막관리자 보호)
+
+## 프론트 (admin.js / index.html / css) — 다음 단계
+- [ ] 로그인 폼 username+password 화 (현재 password만)
+- [ ] admin 서브탭 `[통계현황] [사용자관리]`
+- [ ] 사용자관리 UI: 목록·추가폼·활성토글
+- [ ] 로그인 사용자 정보 localStorage 저장·표시
+
+## 인프라 (사용자 액션)
+- [ ] Vercel 환경변수 `FIREBASE_SERVICE_ACCOUNT` 설정 확인 (Admin SDK = 계정 보안 전제)
+- [ ] Firestore 보안 규칙: `users` 컬렉션 클라이언트 read/write 차단 (Firebase 콘솔)
+
+## 다음 단계 (MVP 이후)
+- [ ] 작성자 자동기록: 각 모듈 저장 시 `createdBy:{uid,name}` 첨부 (로그인 시)
+- [ ] 사람별 히스토리: 사용자관리 탭에서 createdBy 필터 조회

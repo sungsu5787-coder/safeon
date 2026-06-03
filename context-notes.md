@@ -57,6 +57,16 @@
 - **라벨**: "무사고 연속일수" → **"무재해 연속일수"**(index.html). 정식 용어이자 기준을 라벨이 직접 드러냄. KPI 카드가 좁아(≈100px) sub에 기준 문구를 넣으면 잘리므로 라벨로 해결. sub는 `최근 재해 {date}` / 재해 없으면 `재해 기록 없음`.
 - **한계**: limit 100. 최근 사고 100건이 전부 경미사고면 그 이전 재해를 놓침(현실적으로 재해는 드물어 상위권에 노출, 사고 누적도 적어 안전). 정밀 필요 시 복합 인덱스 + where 쿼리로 전환.
 
+## 사용자 계정·권한 시스템 RBAC (2026-06-03, 1단계 MVP 진행)
+- **요구**: 개발자+부사수별 개별 아이디/비번. 누가 작업했는지 파악 + 사람별 히스토리. 관리 탭 안에서 통계와 분리된 서브탭으로.
+- **사용자 결정**: ① 작성자 기록 = 로그인 후 작업(이름 자동기록, 미로그인 시 익명) ② 범위 = MVP부터(계정+로그인+사용자관리 서브탭). 작성자 자동기록·히스토리는 다음 단계.
+- **현황 진단**: 코드에 세션/사용자 개념 전무(`currentUser` 등 없음). admin은 단일 `ADMIN_PASSWORD` 하나로 진입. 작성 데이터(tbm/risk/...)에 작성자 필드 없음 → 과거 데이터 소급 불가.
+- **배포 구조**: 실제 백엔드 = `backend/server.js`(vercel.json이 여기로 라우팅, `api/server.js`는 미사용). Firebase는 `FIREBASE_SERVICE_ACCOUNT` env(JSON/base64) → Admin SDK, 없으면 REST 폴백(공개 키).
+- **보안 핵심 결정**: `users` 컬렉션은 **Admin SDK 전용**. passwordHash가 들어있어 REST 공개키/클라 접근 시 노출되므로, 모든 users 라우트는 `firebaseReady`(Admin SDK) 없으면 503 반환. 사용자 액션 2개 전제 — ⓐ Vercel `FIREBASE_SERVICE_ACCOUNT` 설정 ⓑ Firestore 규칙에서 users 클라 차단.
+- **백엔드 구현(완료)**: scrypt+salt 해시(`hashPassword`/`verifyPassword`), base64url payload + HMAC(키=ADMIN_PASSWORD) 세션 토큰(`signSession`/`verifySession`, uid·username·name·role·exp). `requireAdmin`은 세션 우선 + 레거시 단일비번 토큰 하위호환, `requireRole('admin')`. 라우트: `POST /api/auth/login`(부트스트랩: users 비면 admin/ADMIN_PASSWORD로 첫 관리자 자동생성), `GET/POST /api/admin/users`, `PATCH /api/admin/users/:id`(활성토글·비번재설정, 마지막 관리자 보호).
+- **역할**: `admin`(계정관리 가능) / `staff`(부사수, 작업만). 계정 삭제 대신 active=false 비활성화(작성 이력 보존 목적).
+- **다음(프론트)**: admin.js 로그인 username화, admin 서브탭 [통계현황][사용자관리], 사용자관리 UI, 로그인정보 localStorage.
+
 ## 미해결/2단계
-- 진짜 사용자 계정·역할(RBAC).
 - 제안관리 등 변경 API 서버 인증 적용.
+- 작성자 자동기록(createdBy) + 사람별 히스토리 (RBAC 2단계).

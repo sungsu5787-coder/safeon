@@ -98,11 +98,60 @@ function verifyAdminToken(token) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// ── 사용자 계정 시스템 (RBAC) — 비번 해시 + 세션 토큰 ────────
+const SESSION_TTL_MS  = 8 * 60 * 60 * 1000; // 8시간
+const USERS_COLLECTION = 'users';
+
+// 비밀번호 해시: scrypt + 무작위 salt (평문 저장 금지)
+function hashPassword(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(pw), salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
+function verifyPassword(pw, stored) {
+  if (!stored || typeof stored !== 'string' || !stored.includes(':')) return false;
+  const [salt, hash] = stored.split(':');
+  const test = crypto.scryptSync(String(pw), salt, 64).toString('hex');
+  const a = Buffer.from(hash, 'hex'), b = Buffer.from(test, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// 세션 토큰: base64url(payload).HMAC — 변조 방지, 별도 저장소 불필요
+function signSession(payload) {
+  const body = { ...payload, exp: Date.now() + SESSION_TTL_MS };
+  const data = Buffer.from(JSON.stringify(body)).toString('base64url');
+  const sig  = crypto.createHmac('sha256', ADMIN_PASSWORD).update(data).digest('hex');
+  return `${data}.${sig}`;
+}
+function verifySession(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+  const [data, sig] = token.split('.');
+  const expected = crypto.createHmac('sha256', ADMIN_PASSWORD).update(data).digest('hex');
+  const a = Buffer.from(sig), b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const body = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
+    if (!body.exp || Date.now() > body.exp) return null;
+    return body;
+  } catch { return null; }
+}
+
 function requireAdmin(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  if (!verifyAdminToken(token)) return res.status(401).json({ error: '인증이 필요합니다.' });
-  next();
+  const session = verifySession(token);
+  if (session) { req.user = session; return next(); }
+  // 레거시 단일 비밀번호 토큰 하위호환 (기존 통계 화면)
+  if (verifyAdminToken(token)) { req.user = { role: 'admin', name: '관리자', legacy: true }; return next(); }
+  return res.status(401).json({ error: '인증이 필요합니다.' });
+}
+
+function requireRole(role) {
+  return (req, res, next) => {
+    if (!req.user || req.user.role !== role)
+      return res.status(403).json({ error: '권한이 없습니다.' });
+    next();
+  };
 }
 
 // ── 로컬 JSON 폴백 ────────────────────────────────────────────
@@ -495,12 +544,123 @@ app.get('/api/history', async (req, res) => {
 });
 
 // ── 관리자 로그인 / 통계 ──────────────────────────────────────
+// (레거시) 단일 비밀번호 로그인 — 하위호환용. 신규는 /api/auth/login 사용
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD)
     return res.status(401).json({ error: '비밀번호가 올바르지 않습니다.' });
   const token = signAdminToken();
   res.json({ token, expiresAt: Date.now() + ADMIN_TOKEN_TTL_MS });
+});
+
+// ── 사용자 계정 API (Admin SDK 전용) ─────────────────────────
+async function findUserByUsername(username) {
+  const snap = await db.collection(USERS_COLLECTION).where('username', '==', username).limit(1).get();
+  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
+}
+
+// 로그인 + 최초 부트스트랩(users 비면 admin/ADMIN_PASSWORD로 첫 관리자 자동 생성)
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password)
+    return res.status(400).json({ error: '아이디와 비밀번호를 입력하세요.' });
+  if (!firebaseReady)
+    return res.status(503).json({ error: '서버 계정 저장소(Admin SDK)가 설정되지 않았습니다. FIREBASE_SERVICE_ACCOUNT를 확인하세요.' });
+
+  try {
+    let user = await findUserByUsername(username);
+
+    if (!user) {
+      const empty = (await db.collection(USERS_COLLECTION).limit(1).get()).empty;
+      if (empty && username === 'admin' && password === ADMIN_PASSWORD) {
+        const doc = {
+          username: 'admin', name: '관리자', role: 'admin', active: true,
+          passwordHash: hashPassword(ADMIN_PASSWORD), createdAt: new Date().toISOString()
+        };
+        const ref = await db.collection(USERS_COLLECTION).add(doc);
+        user = { id: ref.id, ...doc };
+      } else {
+        return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+      }
+    }
+
+    if (user.active === false) return res.status(403).json({ error: '비활성화된 계정입니다.' });
+    if (!verifyPassword(password, user.passwordHash))
+      return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+
+    const profile = { uid: user.id, username: user.username, name: user.name, role: user.role };
+    res.json({ token: signSession(profile), user: profile, expiresAt: Date.now() + SESSION_TTL_MS });
+  } catch (e) {
+    console.error('[Auth] 로그인 실패:', e.message);
+    res.status(500).json({ error: '로그인 처리 중 오류가 발생했습니다.' });
+  }
+});
+
+// 계정 목록 (비밀번호 해시 제외)
+app.get('/api/admin/users', requireAdmin, requireRole('admin'), async (req, res) => {
+  if (!firebaseReady) return res.status(503).json({ error: 'Admin SDK가 설정되지 않았습니다.' });
+  try {
+    const snap = await db.collection(USERS_COLLECTION).get();
+    const users = snap.docs.map(d => {
+      const u = d.data();
+      return { uid: d.id, username: u.username, name: u.name, role: u.role, active: u.active !== false, createdAt: u.createdAt };
+    });
+    res.json({ users });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 계정 추가
+app.post('/api/admin/users', requireAdmin, requireRole('admin'), async (req, res) => {
+  if (!firebaseReady) return res.status(503).json({ error: 'Admin SDK가 설정되지 않았습니다.' });
+  const { username, name, password, role } = req.body || {};
+  if (!username || !name || !password)
+    return res.status(400).json({ error: '아이디·이름·비밀번호는 필수입니다.' });
+  if (String(password).length < 6)
+    return res.status(400).json({ error: '비밀번호는 6자 이상이어야 합니다.' });
+  try {
+    if (await findUserByUsername(username))
+      return res.status(409).json({ error: '이미 존재하는 아이디입니다.' });
+    const doc = {
+      username, name, role: role === 'admin' ? 'admin' : 'staff', active: true,
+      passwordHash: hashPassword(password), createdAt: new Date().toISOString()
+    };
+    const ref = await db.collection(USERS_COLLECTION).add(doc);
+    res.json({ uid: ref.id, username, name, role: doc.role, active: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 계정 수정 (활성 토글 / 비번 재설정 / 이름·역할 변경) — 마지막 관리자 보호
+app.patch('/api/admin/users/:id', requireAdmin, requireRole('admin'), async (req, res) => {
+  if (!firebaseReady) return res.status(503).json({ error: 'Admin SDK가 설정되지 않았습니다.' });
+  const { id } = req.params;
+  const { active, password, name, role } = req.body || {};
+  try {
+    const ref  = db.collection(USERS_COLLECTION).doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: '계정을 찾을 수 없습니다.' });
+    const cur = snap.data();
+
+    const update = {};
+    if (typeof active === 'boolean') update.active = active;
+    if (name) update.name = name;
+    if (role) update.role = role === 'admin' ? 'admin' : 'staff';
+    if (password) {
+      if (String(password).length < 6) return res.status(400).json({ error: '비밀번호는 6자 이상이어야 합니다.' });
+      update.passwordHash = hashPassword(password);
+    }
+
+    // 마지막 활성 관리자를 비활성/강등하지 못하게 보호
+    const losingAdmin = (update.active === false || update.role === 'staff') && cur.role === 'admin';
+    if (losingAdmin) {
+      const admins = await db.collection(USERS_COLLECTION).where('role', '==', 'admin').get();
+      const activeAdmins = admins.docs.filter(d => d.data().active !== false);
+      if (activeAdmins.length <= 1)
+        return res.status(400).json({ error: '마지막 관리자는 비활성화하거나 강등할 수 없습니다.' });
+    }
+
+    await ref.update(update);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 async function _fetchAll(col) {
