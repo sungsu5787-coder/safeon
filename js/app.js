@@ -331,6 +331,7 @@ const App = {
   renderLoginChip() {
     const chip = document.getElementById('home-login-chip');
     if (!chip) return;
+    if (this.guestMode) { chip.classList.add('hidden'); return; } // 게스트는 로그인 대상 아님
     const u = window.Admin && Admin.currentUser;
     if (u && u.uid) {
       chip.innerHTML = `👤 <b>${u.name}</b> · ${u.role === 'admin' ? '관리자' : '부사수'}<span class="hlc-act">로그아웃</span>`;
