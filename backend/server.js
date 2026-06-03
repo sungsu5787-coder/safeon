@@ -44,8 +44,7 @@ let firebaseInitDetail = { step: 'start' }; // [임시 진단] 확인 후 제거
       console.warn('[Firebase] FIREBASE_SERVICE_ACCOUNT 파싱 실패:', e.message);
     }
   } else {
-    const allKeys = Object.keys(process.env).sort();
-    firebaseInitDetail = { source: 'none', envKeys: allKeys };
+    firebaseInitDetail = { source: 'none' };
   }
 
   // 2. 로컬 파일 (개발 환경)
