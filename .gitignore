@@ -4,6 +4,9 @@
 *.backup
 *.log
 
+# 인쇄 테스트 산출물 (앞에 _ 붙은 임시 PDF)
+_*.pdf
+
 # PowerShell 스크립트 (로컬 서버용)
 *.ps1
 *.bat
