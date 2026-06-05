@@ -91,9 +91,7 @@ const Admin = {
   logout() {
     this.token = '';
     this.currentUser = null;
-    this._showLogin();
-    if (window.App && App.renderLoginChip) App.renderLoginChip();
-    App.showToast('로그아웃되었습니다.');
+    location.reload();   // 하드 게이트로 복귀 (로그인해야 다시 진입)
   },
 
   _showError(msg) {

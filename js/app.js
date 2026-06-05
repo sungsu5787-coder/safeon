@@ -22,6 +22,8 @@ const App = {
   },
 
   async init() {
+    if (this._inited) return;   // 게이트 통과 후 중복 init 방지
+    this._inited = true;
     this.initGuestMode();   // 가장 먼저 실행
     this.setupNavigation();
     this.setupDate();
@@ -55,8 +57,6 @@ const App = {
     if (_p.get('mode') === 'tbm-view' && _p.get('id')) {
       TBM.initSharedView(_p.get('id'), _p.get('lang') || 'ko');
     }
-
-    this.maybeLoginPrompt();   // 시작 시 로그인 권유(소프트, 잠금 없음)
   },
 
   // ── 게스트 모드 초기화 ───────────────────────────────────
@@ -355,32 +355,59 @@ const App = {
     }
   },
 
-  // ── 시작 시 로그인 권유(소프트) ───────────────────────────
-  // 잠금 없음. 비로그인·비게스트·일반 진입일 때 노출, 사용자가 닫거나 로그인하면 세션 동안 재노출 안 함.
-  // (플래그는 '표시' 시점이 아니라 '사용자 행동' 시점에 찍는다 — SW 자동 새로고침에도 카드가 살아남도록)
-  maybeLoginPrompt() {
-    if (this.guestMode) return;                                  // 게스트 우회
-    const mode = new URLSearchParams(location.search).get('mode');
-    if (mode === 'tbm-view') return;                             // QR 공유 뷰어 우회
-    if (window.Admin && Admin.token) return;                     // 이미 로그인됨
-    if (sessionStorage.getItem('sfo_login_nudge')) return;       // 이미 닫음/로그인함
-    const el = document.getElementById('login-prompt');
-    if (!el) return;
-    el.classList.remove('hidden');
-    requestAnimationFrame(() => el.classList.add('show'));
+  // ── 앱 시작 로그인 게이트 ─────────────────────────────────
+  // 로그인해야 앱(init)이 시작됨. 게스트(?guest=1)·QR 공유(?mode=tbm-view)·기존 세션은 우회.
+  bootGate() {
+    const params = new URLSearchParams(location.search);
+    const bypass = params.get('guest') === '1' || params.get('mode') === 'tbm-view';
+    if (bypass || (window.Admin && Admin.token)) { this.init(); return; }
+    this.showGate();
   },
 
-  dismissLoginPrompt() {
-    sessionStorage.setItem('sfo_login_nudge', '1');   // 사용자가 닫음 → 세션 동안 재노출 안 함
-    const el = document.getElementById('login-prompt');
-    if (!el) return;
-    el.classList.remove('show');
-    setTimeout(() => el.classList.add('hidden'), 200);
+  showGate() {
+    const gate = document.getElementById('login-gate');
+    if (!gate) { this.init(); return; }   // 게이트 마크업 없으면 앱을 잠그지 않음(페일오픈)
+    gate.classList.remove('hidden');
+    const u = document.getElementById('gate-username');
+    if (u) setTimeout(() => u.focus(), 100);
   },
 
-  loginFromPrompt() {
-    this.dismissLoginPrompt();
-    this.navigateTo('admin');
+  toggleGatePassword(show) {
+    const p = document.getElementById('gate-password');
+    if (p) p.type = show ? 'text' : 'password';
+  },
+
+  async gateLogin() {
+    const uInput = document.getElementById('gate-username');
+    const pInput = document.getElementById('gate-password');
+    const username = (uInput.value || '').trim();
+    const password = (pInput.value || '').trim();
+    if (!username || !password) { this._gateError('아이디와 비밀번호를 입력하세요.'); return; }
+
+    const btn = document.getElementById('gate-login-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '로그인 중…'; }
+    try {
+      const apiBase = window.API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { this._gateError(data.error || '로그인에 실패했습니다.'); return; }
+      if (window.Admin) { Admin.token = data.token; Admin.currentUser = data.user; }
+      document.getElementById('login-gate').classList.add('hidden');
+      this.init();
+    } catch (e) {
+      this._gateError('로그인 중 오류가 발생했습니다.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '로그인'; }
+    }
+  },
+
+  _gateError(msg) {
+    const err = document.getElementById('gate-error');
+    if (err) { err.textContent = msg; err.classList.remove('hidden'); }
   },
 
   // 로그인 상태면 문서에 작성자 정보를 첨부 (미로그인 시 익명 유지)
@@ -2537,5 +2564,5 @@ const App = {
   }
 };
 
-// Initialize app when DOM ready
-document.addEventListener('DOMContentLoaded', () => App.init());
+// Initialize app when DOM ready — 로그인 게이트 경유
+document.addEventListener('DOMContentLoaded', () => App.bootGate());

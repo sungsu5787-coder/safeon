@@ -106,3 +106,10 @@
 - **수정**: 플래그를 '표시 시점'이 아니라 '사용자 행동 시점'(dismissLoginPrompt/loginFromPrompt)에 찍도록 이동. SW 재로드를 거쳐도 카드가 남고, 닫거나 로그인해야 세션 동안 재노출 안 함.
 - **검증**: 로컬 3100 + puppeteer-core(시스템 Chrome) → SHOWN:true, class 'login-prompt show', opacity 1, cardVisible true, nudgeFlag null. 스크린샷으로 렌더 육안 확인.
 - SW 캐시 v48→v49만 상승(앱 버전 문구 1.7.4 유지 — 같은 기능 교정이라 changelog 중복 방지). 검증용 임시파일 _check_prompt.js·_prompt_shot.png는 커밋 제외.
+
+## 소프트 권유 → 하드 로그인 게이트 전환 (2026-06-05, v1.7.5)
+- **사용자 결정**: "그냥 들어가는 건 이상하다" → 하드 게이트. 계정 없는 사람=의도된 차단(등록된 사람만). QR·게스트는 우회 유지. + 비밀번호 표시 체크박스, "작성기록 남아요" 문구 삭제.
+- **구현**(app.js 중심): bootGate()가 부팅 분기 — 게스트/?mode=tbm-view/기존 Admin.token이면 init(), 아니면 showGate(). gateLogin()이 /api/auth/login 호출 후 Admin.token/currentUser 세팅(admin.js의 setter 재사용)하고 gate 숨김→init(). toggleGatePassword(show)로 비번 input type 토글. init()에 `_inited` 가드(게이트 통과 후 중복 init 방지). 부팅 라인 App.bootGate() 경유. 소프트 권유(maybeLoginPrompt 등)·#login-prompt·.login-prompt* 전부 제거.
+- **admin.js**: logout()을 location.reload()로 변경 → 하드 게이트로 복귀(로그인해야 재진입). 리로드라 _showLogin/칩/토스트 불필요.
+- **검증**: puppeteer-core+시스템 Chrome 로컬. 차단 화면(전체덮음, app 미init), 비번표시 password→text→password, admin/safeon-admin 로그인→게이트숨김·토큰·관리자/admin·홈 로드. 스크린샷 2종 육안 확인. (_inited 플래그는 로그인 직후 1회 리로드로 리셋되나 무해 — _diag로 같은 컨텍스트 _inited:true 확정.) 라이브는 실계정 필요라 차단 노출만 확인 예정.
+- **운영 전제**: 게이트라 계정 있는 사람만 진입. 관리자가 사용자관리(서비스계정 firebase:true라 정상 동작)에서 현장 작업자 계정을 만들어야 함.

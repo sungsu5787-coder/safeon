@@ -109,3 +109,14 @@
 - [x] sw 캐시 v47→v48, package 1.7.3→1.7.4, changelog 1.7.4 항목 추가, index.html SW_URL·주석 갱신
 - [x] 로컬 구동 검증 — 포트 3100에서 login-prompt 마크업·maybeLoginPrompt·css 서빙 확인 (3000은 타 폴더 서버 점유)
 - [ ] 검증: 실서버에서 시작 시 권유 노출→[나중에] 닫힘→[로그인] 흐름 (사용자)
+
+## 앱 시작 하드 로그인 게이트 (2026-06-05, v1.7.5)
+- 소프트 권유 → 하드 게이트로 전환. 사용자 결정: 등록된 사람만 접속(의도된 차단), QR(?mode=tbm-view)·게스트(?guest=1) 우회 유지.
+- [x] index.html: `#login-gate` 차단형 로그인(아이디/비번/**비밀번호 표시 체크박스**/로그인). "작성기록" 문구 없음
+- [x] css: `.login-gate*` 풀스크린 차단 스타일
+- [x] app.js: bootGate/showGate/gateLogin/_gateError/toggleGatePassword, init() `_inited` 중복가드, 부팅 bootGate 경유, 소프트 권유 제거
+- [x] admin.js: logout → location.reload()로 게이트 복귀
+- [x] sw v49→v50, package 1.7.5, changelog 1.7.5 추가
+- [x] 로컬 브라우저 검증(puppeteer+Chrome): 차단(coversViewport·app 미init)·비번표시 토글·admin/safeon-admin 로그인→앱 진입. 스크린샷 2종 확인
+- [ ] 라이브: 게이트 차단 노출 확인(실계정 로그인 흐름은 사용자)
+- [ ] 관리자: 사용자관리에서 현장 작업자 계정 생성(게이트라 계정 있어야 진입)

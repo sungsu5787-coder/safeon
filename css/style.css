@@ -5849,8 +5849,8 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   margin: 12px 0 0;
 }
 
-/* 시작 시 로그인 권유 — 잠금 없는 소프트 안내(바깥 탭하면 닫힘) */
-.login-prompt {
+/* 앱 시작 로그인 게이트 — 전체 화면을 덮어 로그인 전 접근 차단 */
+.login-gate {
   position: fixed;
   inset: 0;
   z-index: 1400;
@@ -5858,60 +5858,68 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.35);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  background: var(--gray-100);
 }
-.login-prompt.show { opacity: 1; }
-.login-prompt-card {
+.login-gate-card {
   width: 100%;
-  max-width: 320px;
+  max-width: 340px;
   background: var(--white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  padding: 28px 22px;
+  padding: 32px 24px;
   text-align: center;
-  transform: translateY(8px);
-  transition: transform 0.2s ease;
 }
-.login-prompt.show .login-prompt-card { transform: translateY(0); }
-.login-prompt-icon { font-size: 32px; margin-bottom: 10px; }
-.login-prompt-title {
-  font-size: 1.1rem;
+.login-gate-icon { color: var(--primary); margin-bottom: 12px; }
+.login-gate-title {
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--gray-900);
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
-.login-prompt-desc {
+.login-gate-desc {
   font-size: 0.85rem;
   color: var(--gray-600);
   margin: 0 0 20px;
-  line-height: 1.5;
 }
-.login-prompt-actions { display: flex; gap: 10px; }
-.login-prompt-btn-ghost {
-  flex: 1;
-  padding: 12px;
+.login-gate-input {
+  width: 100%;
+  padding: 12px 14px;
   border: 1px solid var(--gray-300);
-  background: var(--white);
-  color: var(--gray-700);
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
+  margin-bottom: 12px;
+  box-sizing: border-box;
 }
-.login-prompt-btn-primary {
-  flex: 1;
+.login-gate-input:focus { outline: none; border-color: var(--primary); }
+.login-gate-showpw {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--gray-700);
+  margin: 0 2px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.login-gate-showpw input { width: 16px; height: 16px; cursor: pointer; }
+.login-gate-btn {
+  width: 100%;
   padding: 12px;
-  border: none;
   background: var(--primary);
   color: var(--white);
+  border: none;
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
 }
-.login-prompt-btn-primary:active { background: var(--primary-dark); }
+.login-gate-btn:active { background: var(--primary-dark); }
+.login-gate-btn:disabled { opacity: 0.6; cursor: default; }
+.login-gate-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 12px 0 0;
+}
 
 .admin-dash-head {
   display: flex;
