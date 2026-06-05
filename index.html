@@ -1199,7 +1199,7 @@
             <div class="wi-list-title">📋 등록된 사업장 목록</div>
             <button class="btn-wi-print" onclick="WorkplaceInfo.print()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-              출력
+              인쇄
             </button>
           </div>
           <div id="wi-list" class="wi-list">
@@ -1355,7 +1355,7 @@
             <div class="sr-ctrl-right">
               <button class="btn-sr-print" onclick="SafetyReport.print()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                출력
+                인쇄
               </button>
             </div>
           </div>
@@ -1383,7 +1383,7 @@
                 </button>
                 <button id="btn-print-detail" class="btn-detail-action btn-detail-print" onclick="App.printDetail()">
                   <span class="detail-action-icon">🖨️</span>
-                  <span class="detail-action-label">인쇄·PDF</span>
+                  <span class="detail-action-label">인쇄</span>
                 </button>
               </div>
               <button id="btn-delete-record" class="btn-detail-delete">
@@ -1454,10 +1454,16 @@
         <p class="login-gate-desc">로그인 후 이용할 수 있습니다.</p>
         <input type="text" id="gate-username" class="login-gate-input" placeholder="아이디" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('gate-password').focus()">
         <input type="password" id="gate-password" class="login-gate-input" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.gateLogin()">
-        <label class="login-gate-showpw">
-          <input type="checkbox" id="gate-showpw" onchange="App.toggleGatePassword(this.checked)">
-          <span>비밀번호 표시</span>
-        </label>
+        <div class="login-gate-opts">
+          <label class="login-gate-check">
+            <input type="checkbox" id="gate-showpw" onchange="App.toggleGatePassword(this.checked)">
+            <span>비밀번호 표시</span>
+          </label>
+          <label class="login-gate-check">
+            <input type="checkbox" id="gate-remember">
+            <span>자동 로그인</span>
+          </label>
+        </div>
         <button id="gate-login-btn" class="login-gate-btn" onclick="App.gateLogin()">로그인</button>
         <p id="gate-error" class="login-gate-error hidden"></p>
       </div>
@@ -1829,8 +1835,8 @@
   (function() {
     if (!('serviceWorker' in navigator)) return;
 
-    // SW 등록 (sw.js?v=50 - 브라우저의 HTTP 캐시 강제 무효화)
-    const SW_URL = 'sw.js?v=50';
+    // SW 등록 (sw.js?v=51 - 브라우저의 HTTP 캐시 강제 무효화)
+    const SW_URL = 'sw.js?v=51';
 
     window.addEventListener('load', function() {
       navigator.serviceWorker.register(SW_URL, { updateViaCache: 'none' })

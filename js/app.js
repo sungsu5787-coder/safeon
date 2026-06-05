@@ -380,8 +380,10 @@ const App = {
   async gateLogin() {
     const uInput = document.getElementById('gate-username');
     const pInput = document.getElementById('gate-password');
+    const rememberEl = document.getElementById('gate-remember');
     const username = (uInput.value || '').trim();
     const password = (pInput.value || '').trim();
+    const remember = !!(rememberEl && rememberEl.checked);
     if (!username || !password) { this._gateError('아이디와 비밀번호를 입력하세요.'); return; }
 
     const btn = document.getElementById('gate-login-btn');
@@ -391,11 +393,18 @@ const App = {
       const res = await fetch(`${apiBase}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, remember })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { this._gateError(data.error || '로그인에 실패했습니다.'); return; }
-      if (window.Admin) { Admin.token = data.token; Admin.currentUser = data.user; }
+      if (window.Admin) {
+        Admin.token = data.token; Admin.currentUser = data.user;
+        // 자동 로그인 체크 시 localStorage에 보관 → 앱 재시작해도 30일간 자동 진입
+        if (remember) {
+          localStorage.setItem(Admin.TOKEN_KEY, data.token);
+          localStorage.setItem(Admin.USER_KEY, JSON.stringify(data.user));
+        }
+      }
       document.getElementById('login-gate').classList.add('hidden');
       this.init();
     } catch (e) {
@@ -2005,6 +2014,27 @@ const App = {
       window.print();
       setTimeout(() => { printArea.innerHTML = ''; printArea.style.cssText = ''; }, 1000);
     }, 150);
+  },
+
+  // ── 자체 완결 HTML 문서를 앱 안에서 인쇄 (숨김 iframe) ──────
+  // window.open('_blank')는 설치형 PWA에서 앱 밖(브라우저)으로 나가므로 iframe으로 대체.
+  // html 은 <script>window.print()</script> 없이 전달 — 인쇄는 여기서 1회만 트리거.
+  printHtmlDoc(html) {
+    const old = document.getElementById('_print_iframe');
+    if (old) old.remove();
+    const iframe = document.createElement('iframe');
+    iframe.id = '_print_iframe';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;border:0;opacity:0;pointer-events:none';
+    iframe.onload = () => {
+      setTimeout(() => {
+        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+        catch (e) { console.warn('[인쇄] 실패', e); this.showToast('인쇄를 시작할 수 없습니다'); }
+        setTimeout(() => { try { iframe.remove(); } catch (_) {} }, 1500);
+      }, 250);
+    };
+    document.body.appendChild(iframe);
+    iframe.srcdoc = html;
   },
 
   // ── 텍스트 표 생성 유틸 ──────────────────────────────────

@@ -120,3 +120,12 @@
 - [x] 로컬 브라우저 검증(puppeteer+Chrome): 차단(coversViewport·app 미init)·비번표시 토글·admin/safeon-admin 로그인→앱 진입. 스크린샷 2종 확인
 - [ ] 라이브: 게이트 차단 노출 확인(실계정 로그인 흐름은 사용자)
 - [ ] 관리자: 사용자관리에서 현장 작업자 계정 생성(게이트라 계정 있어야 진입)
+
+## 자동 로그인 + 인쇄 통합/버그수정 (2026-06-05, v1.7.6)
+- [x] 자동 로그인: 게이트에 '자동 로그인' 체크박스. 체크 시 backend 30일 토큰(REMEMBER_TTL_MS) + localStorage 보관 → 앱 재시작에도 자동 진입. admin.js token/currentUser 게터가 session→local 폴백, logout 시 둘 다 비움
+- [x] 인쇄 버그: SafetyReport/WorkplaceInfo/ProposalsView의 window.open('_blank') → App.printHtmlDoc(숨김 iframe, srcdoc)로 교체. 설치형 PWA에서 앱 밖으로 나가던 문제 해결
+- [x] 인쇄 라벨 '인쇄'로 통일(출력 2곳·보고서 출력·인쇄·PDF → 인쇄)
+- [x] backend: signSession(payload, ttl), /api/auth/login remember 처리
+- [x] sw v50→v51, package 1.7.6, changelog 추가
+- [x] 브라우저 검증(puppeteer+Chrome) PASS: 자동로그인 ON 재시작 무게이트·OFF 재시작 게이트, 인쇄 팝업無·iframe생성·앱내 유지. 게이트 2체크박스 스크린샷 확인
+- [ ] 라이브: 자동로그인·인쇄 실기기 확인(사용자)

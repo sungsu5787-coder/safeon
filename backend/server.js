@@ -100,6 +100,7 @@ function verifyAdminToken(token) {
 
 // ── 사용자 계정 시스템 (RBAC) — 비번 해시 + 세션 토큰 ────────
 const SESSION_TTL_MS  = 8 * 60 * 60 * 1000; // 8시간
+const REMEMBER_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30일 (자동 로그인 체크 시)
 const USERS_COLLECTION = 'users';
 
 // 비밀번호 해시: scrypt + 무작위 salt (평문 저장 금지)
@@ -117,8 +118,8 @@ function verifyPassword(pw, stored) {
 }
 
 // 세션 토큰: base64url(payload).HMAC — 변조 방지, 별도 저장소 불필요
-function signSession(payload) {
-  const body = { ...payload, exp: Date.now() + SESSION_TTL_MS };
+function signSession(payload, ttlMs = SESSION_TTL_MS) {
+  const body = { ...payload, exp: Date.now() + ttlMs };
   const data = Buffer.from(JSON.stringify(body)).toString('base64url');
   const sig  = crypto.createHmac('sha256', ADMIN_PASSWORD).update(data).digest('hex');
   return `${data}.${sig}`;
@@ -561,15 +562,18 @@ async function findUserByUsername(username) {
 
 // 로그인 + 최초 부트스트랩(users 비면 admin/ADMIN_PASSWORD로 첫 관리자 자동 생성)
 app.post('/api/auth/login', async (req, res) => {
-  const { username, password } = req.body || {};
+  const { username, password, remember } = req.body || {};
   if (!username || !password)
     return res.status(400).json({ error: '아이디와 비밀번호를 입력하세요.' });
+
+  // 자동 로그인 체크 시 30일 토큰, 아니면 8시간
+  const ttl = remember ? REMEMBER_TTL_MS : SESSION_TTL_MS;
 
   // Admin SDK 미설정 → 레거시 단일 관리자 모드 (계정 기능만 잠금, 통계 등 기존 기능 유지)
   if (!firebaseReady) {
     if (username === 'admin' && password === ADMIN_PASSWORD) {
       const profile = { uid: 'legacy-admin', username: 'admin', name: '관리자', role: 'admin' };
-      return res.json({ token: signSession(profile), user: profile, expiresAt: Date.now() + SESSION_TTL_MS });
+      return res.json({ token: signSession(profile, ttl), user: profile, expiresAt: Date.now() + ttl });
     }
     return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
   }
@@ -596,7 +600,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
 
     const profile = { uid: user.id, username: user.username, name: user.name, role: user.role };
-    res.json({ token: signSession(profile), user: profile, expiresAt: Date.now() + SESSION_TTL_MS });
+    res.json({ token: signSession(profile, ttl), user: profile, expiresAt: Date.now() + ttl });
   } catch (e) {
     console.error('[Auth] 로그인 실패:', e.message);
     res.status(500).json({ error: '로그인 처리 중 오류가 발생했습니다.' });

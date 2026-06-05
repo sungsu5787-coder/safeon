@@ -5891,17 +5891,22 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   box-sizing: border-box;
 }
 .login-gate-input:focus { outline: none; border-color: var(--primary); }
-.login-gate-showpw {
+.login-gate-opts {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 2px 16px;
+}
+.login-gate-check {
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: 0.85rem;
   color: var(--gray-700);
-  margin: 0 2px 16px;
   cursor: pointer;
   user-select: none;
 }
-.login-gate-showpw input { width: 16px; height: 16px; cursor: pointer; }
+.login-gate-check input { width: 16px; height: 16px; cursor: pointer; }
 .login-gate-btn {
   width: 100%;
   padding: 12px;

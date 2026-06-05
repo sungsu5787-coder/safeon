@@ -430,10 +430,7 @@ const SafetyReport = {
     const st = this._stats();
     const d  = this._data;
 
-    const win = window.open('', '_blank', 'width=900,height=700');
-    if (!win) { App.showToast('팝업이 차단되었습니다. 팝업을 허용해 주세요.'); return; }
-
-    win.document.write(`<!DOCTYPE html>
+    App.printHtmlDoc(`<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -664,9 +661,7 @@ ${d.workplan.length ? `
 </div>` : ''}
 
 <div class="footer">SAMHWA SafeOn &nbsp;|&nbsp; ${monthLabel} 안전점검현황 &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</div>
-<script>window.onload = () => { window.print(); };<\/script>
 </body></html>`);
-    win.document.close();
   },
 
   _buildCompare(st, pst, curLabel, prevLabel) {

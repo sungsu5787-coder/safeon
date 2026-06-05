@@ -181,9 +181,6 @@ const WorkplaceInfo = {
   print() {
     if (!this._items.length) { App.showToast('등록된 사업장이 없습니다'); return; }
 
-    const win = window.open('', '_blank', 'width=900,height=700');
-    if (!win) { App.showToast('팝업이 차단되었습니다. 팝업을 허용해 주세요.'); return; }
-
     const rows = this._items.map((item, idx) => {
       const total = (parseInt(item.staff) || 0) + (parseInt(item.contract) || 0);
       return `<tr>
@@ -206,7 +203,7 @@ const WorkplaceInfo = {
     const totalContract = this._items.reduce((s, i) => s + (parseInt(i.contract) || 0), 0);
     const grandTotal    = totalStaff + totalContract;
 
-    win.document.write(`<!DOCTYPE html>
+    App.printHtmlDoc(`<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -275,9 +272,7 @@ const WorkplaceInfo = {
   </tfoot>
 </table>
 <div class="footer">SAMHWA SafeOn &nbsp;|&nbsp; 사업장현황 &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</div>
-<script>window.onload = () => { window.print(); };<\/script>
 </body></html>`);
-    win.document.close();
   },
 
   _esc(s) {

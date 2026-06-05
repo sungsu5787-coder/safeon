@@ -113,3 +113,8 @@
 - **admin.js**: logout()을 location.reload()로 변경 → 하드 게이트로 복귀(로그인해야 재진입). 리로드라 _showLogin/칩/토스트 불필요.
 - **검증**: puppeteer-core+시스템 Chrome 로컬. 차단 화면(전체덮음, app 미init), 비번표시 password→text→password, admin/safeon-admin 로그인→게이트숨김·토큰·관리자/admin·홈 로드. 스크린샷 2종 육안 확인. (_inited 플래그는 로그인 직후 1회 리로드로 리셋되나 무해 — _diag로 같은 컨텍스트 _inited:true 확정.) 라이브는 실계정 필요라 차단 노출만 확인 예정.
 - **운영 전제**: 게이트라 계정 있는 사람만 진입. 관리자가 사용자관리(서비스계정 firebase:true라 정상 동작)에서 현장 작업자 계정을 만들어야 함.
+
+## 자동 로그인 + 인쇄 통합/버그수정 (2026-06-05, v1.7.6)
+- **자동 로그인(30일)**: 게이트 `#gate-remember` 체크 시 gateLogin이 body에 remember:true 전송 → backend /api/auth/login이 ttl=REMEMBER_TTL_MS(30일) 토큰 발급(signSession에 ttl 인자 추가). 프론트는 토큰·user를 localStorage에도 저장. admin.js token/currentUser 게터를 sessionStorage→localStorage 폴백으로 변경, 셋터(logout)는 둘 다 제거. 미체크 시 기존 sessionStorage(8h)만. 검증: 새 BrowserContext 탭으로 앱 재시작 모사 — ON이면 무게이트 진입, OFF면 게이트 재노출.
+- **인쇄 버그/통합**: 근본원인 = SafetyReport/WorkplaceInfo/ProposalsView가 window.open('','_blank')로 새 창을 띄움 → 설치형 PWA(standalone)에선 시스템 브라우저로 나가버림. 수정 = App.printHtmlDoc(html) 헬퍼(숨김 iframe + srcdoc, onload 후 contentWindow.print(), 1.5s 뒤 제거)로 교체. 각 함수의 window.open/win.document.write/close/embedded `<script>window.print()</script>` 제거. detail/history는 기존 #print-area+window.print() 유지(앱 CSS 의존이라 iframe 불가). 라벨은 '인쇄'로 통일.
+- **검증**: puppeteer-core+Chrome. 인쇄 시 page 'popup' 이벤트 미발생 + #_print_iframe 생성(사업장현황 포함) + URL 불변 = 앱 안에서 인쇄. PASS.

@@ -3,19 +3,20 @@ const Admin = {
   TOKEN_KEY: 'safeon_admin_token',
   USER_KEY:  'safeon_admin_user',
 
-  get token() { return sessionStorage.getItem(this.TOKEN_KEY) || ''; },
+  // 세션(sessionStorage) 우선, 자동 로그인(localStorage) 폴백
+  get token() { return sessionStorage.getItem(this.TOKEN_KEY) || localStorage.getItem(this.TOKEN_KEY) || ''; },
   set token(v) {
     if (v) sessionStorage.setItem(this.TOKEN_KEY, v);
-    else sessionStorage.removeItem(this.TOKEN_KEY);
+    else { sessionStorage.removeItem(this.TOKEN_KEY); localStorage.removeItem(this.TOKEN_KEY); }
   },
 
   get currentUser() {
-    try { return JSON.parse(sessionStorage.getItem(this.USER_KEY) || 'null'); }
+    try { return JSON.parse(sessionStorage.getItem(this.USER_KEY) || localStorage.getItem(this.USER_KEY) || 'null'); }
     catch { return null; }
   },
   set currentUser(v) {
     if (v) sessionStorage.setItem(this.USER_KEY, JSON.stringify(v));
-    else sessionStorage.removeItem(this.USER_KEY);
+    else { sessionStorage.removeItem(this.USER_KEY); localStorage.removeItem(this.USER_KEY); }
   },
 
   onPageShow() {

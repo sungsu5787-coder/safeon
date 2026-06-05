@@ -294,7 +294,7 @@ const ProposalsView = {
             <span>제안자 <b>${ranked.length}</b>명</span>
             <span>완료율 <b>${rate}%</b></span>
           </div>
-          <button class="prop-rank-print-btn" onclick="ProposalsView.showPrintPreview()">🖨️ 보고서 출력</button>
+          <button class="prop-rank-print-btn" onclick="ProposalsView.showPrintPreview()">🖨️ 보고서 인쇄</button>
         </div>
         <div class="prop-rank-table-wrap">
           <table class="prop-rank-table">
@@ -389,8 +389,7 @@ const ProposalsView = {
   printReport() {
     const content = document.getElementById('proposals-print-content');
     if (!content) return;
-    const win = window.open('', '_blank', 'width=900,height=750');
-    win.document.write(`<!DOCTYPE html>
+    App.printHtmlDoc(`<!DOCTYPE html>
 <html lang="ko"><head>
 <meta charset="UTF-8">
 <title>제안 활동 현황 보고서</title>
@@ -414,8 +413,5 @@ body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:12px
 @media print{body{padding:10px}}
 </style>
 </head><body>${content.innerHTML}</body></html>`);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 400);
   }
 };
