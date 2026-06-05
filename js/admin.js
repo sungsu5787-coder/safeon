@@ -174,20 +174,46 @@ const Admin = {
     const curVer = document.getElementById('admin-cur-ver');
     if (curVer && list.length) curVer.textContent = `현재 v${list[0].version}`;
 
+    const PAGE_SIZE = 4;
+    let page = 0;
+    const totalPages = Math.ceil(list.length / PAGE_SIZE);
+
     const box = document.getElementById('admin-changelog');
-    box.innerHTML = list.map(entry => {
-      const t = TYPE[entry.type] || { label: '변경', cls: 'chore' };
-      const items = (entry.changes || []).map(c => `<li>${c}</li>`).join('');
-      return `
-        <div class="admin-cl-entry">
-          <div class="admin-cl-head">
-            <span class="admin-cl-ver">v${entry.version}</span>
-            <span class="admin-cl-badge admin-cl-${t.cls}">${t.label}</span>
-            <span class="admin-cl-date">${entry.date || ''}</span>
-          </div>
-          <ul class="admin-cl-list">${items}</ul>
-        </div>`;
-    }).join('');
+
+    const renderPage = () => {
+      const start = page * PAGE_SIZE;
+      const entries = list.slice(start, start + PAGE_SIZE);
+
+      const entriesHtml = entries.map(entry => {
+        const t = TYPE[entry.type] || { label: '변경', cls: 'chore' };
+        const items = (entry.changes || []).map(c => `<li>${c}</li>`).join('');
+        return `
+          <div class="admin-cl-entry">
+            <div class="admin-cl-head">
+              <span class="admin-cl-ver">v${entry.version}</span>
+              <span class="admin-cl-badge admin-cl-${t.cls}">${t.label}</span>
+              <span class="admin-cl-date">${entry.date || ''}</span>
+            </div>
+            <ul class="admin-cl-list">${items}</ul>
+          </div>`;
+      }).join('');
+
+      const pagerHtml = totalPages > 1 ? `
+        <div class="cl-pager">
+          <button class="cl-pg-btn" id="cl-pg-prev" ${page === 0 ? 'disabled' : ''}>‹ 이전</button>
+          <span class="cl-pg-info">${page + 1} / ${totalPages}</span>
+          <button class="cl-pg-btn" id="cl-pg-next" ${page >= totalPages - 1 ? 'disabled' : ''}>다음 ›</button>
+        </div>` : '';
+
+      box.innerHTML = entriesHtml + pagerHtml;
+
+      if (totalPages > 1) {
+        box.querySelector('#cl-pg-prev')?.addEventListener('click', () => { page--; renderPage(); });
+        box.querySelector('#cl-pg-next')?.addEventListener('click', () => { page++; renderPage(); });
+      }
+    };
+
+    renderPage();
   },
 
   // ── 사용자 계정 관리 (admin 역할) ──────────────────────────

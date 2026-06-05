@@ -1028,8 +1028,8 @@ const WorkPlan = {
   .htitle{flex:1}
   .head .sub{font-size:10pt;color:#5f6368;margin-top:4px;white-space:nowrap}
   .appr{border-collapse:collapse;flex-shrink:0}
-  .appr th{background:#f1f3f4;font-size:8pt;font-weight:700;text-align:center;padding:3px 0;border:1px solid #444;width:58px}
-  .appr td{height:50px;border:1px solid #444;width:58px}
+  .appr th{background:#f1f3f4;font-size:7.5pt;font-weight:700;text-align:center;padding:2px 0;border:1px solid #444;width:44px}
+  .appr td{height:38px;border:1px solid #444;width:44px}
   hr{border:none;border-top:2px solid #202124;margin:8px 0 14px}
   .sec{margin-bottom:12px}
   .sec-t{font-size:11pt;font-weight:700;border-left:4px solid #0288d1;padding-left:8px;margin-bottom:6px;color:#0277bd}
@@ -1042,7 +1042,7 @@ const WorkPlan = {
   .photos{display:flex;flex-wrap:wrap;gap:6px}
   .photos img{width:31%;height:auto;border:1px solid #dadce0;border-radius:4px}
   .sigrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:6px;font-size:10pt}
-  .sigrow img{height:50px;border-bottom:1px solid #444}
+  .sigrow img{height:40px;border-bottom:1px solid #444}
   .law{margin-top:16px;padding:8px 10px;border:1px solid #e0e0e0;border-radius:5px;background:#fafafa;font-size:7.5pt;color:#666;line-height:1.5}
   .law b{color:#444}
   .foot{text-align:center;font-size:8pt;color:#9aa0a6;margin-top:10px;padding-top:6px;border-top:1px solid #dadce0}

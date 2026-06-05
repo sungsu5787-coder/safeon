@@ -884,21 +884,288 @@ const Accident = {
     document.getElementById('accident-date').value = new Date().toISOString().split('T')[0];
   },
 
-  // ── 공문서형 보고서 인쇄 (현재 입력값 기준 · 저장 불필요) ──────
+  // ── 공문서형 인쇄 — type별 분기 ──────────────────────────────
   printReport() {
+    const type = this.getSelectedType();
+    const v    = id => (document.getElementById(id)?.value || '').trim();
+    if (!type && !v('accident-date') && !v('accident-content')) {
+      App.showToast('⚠️ 인쇄할 내용을 먼저 입력하세요'); return;
+    }
+    // 산업재해·중대재해는 공식 별지30호 양식, 나머지는 사내 보고서
+    if (type === 'industrial' || type === 'serious') {
+      this._printOfficialForm();
+    } else {
+      this._printInternalReport();
+    }
+  },
+
+  // ── [별지 제30호서식] 산업재해조사표 ─────────────────────────
+  _printOfficialForm() {
+    const v    = id => (document.getElementById(id)?.value || '').trim();
+    const esc  = s  => App.escapeHtml(s || '');
+    const nl2br = s => esc(s).replace(/\n/g, '<br>');
+    const sig  = this.reporterSig && !this.reporterSig.isEmpty?.()
+                 ? this.reporterSig.toDataURL() : '';
+
+    // 사업장 정보 (WorkplaceInfo 첫 번째 항목)
+    const wp   = (typeof WorkplaceInfo !== 'undefined' && WorkplaceInfo._items?.length)
+                 ? WorkplaceInfo._items[0] : {};
+    const wpName    = esc(wp.name    || '');
+    const wpCeo     = esc(wp.ceo     || '');
+    const wpAddr    = esc(wp.address || '');
+    const wpWorkers = (wp.staff || 0) + (wp.contract || 0) || '';
+
+    // 발생일 → 요일
+    const dateVal = v('accident-date');
+    const DOW = ['일','월','화','수','목','금','토'];
+    let dowIdx = -1;
+    if (dateVal) { try { dowIdx = new Date(dateVal).getDay(); } catch(e) {} }
+    const chk = (label, active) =>
+      `<span class="ci ${active ? 'ci-on' : ''}">${active ? '☑' : '☐'} ${label}</span>`;
+
+    // 부상부위 키워드 매칭
+    const partText = (v('accident-injured-part') + ' ' + v('accident-injured-info')).toLowerCase();
+    const matchPart = kw => kw.some(k => partText.includes(k));
+    const PARTS = [
+      { label:'머리',   kw:['머리','두부'] },
+      { label:'눈',     kw:['눈','안구'] },
+      { label:'귀',     kw:['귀'] },
+      { label:'코',     kw:['코'] },
+      { label:'목',     kw:['목','경추'] },
+      { label:'흉부',   kw:['흉부','가슴','갈비','늑골'] },
+      { label:'복부',   kw:['복부','배'] },
+      { label:'등·허리',kw:['등','허리','요추','척추'] },
+      { label:'어깨',   kw:['어깨'] },
+      { label:'팔',     kw:['팔','팔꿈치','상완','전완'] },
+      { label:'손·손가락', kw:['손','손가락','손목'] },
+      { label:'골반',   kw:['골반','엉덩이'] },
+      { label:'다리',   kw:['다리','무릎','종아리','허벅지'] },
+      { label:'발·발가락', kw:['발','발가락','발목'] },
+      { label:'전신',   kw:['전신'] },
+    ];
+
+    // 상해종류 키워드 매칭
+    const levelText = v('accident-injured-level').toLowerCase();
+    const TYPES_MAP = [
+      { label:'골절', kw:['골절'] }, { label:'절단', kw:['절단'] },
+      { label:'타박상', kw:['타박'] }, { label:'찰과상', kw:['찰과','긁'] },
+      { label:'창상(베임·찔림)', kw:['베임','찔림','열상','자상'] },
+      { label:'화상', kw:['화상'] }, { label:'뇌진탕', kw:['뇌진탕'] },
+      { label:'중독·질식', kw:['중독','질식'] }, { label:'감전', kw:['감전'] },
+      { label:'염좌', kw:['염좌','삠'] }, { label:'사망', kw:['사망'] },
+    ];
+
+    // 현장사진 HTML
+    const photosHtml = this.photos.length
+      ? `<div style="margin-top:8px">
+           <div style="font-weight:700;font-size:8.5pt;background:#333;color:#fff;padding:3px 6px;margin-bottom:4px">현장사진 (${this.photos.length}매)</div>
+           <div style="display:flex;flex-wrap:wrap;gap:4px">
+             ${this.photos.map(p => `<img src="${p.data}" style="width:31%;height:auto;border:1px solid #ccc">`).join('')}
+           </div>
+         </div>`
+      : '';
+
+    App.printHtmlDoc(`<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8">
+<title>[별지 제30호서식] 산업재해조사표</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:8.5pt;color:#111;background:#fff;padding:10mm 12mm}
+  h1{font-size:16pt;font-weight:900;letter-spacing:3px;text-align:center;margin:0}
+  .top-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px}
+  .serial{font-size:7.5pt;color:#555}
+  .proc{font-size:7.5pt;text-align:right;line-height:1.8}
+  .top-hr{border:none;border-top:2px solid #111;margin:3px 0 5px}
+  table{width:100%;border-collapse:collapse}
+  td,th{border:1px solid #444;padding:3px 5px;font-size:8pt;vertical-align:middle}
+  .sh{background:#333;color:#fff;font-weight:700;font-size:8pt;padding:2px 6px;letter-spacing:0.3px}
+  .tl{background:#f0f0f0;font-weight:700;white-space:nowrap;min-width:70px}
+  .ci{display:inline-block;margin-right:8px;white-space:nowrap;font-size:8pt}
+  .ci-on{font-weight:700}
+  .tall{height:56px;vertical-align:top;padding-top:4px}
+  .vtop{vertical-align:top;padding-top:3px}
+  .sig-img{height:36px;border-bottom:1px solid #444}
+  .note{font-size:7pt;color:#666}
+  .foot{text-align:center;font-size:7.5pt;color:#888;margin-top:8px;padding-top:5px;border-top:1px solid #ccc}
+  .info-box{margin-top:8px;border:1px solid #999;padding:5px 8px;font-size:7.5pt;color:#444;line-height:1.9;background:#fafafa}
+  @media print{body{padding:8mm 10mm}@page{size:A4 portrait;margin:8mm}}
+</style></head><body>
+
+<div class="top-row">
+  <div class="serial">[별지 제30호서식]<br>(앞쪽)</div>
+  <h1>산 업 재 해 조 사 표</h1>
+  <div class="proc">처리기간: 즉시<br><span class="note">「산업안전보건법 시행규칙」 제73조</span></div>
+</div>
+<div class="top-hr"></div>
+
+<!-- ① 사업장 정보 -->
+<table style="margin-bottom:0">
+  <tr><td colspan="4" class="sh">① 사업장 정보</td></tr>
+  <tr>
+    <td class="tl">사업장명</td><td>${wpName}</td>
+    <td class="tl">사업장 관리번호</td><td></td>
+  </tr>
+  <tr>
+    <td class="tl">업종</td><td></td>
+    <td class="tl">상시근로자수</td><td>${wpWorkers ? wpWorkers + '명' : ''}</td>
+  </tr>
+  <tr><td class="tl">소재지</td><td colspan="3">${wpAddr}</td></tr>
+  <tr>
+    <td class="tl">대표자 성명</td><td>${wpCeo}</td>
+    <td class="tl">원수급인<br>사업장명</td><td><span class="note">(해당 시 기재)</span></td>
+  </tr>
+</table>
+
+<!-- ② 재해자 정보 -->
+<table style="margin-top:-1px">
+  <tr><td colspan="4" class="sh">② 재해자 정보</td></tr>
+  <tr>
+    <td class="tl">성명</td><td>${esc(v('accident-injured-name'))}</td>
+    <td class="tl">성별</td>
+    <td>${chk('남',false)}&nbsp;${chk('여',false)}</td>
+  </tr>
+  <tr>
+    <td class="tl">나이</td><td></td>
+    <td class="tl">국적</td>
+    <td>${chk('내국인',true)}&nbsp;${chk('외국인',false)}</td>
+  </tr>
+  <tr>
+    <td class="tl">입사일</td><td></td>
+    <td class="tl">고용형태</td>
+    <td>${chk('상용',false)}&nbsp;${chk('임시·일용',false)}&nbsp;${chk('파견',false)}&nbsp;${chk('기타',false)}</td>
+  </tr>
+  <tr>
+    <td class="tl">직종</td><td>${esc(v('accident-dept'))}</td>
+    <td class="tl">근속기간</td><td>　년　　개월</td>
+  </tr>
+  <tr>
+    <td class="tl vtop">재해당시<br>작업내용</td>
+    <td colspan="3" class="tall">${nl2br(v('accident-content'))}</td>
+  </tr>
+</table>
+
+<!-- ③ 재해발생 개요 -->
+<table style="margin-top:-1px">
+  <tr><td colspan="4" class="sh">③ 재해발생 개요</td></tr>
+  <tr>
+    <td class="tl">발생일시</td>
+    <td>${esc(dateVal)} ${esc(v('accident-time'))}</td>
+    <td class="tl">발생요일</td>
+    <td>
+      ${['월','화','수','목','금','토','일'].map((d,i) => chk(d, dowIdx === (i+1)%7 || (i===6 && dowIdx===0))).join(' ')}
+    </td>
+  </tr>
+  <tr><td class="tl">발생장소</td><td colspan="3">${esc(v('accident-location'))}</td></tr>
+  <tr>
+    <td class="tl">목격자</td>
+    <td colspan="3">${chk('있음',false)}&nbsp;${chk('없음',false)}</td>
+  </tr>
+  <tr>
+    <td class="tl vtop">재해발생경위</td>
+    <td colspan="3" style="height:80px;vertical-align:top;padding-top:4px">${nl2br(v('accident-content'))}</td>
+  </tr>
+</table>
+
+<!-- ④ 재해발생 원인 -->
+<table style="margin-top:-1px">
+  <tr><td colspan="4" class="sh">④ 재해발생 원인</td></tr>
+  <tr>
+    <td class="tl" rowspan="2">기인물</td>
+    <td style="background:#f8f8f8;width:48px">1순위</td>
+    <td class="tl">분류번호</td><td></td>
+  </tr>
+  <tr>
+    <td style="background:#f8f8f8">2순위</td>
+    <td class="tl">분류번호</td><td></td>
+  </tr>
+  <tr>
+    <td class="tl">가해물</td><td></td>
+    <td class="tl">분류번호</td><td></td>
+  </tr>
+  <tr>
+    <td class="tl">사고성 재해</td>
+    <td colspan="3">${chk('해당', type === 'industrial' || type === 'serious')}&nbsp;${chk('비해당', false)}</td>
+  </tr>
+  <tr>
+    <td class="tl vtop">재해유형</td>
+    <td colspan="3" style="padding:4px 6px;line-height:1.9">
+      ${['떨어짐','넘어짐','깔림·뒤집힘','부딪힘','맞음','무너짐','끼임',
+         '절단·베임·찔림','감전','폭발·파열','화재','불균형 및 무리한 동작',
+         '이상온도 접촉','유해·위험물질 노출','산소결핍','빠짐·익사',
+         '교통사고(업무상)','폭력행위','동물상해','직업성질병','그 밖의 경우']
+        .map(d => chk(d, false)).join(' ')}
+    </td>
+  </tr>
+</table>
+
+<!-- ⑤ 휴업 및 상해 정보 -->
+<table style="margin-top:-1px">
+  <tr><td colspan="4" class="sh">⑤ 휴업 및 상해 정보</td></tr>
+  <tr>
+    <td class="tl">휴업예정일수</td>
+    <td>　　일 <span class="note">(의사소견서 기준)</span></td>
+    <td class="tl">사망 여부</td>
+    <td>${chk('사망', type==='serious')}&nbsp;${chk('부상', type!=='serious')}&nbsp;${chk('직업병',false)}</td>
+  </tr>
+  <tr>
+    <td class="tl vtop">상해부위</td>
+    <td colspan="3" style="padding:4px 6px;line-height:1.9">
+      ${PARTS.map(p => chk(p.label, matchPart(p.kw))).join(' ')}
+      ${chk('그 밖의 부위', false)}
+    </td>
+  </tr>
+  <tr>
+    <td class="tl vtop">상해종류</td>
+    <td colspan="3" style="padding:4px 6px;line-height:1.9">
+      ${TYPES_MAP.map(t => chk(t.label, t.kw.some(k => levelText.includes(k)))).join(' ')}
+      ${chk('직업성질병',false)}&nbsp;${chk('그 밖의 경우',false)}
+    </td>
+  </tr>
+</table>
+
+<!-- ⑥ 재발방지계획 -->
+<table style="margin-top:-1px">
+  <tr><td colspan="2" class="sh">⑥ 재발방지계획</td></tr>
+  <tr>
+    <td class="tl vtop" style="width:80px">재발방지계획</td>
+    <td style="height:60px;vertical-align:top;padding-top:4px">${nl2br(v('accident-prevention'))}</td>
+  </tr>
+</table>
+
+<!-- 작성자 -->
+<table style="margin-top:-1px">
+  <tr>
+    <td class="tl">작성일</td>
+    <td>${new Date().toLocaleDateString('ko-KR').replace(/\s/g,'')}</td>
+    <td class="tl">소속·직위</td>
+    <td>${esc(v('accident-dept'))}</td>
+  </tr>
+  <tr>
+    <td class="tl">작성자 성명</td>
+    <td>${esc(v('accident-reporter'))}</td>
+    <td class="tl">서명(인)</td>
+    <td style="height:42px">${sig ? `<img src="${sig}" class="sig-img" alt="서명">` : ''}</td>
+  </tr>
+</table>
+
+${photosHtml}
+
+<div class="info-box">
+  <b>제출처:</b> 관할 지방고용노동관서<br>
+  <b>유의사항:</b> 사망자 발생 또는 3일 이상 휴업이 필요한 부상·질병 발생일로부터 1개월 이내 제출 (「산업안전보건법」 제57조, 시행규칙 제73조)
+</div>
+<div class="foot">SAMHWA SafeOn 현장 안전보건 관리 시스템 &nbsp;|&nbsp; [별지 제30호서식] 산업재해조사표</div>
+</body></html>`);
+  },
+
+  // ── 사내 보고서 (아차사고·안전사고) ──────────────────────────
+  _printInternalReport() {
     const v = id => (document.getElementById(id)?.value || '').trim();
     const esc = s => App.escapeHtml(s || '');
     const nl2br = s => esc(s).replace(/\n/g, '<br>');
-
-    const type     = this.getSelectedType();
+    const type = this.getSelectedType();
     const typeLabel = this.TYPE_LABELS[type] || '미선택';
     const isInjury = type && type !== 'nearmiss';
-
-    const date = v('accident-date');
-    const time = v('accident-time');
-    const content = v('accident-content');
-    if (!type && !date && !content) { App.showToast('⚠️ 인쇄할 내용을 먼저 입력하세요'); return; }
-
     const dash = s => s ? esc(s) : '<span style="color:#bbb">-</span>';
     const sig = this.reporterSig && !this.reporterSig.isEmpty?.() ? this.reporterSig.toDataURL() : '';
 
@@ -924,8 +1191,8 @@ const Accident = {
   .htitle{flex:1}
   .head .sub{font-size:10pt;color:#5f6368;margin-top:4px;white-space:nowrap}
   .appr{border-collapse:collapse;flex-shrink:0}
-  .appr th{background:#f1f3f4;font-size:8pt;font-weight:700;text-align:center;padding:3px 0;border:1px solid #444;width:58px}
-  .appr td{height:50px;border:1px solid #444;width:58px}
+  .appr th{background:#f1f3f4;font-size:7.5pt;font-weight:700;text-align:center;padding:2px 0;border:1px solid #444;width:44px}
+  .appr td{height:38px;border:1px solid #444;width:44px}
   hr{border:none;border-top:2px solid #202124;margin:8px 0 14px}
   .sec{margin-bottom:12px}
   .sec-t{font-size:11pt;font-weight:700;border-left:4px solid #d93025;padding-left:8px;margin-bottom:6px;color:#d93025}
@@ -937,7 +1204,7 @@ const Accident = {
   .photos{display:flex;flex-wrap:wrap;gap:6px}
   .photos img{width:31%;height:auto;border:1px solid #dadce0;border-radius:4px}
   .sigrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:6px;font-size:10pt}
-  .sigrow img{height:50px;border-bottom:1px solid #444}
+  .sigrow img{height:40px;border-bottom:1px solid #444}
   .law{margin-top:16px;padding:8px 10px;border:1px solid #e0e0e0;border-radius:5px;background:#fafafa;font-size:7.5pt;color:#666;line-height:1.5}
   .law b{color:#444}
   .foot{text-align:center;font-size:8pt;color:#9aa0a6;margin-top:10px;padding-top:6px;border-top:1px solid #dadce0}
@@ -951,12 +1218,12 @@ const Accident = {
 <div class="sec"><span class="typebadge">${esc(typeLabel)}</span></div>
 <div class="sec"><div class="sec-t">발생 개요</div>
   <table><tbody>
-    <tr><th>발생일시</th><td>${dash(date)} ${esc(time)}</td><th>발생장소</th><td>${dash(v('accident-location'))}</td></tr>
+    <tr><th>발생일시</th><td>${dash(v('accident-date'))} ${esc(v('accident-time'))}</td><th>발생장소</th><td>${dash(v('accident-location'))}</td></tr>
     <tr><th>보고자</th><td>${dash(v('accident-reporter'))}</td><th>소속</th><td>${dash(v('accident-dept'))}</td></tr>
   </tbody></table>
 </div>
 ${injuryHtml}
-<div class="sec"><div class="sec-t">사고 경위</div><div class="box">${nl2br(content) || '<span style="color:#bbb">-</span>'}</div></div>
+<div class="sec"><div class="sec-t">사고 경위</div><div class="box">${nl2br(v('accident-content')) || '<span style="color:#bbb">-</span>'}</div></div>
 <div class="sec"><div class="sec-t">사고 원인</div><div class="box">${nl2br(v('accident-cause')) || '<span style="color:#bbb">-</span>'}</div></div>
 <div class="sec"><div class="sec-t">즉시 조치사항</div><div class="box">${nl2br(v('accident-immediate')) || '<span style="color:#bbb">-</span>'}</div></div>
 <div class="sec"><div class="sec-t">재발방지 대책</div><div class="box">${nl2br(v('accident-prevention')) || '<span style="color:#bbb">-</span>'}</div></div>
@@ -964,9 +1231,9 @@ ${photosHtml}
 ${sig ? `<div class="sigrow">보고자 <img src="${sig}" alt="서명"> (서명)</div>` : ''}
 <div class="law">
   <b>관련 법령 「산업안전보건법」</b><br>
-  · 제57조(산업재해 발생 은폐 금지 및 보고 등) — 산업재해 발생 사실 은폐 금지, 발생원인 기록·보존, 발생개요·원인 및 재발방지계획을 고용노동부장관에게 보고<br>
-  · 시행규칙 제73조(산업재해 발생 보고 등) — 사망자 발생 또는 3일 이상 휴업이 필요한 부상·질병 시 발생일부터 1개월 이내 산업재해조사표(별지 제30호서식) 제출<br>
-  · 제54조(중대재해 발생 시 사업주의 조치) — 즉시 작업중지·근로자 대피 등 필요 조치, 지체 없이 고용노동부장관에게 보고
+  · 제57조(산업재해 발생 은폐 금지 및 보고 등) — 산업재해 발생 사실 은폐 금지, 발생원인 기록·보존<br>
+  · 시행규칙 제73조(산업재해 발생 보고 등) — 사망자 또는 3일 이상 휴업 시 1개월 이내 산업재해조사표 제출<br>
+  · 제54조(중대재해 발생 시) — 즉시 작업중지·대피 후 고용노동부장관에게 보고
 </div>
 <div class="foot">SAMHWA SafeOn 현장 안전보건 관리 시스템</div>
 </body></html>`);

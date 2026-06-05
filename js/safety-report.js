@@ -473,8 +473,8 @@ const SafetyReport = {
   .doc-title-block .meta { font-size:9pt; color:#888; }
   .approval-wrap { flex-shrink:0; }
   .approval-table { border-collapse:collapse; }
-  .approval-table th { background:#f1f3f4; font-size:8pt; font-weight:700; text-align:center; padding:4px 0; border:1px solid #444; width:62px; letter-spacing:0.5px; }
-  .approval-table td { height:54px; border:1px solid #444; width:62px; vertical-align:top; padding:3px; }
+  .approval-table th { background:#f1f3f4; font-size:7.5pt; font-weight:700; text-align:center; padding:2px 0; border:1px solid #444; width:46px; letter-spacing:0.5px; }
+  .approval-table td { height:40px; border:1px solid #444; width:46px; vertical-align:top; padding:2px; }
   .footer { text-align:center; font-size:8pt; color:#9aa0a6; margin-top:8px; padding-top:8px; border-top:1px solid #dadce0; }
   @media print {
     body { padding:10mm 12mm; }

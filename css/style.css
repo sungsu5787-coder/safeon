@@ -6100,6 +6100,35 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   line-height: 1.5;
 }
 
+/* ── 버전 내역 페이지 넘김 ── */
+.cl-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 0 2px;
+}
+.cl-pg-btn {
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cl-pg-btn:hover:not(:disabled) { background: var(--gray-100); }
+.cl-pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.cl-pg-info {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  min-width: 48px;
+  text-align: center;
+}
+
 /* ── 홈 상단 버전 배지 ──────────────────────────── */
 .home-version-bar {
   display: flex;
