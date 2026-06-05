@@ -89,3 +89,13 @@
 - **수정**: admin.js loadUsers에 `if (res.status===503)` 분기 추가 → `_renderUsersSetupNeeded()`가 친절한 안내 패널 렌더 + 작동 안 하는 "계정 추가" 버튼 숨김. css `.admin-setup-needed` 스타일 추가. 근본 활성화(서비스계정)는 별개로 사용자 dashboard 작업 필요.
 - **검증**: ① 로컬 서버(Firebase 미설정 모드) → /api/health `{firebase:false}`, 레거시 admin 로그인 role=admin, /api/admin/users HTTP 503 재현 확인. ② DOM 스텁으로 admin.js loadUsers 503 분기 실행 → 안내 패널 렌더·오류문구 미노출·추가버튼 숨김 5/5 PASS.
 - 캐시 v46→v47, 1.7.2→1.7.3, changelog 항목 추가.
+
+## 앱 시작 로그인 권유(소프트) (2026-06-05)
+- **요청 흐름**: "앱 시작 시 사용자 인증" → 처음엔 "강제 로그인 게이트" 선택 → 그러나 게이트가 앱 전체를 잠가 **계정 없는 현장 작업자가 전원 잠김** 위험을 발견 → 사용자가 "범위 재고려" → 최종 "소프트 권유(잠금 없음)" 선택. 강제 게이트 코드는 전부 원복(admin.js diff 0, 게이트 흔적 grep clean).
+- **서비스계정 블로커 — 이미 해결됨(중요)**: 작업 중 라이브 https://safeon0526.vercel.app/api/health 가 `{"status":"ok","firebase":true}` 반환 확인. 즉 FIREBASE_SERVICE_ACCOUNT가 이미 Production에 적용돼 Admin SDK 정상(커밋 67b8582). 메모리(firebase-service-account-blocker)·MEMORY.md를 "해결됨"으로 갱신함. firestore.rules도 users 클라 차단 완료(f05f5ae).
+- **기존 구조**: firebase-config.js 익명 로그인(Firestore 접근용). 사용자 로그인은 Admin 모듈(/api/auth/login, sessionStorage token·user, role admin|부사수). 홈에 기존 로그인 칩(renderLoginChip)도 있음 — 소프트 권유는 그 startup 버전 격.
+- **구현**(app.js 단독, admin.js·부팅 로직 불변):
+  - `#login-prompt` 소프트 모달(index.html): 메시지 + [나중에]/[로그인]. 바깥 탭하면 닫힘. css `.login-prompt` 반투명 백드롭(z-index:1400, 잠금 아님).
+  - App.maybeLoginPrompt(): init() 끝에서 호출. 가드 — guestMode·tbm-view·이미 로그인(Admin.token)·세션당1회(sessionStorage sfo_login_nudge)면 표시 안 함.
+  - App.dismissLoginPrompt()/loginFromPrompt(): 닫기 / 닫고 admin 페이지로 이동(기존 로그인 위치 재사용).
+- **검증**: node --check (admin.js·app.js) 통과. 게이트 흔적 grep 0, 소프트 권유 배선 28곳 확인. 실서버 노출/닫힘 흐름은 사용자 확인 필요(정적 PWA라 로컬 라이브 구동 미실시).

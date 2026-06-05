@@ -5849,6 +5849,70 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   margin: 12px 0 0;
 }
 
+/* 시작 시 로그인 권유 — 잠금 없는 소프트 안내(바깥 탭하면 닫힘) */
+.login-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.login-prompt.show { opacity: 1; }
+.login-prompt-card {
+  width: 100%;
+  max-width: 320px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 28px 22px;
+  text-align: center;
+  transform: translateY(8px);
+  transition: transform 0.2s ease;
+}
+.login-prompt.show .login-prompt-card { transform: translateY(0); }
+.login-prompt-icon { font-size: 32px; margin-bottom: 10px; }
+.login-prompt-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 8px;
+}
+.login-prompt-desc {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+.login-prompt-actions { display: flex; gap: 10px; }
+.login-prompt-btn-ghost {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  color: var(--gray-700);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.login-prompt-btn-primary {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.login-prompt-btn-primary:active { background: var(--primary-dark); }
+
 .admin-dash-head {
   display: flex;
   align-items: center;

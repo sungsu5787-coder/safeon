@@ -55,6 +55,8 @@ const App = {
     if (_p.get('mode') === 'tbm-view' && _p.get('id')) {
       TBM.initSharedView(_p.get('id'), _p.get('lang') || 'ko');
     }
+
+    this.maybeLoginPrompt();   // 시작 시 로그인 권유(소프트, 잠금 없음)
   },
 
   // ── 게스트 모드 초기화 ───────────────────────────────────
@@ -351,6 +353,33 @@ const App = {
     } else {
       this.navigateTo('admin');
     }
+  },
+
+  // ── 시작 시 로그인 권유(소프트) ───────────────────────────
+  // 잠금 없음. 비로그인·비게스트·일반 진입일 때 세션당 1회만 노출.
+  maybeLoginPrompt() {
+    if (this.guestMode) return;                                  // 게스트 우회
+    const mode = new URLSearchParams(location.search).get('mode');
+    if (mode === 'tbm-view') return;                             // QR 공유 뷰어 우회
+    if (window.Admin && Admin.token) return;                     // 이미 로그인됨
+    if (sessionStorage.getItem('sfo_login_nudge')) return;       // 세션당 1회
+    const el = document.getElementById('login-prompt');
+    if (!el) return;
+    sessionStorage.setItem('sfo_login_nudge', '1');
+    el.classList.remove('hidden');
+    requestAnimationFrame(() => el.classList.add('show'));
+  },
+
+  dismissLoginPrompt() {
+    const el = document.getElementById('login-prompt');
+    if (!el) return;
+    el.classList.remove('show');
+    setTimeout(() => el.classList.add('hidden'), 200);
+  },
+
+  loginFromPrompt() {
+    this.dismissLoginPrompt();
+    this.navigateTo('admin');
   },
 
   // 로그인 상태면 문서에 작성자 정보를 첨부 (미로그인 시 익명 유지)

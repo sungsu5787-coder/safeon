@@ -97,3 +97,15 @@
 ## 다음 개선 후보
 - [ ] 기존 무작성자 데이터 표시 처리
 - [ ] 게스트 모드일 때 로그인 칩 숨김 (현재는 눌러도 권한차단 토스트)
+
+## 앱 시작 로그인 권유(소프트) (2026-06-05)
+- 처음엔 "강제 로그인 게이트"로 구현했다가, 현장 작업자 잠김 위험 때문에 사용자가 "소프트 권유(잠금 없음)"로 범위 재조정. 게이트 코드는 전부 원복(admin.js diff 0).
+- [x] index.html: `#login-prompt` 소프트 모달 (메시지 + [나중에]/[로그인], 바깥 탭하면 닫힘)
+- [x] css: `.login-prompt` 스타일 (반투명 백드롭 z-index:1400, 잠금 아님)
+- [x] app.js: `maybeLoginPrompt`/`dismissLoginPrompt`/`loginFromPrompt` 추가, init() 끝에서 호출. 세션당 1회(sfo_login_nudge), 비로그인·비게스트·비 tbm-view일 때만
+- [x] admin.js·app.js 부팅 로직 원복 — 강제 게이트 흔적 0 (grep clean)
+- [x] node --check 통과 (admin.js·app.js)
+- [x] 서비스계정 블로커는 이미 해결됨 — 라이브 /api/health firebase:true 확인 (메모리 갱신)
+- [x] sw 캐시 v47→v48, package 1.7.3→1.7.4, changelog 1.7.4 항목 추가, index.html SW_URL·주석 갱신
+- [x] 로컬 구동 검증 — 포트 3100에서 login-prompt 마크업·maybeLoginPrompt·css 서빙 확인 (3000은 타 폴더 서버 점유)
+- [ ] 검증: 실서버에서 시작 시 권유 노출→[나중에] 닫힘→[로그인] 흐름 (사용자)
