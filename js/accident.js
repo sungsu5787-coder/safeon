@@ -882,5 +882,93 @@ const Accident = {
     if (sec) sec.style.display = 'block';
     if (this.reporterSig) this.reporterSig.clear();
     document.getElementById('accident-date').value = new Date().toISOString().split('T')[0];
+  },
+
+  // ── 공문서형 보고서 인쇄 (현재 입력값 기준 · 저장 불필요) ──────
+  printReport() {
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    const esc = s => App.escapeHtml(s || '');
+    const nl2br = s => esc(s).replace(/\n/g, '<br>');
+
+    const type     = this.getSelectedType();
+    const typeLabel = this.TYPE_LABELS[type] || '미선택';
+    const isInjury = type && type !== 'nearmiss';
+
+    const date = v('accident-date');
+    const time = v('accident-time');
+    const content = v('accident-content');
+    if (!type && !date && !content) { App.showToast('⚠️ 인쇄할 내용을 먼저 입력하세요'); return; }
+
+    const dash = s => s ? esc(s) : '<span style="color:#bbb">-</span>';
+    const sig = this.reporterSig && !this.reporterSig.isEmpty?.() ? this.reporterSig.toDataURL() : '';
+
+    const photosHtml = this.photos.length
+      ? `<div class="sec"><div class="sec-t">📷 현장 사진</div><div class="photos">${
+          this.photos.map(p => `<img src="${p.data}" alt="현장사진">`).join('')}</div></div>`
+      : '';
+
+    const injuryHtml = isInjury ? `
+      <div class="sec"><div class="sec-t">부상자 정보</div>
+      <table><tbody>
+        <tr><th>성명</th><td>${dash(v('accident-injured-name'))}</td><th>나이/소속</th><td>${dash(v('accident-injured-info'))}</td></tr>
+        <tr><th>부상부위</th><td>${dash(v('accident-injured-part'))}</td><th>부상정도</th><td>${dash(v('accident-injured-level'))}</td></tr>
+      </tbody></table></div>` : '';
+
+    App.printHtmlDoc(`<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><title>안전사고 발생보고서</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:10.5pt;color:#202124;background:#fff;padding:18mm 16mm}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+  .head h1{font-size:21pt;font-weight:900;letter-spacing:2px;color:#202124;white-space:nowrap}
+  .htitle{flex:1}
+  .head .sub{font-size:10pt;color:#5f6368;margin-top:4px;white-space:nowrap}
+  .appr{border-collapse:collapse;flex-shrink:0}
+  .appr th{background:#f1f3f4;font-size:8pt;font-weight:700;text-align:center;padding:3px 0;border:1px solid #444;width:58px}
+  .appr td{height:50px;border:1px solid #444;width:58px}
+  hr{border:none;border-top:2px solid #202124;margin:8px 0 14px}
+  .sec{margin-bottom:12px}
+  .sec-t{font-size:11pt;font-weight:700;border-left:4px solid #d93025;padding-left:8px;margin-bottom:6px;color:#d93025}
+  table{width:100%;border-collapse:collapse;font-size:10pt}
+  th{background:#f8f9fa;font-weight:700;padding:6px 8px;border:1px solid #dadce0;text-align:left;width:90px;white-space:nowrap}
+  td{padding:6px 8px;border:1px solid #dadce0;vertical-align:top}
+  .box{border:1px solid #dadce0;border-radius:4px;padding:8px 10px;min-height:42px;line-height:1.6}
+  .typebadge{display:inline-block;padding:3px 14px;border-radius:20px;background:#fce8e6;color:#d93025;font-weight:800;font-size:11pt}
+  .photos{display:flex;flex-wrap:wrap;gap:6px}
+  .photos img{width:31%;height:auto;border:1px solid #dadce0;border-radius:4px}
+  .sigrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:6px;font-size:10pt}
+  .sigrow img{height:50px;border-bottom:1px solid #444}
+  .law{margin-top:16px;padding:8px 10px;border:1px solid #e0e0e0;border-radius:5px;background:#fafafa;font-size:7.5pt;color:#666;line-height:1.5}
+  .law b{color:#444}
+  .foot{text-align:center;font-size:8pt;color:#9aa0a6;margin-top:10px;padding-top:6px;border-top:1px solid #dadce0}
+  @media print{body{padding:10mm 12mm}@page{size:A4;margin:10mm}}
+</style></head><body>
+<div class="head">
+  <div class="htitle"><h1>안전사고 발생보고서</h1><div class="sub">SAMHWA SafeOn · 작성일 ${new Date().toLocaleDateString('ko-KR')}</div></div>
+  <table class="appr"><thead><tr><th>담당</th><th>검토</th><th>승인</th></tr></thead><tbody><tr><td></td><td></td><td></td></tr></tbody></table>
+</div>
+<hr>
+<div class="sec"><span class="typebadge">${esc(typeLabel)}</span></div>
+<div class="sec"><div class="sec-t">발생 개요</div>
+  <table><tbody>
+    <tr><th>발생일시</th><td>${dash(date)} ${esc(time)}</td><th>발생장소</th><td>${dash(v('accident-location'))}</td></tr>
+    <tr><th>보고자</th><td>${dash(v('accident-reporter'))}</td><th>소속</th><td>${dash(v('accident-dept'))}</td></tr>
+  </tbody></table>
+</div>
+${injuryHtml}
+<div class="sec"><div class="sec-t">사고 경위</div><div class="box">${nl2br(content) || '<span style="color:#bbb">-</span>'}</div></div>
+<div class="sec"><div class="sec-t">사고 원인</div><div class="box">${nl2br(v('accident-cause')) || '<span style="color:#bbb">-</span>'}</div></div>
+<div class="sec"><div class="sec-t">즉시 조치사항</div><div class="box">${nl2br(v('accident-immediate')) || '<span style="color:#bbb">-</span>'}</div></div>
+<div class="sec"><div class="sec-t">재발방지 대책</div><div class="box">${nl2br(v('accident-prevention')) || '<span style="color:#bbb">-</span>'}</div></div>
+${photosHtml}
+${sig ? `<div class="sigrow">보고자 <img src="${sig}" alt="서명"> (서명)</div>` : ''}
+<div class="law">
+  <b>관련 법령 「산업안전보건법」</b><br>
+  · 제57조(산업재해 발생 은폐 금지 및 보고 등) — 산업재해 발생 사실 은폐 금지, 발생원인 기록·보존, 발생개요·원인 및 재발방지계획을 고용노동부장관에게 보고<br>
+  · 시행규칙 제73조(산업재해 발생 보고 등) — 사망자 발생 또는 3일 이상 휴업이 필요한 부상·질병 시 발생일부터 1개월 이내 산업재해조사표(별지 제30호서식) 제출<br>
+  · 제54조(중대재해 발생 시 사업주의 조치) — 즉시 작업중지·근로자 대피 등 필요 조치, 지체 없이 고용노동부장관에게 보고
+</div>
+<div class="foot">SAMHWA SafeOn 현장 안전보건 관리 시스템</div>
+</body></html>`);
   }
 };

@@ -118,3 +118,11 @@
 - **자동 로그인(30일)**: 게이트 `#gate-remember` 체크 시 gateLogin이 body에 remember:true 전송 → backend /api/auth/login이 ttl=REMEMBER_TTL_MS(30일) 토큰 발급(signSession에 ttl 인자 추가). 프론트는 토큰·user를 localStorage에도 저장. admin.js token/currentUser 게터를 sessionStorage→localStorage 폴백으로 변경, 셋터(logout)는 둘 다 제거. 미체크 시 기존 sessionStorage(8h)만. 검증: 새 BrowserContext 탭으로 앱 재시작 모사 — ON이면 무게이트 진입, OFF면 게이트 재노출.
 - **인쇄 버그/통합**: 근본원인 = SafetyReport/WorkplaceInfo/ProposalsView가 window.open('','_blank')로 새 창을 띄움 → 설치형 PWA(standalone)에선 시스템 브라우저로 나가버림. 수정 = App.printHtmlDoc(html) 헬퍼(숨김 iframe + srcdoc, onload 후 contentWindow.print(), 1.5s 뒤 제거)로 교체. 각 함수의 window.open/win.document.write/close/embedded `<script>window.print()</script>` 제거. detail/history는 기존 #print-area+window.print() 유지(앱 CSS 의존이라 iframe 불가). 라벨은 '인쇄'로 통일.
 - **검증**: puppeteer-core+Chrome. 인쇄 시 page 'popup' 이벤트 미발생 + #_print_iframe 생성(사업장현황 포함) + URL 불변 = 앱 안에서 인쇄. PASS.
+
+## 사고보고서·작업계획서 폼 인쇄(공문서형 + 관련 법령) (2026-06-05)
+- **사용자 결정**: 인쇄 버튼은 "작성 폼 페이지 안", 형식은 "공문서형"(제목+결재란+A4정형+하단 관련법령 작게). 저장 안 해도 현재 입력값으로 인쇄 가능.
+- **구현**: Accident.printReport()/WorkPlan.printReport() 추가 — 폼 DOM 현재값 수집 → 자체완결 HTML → App.printHtmlDoc(iframe 인쇄, 기존 헬퍼 재사용). index.html 두 폼 저장버튼 옆에 type="button" 인쇄버튼 추가.
+- **관련 법령 출처**: 첨부 PDF `산업안전보건법(법령단위비교).pdf`에서 추출(pdf-parse, _pdf_text.txt). 
+  - 사고보고서: 법 제57조(산업재해 발생 은폐 금지 및 보고 등), 시행규칙 제73조(산업재해 발생 보고 등 — 사망/3일이상 휴업 시 1개월내 산업재해조사표 제출), 법 제54조(중대재해 발생 시 즉시 작업중지·대피·지체없이 보고).
+  - 작업계획서: 법 제36조(위험성평가의 실시), 법 제38조(안전조치). + 작업계획서 작성 직접근거는 산업안전보건기준에 관한 규칙 제38조(사전조사 및 작업계획서 작성)로 주석 표기.
+- **임시파일**: _pdf_text.txt(26만자 추출본)·node_modules 내 pdf-parse는 커밋 제외 대상.

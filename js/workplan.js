@@ -990,5 +990,92 @@ const WorkPlan = {
       if (event.target !== overlay) return;
     }
     document.getElementById('wp-suggest-modal').classList.add('hidden');
+  },
+
+  // ── 공문서형 보고서 인쇄 (현재 입력값 기준 · 저장 불필요) ──────
+  printReport() {
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    const esc = s => App.escapeHtml(s || '');
+    const nl2br = s => esc(s).replace(/\n/g, '<br>');
+    const dash = s => s ? esc(s) : '<span style="color:#bbb">-</span>';
+
+    const workName = v('wp-work-name');
+    const date = v('wp-date');
+    if (!workName && !date && !v('wp-content')) { App.showToast('⚠️ 인쇄할 내용을 먼저 입력하세요'); return; }
+
+    const disasters = [...document.querySelectorAll('input[name="wp-disaster"]:checked')].map(cb => cb.value);
+    const sig = this.supervisorSig && !this.supervisorSig.isEmpty?.() ? this.supervisorSig.toDataURL() : '';
+
+    const crewHtml = this.crew.length
+      ? `<div class="sec"><div class="sec-t">투입인원 (${this.crew.length}명)</div>
+         <table><thead><tr><th style="width:44px">No.</th><th>성명</th><th>직종·역할</th></tr></thead><tbody>${
+          this.crew.map((c, i) => `<tr><td>${i + 1}</td><td>${esc(c.name)}</td><td>${esc(c.role) || '-'}</td></tr>`).join('')
+         }</tbody></table></div>`
+      : '';
+
+    const photosHtml = this.photos.length
+      ? `<div class="sec"><div class="sec-t">📷 현장 사진</div><div class="photos">${
+          this.photos.map(p => `<img src="${p.data}" alt="현장사진">`).join('')}</div></div>`
+      : '';
+
+    App.printHtmlDoc(`<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><title>안전 작업계획서</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:10.5pt;color:#202124;background:#fff;padding:18mm 16mm}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+  .head h1{font-size:21pt;font-weight:900;letter-spacing:2px;color:#202124;white-space:nowrap}
+  .htitle{flex:1}
+  .head .sub{font-size:10pt;color:#5f6368;margin-top:4px;white-space:nowrap}
+  .appr{border-collapse:collapse;flex-shrink:0}
+  .appr th{background:#f1f3f4;font-size:8pt;font-weight:700;text-align:center;padding:3px 0;border:1px solid #444;width:58px}
+  .appr td{height:50px;border:1px solid #444;width:58px}
+  hr{border:none;border-top:2px solid #202124;margin:8px 0 14px}
+  .sec{margin-bottom:12px}
+  .sec-t{font-size:11pt;font-weight:700;border-left:4px solid #0288d1;padding-left:8px;margin-bottom:6px;color:#0277bd}
+  table{width:100%;border-collapse:collapse;font-size:10pt}
+  th{background:#f8f9fa;font-weight:700;padding:6px 8px;border:1px solid #dadce0;text-align:left;width:90px;white-space:nowrap}
+  td{padding:6px 8px;border:1px solid #dadce0;vertical-align:top}
+  thead th{text-align:center}
+  .box{border:1px solid #dadce0;border-radius:4px;padding:8px 10px;min-height:42px;line-height:1.6}
+  .chips span{display:inline-block;padding:3px 10px;margin:2px;border-radius:14px;background:#e1f5fe;color:#0277bd;font-size:9pt;font-weight:600}
+  .photos{display:flex;flex-wrap:wrap;gap:6px}
+  .photos img{width:31%;height:auto;border:1px solid #dadce0;border-radius:4px}
+  .sigrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:6px;font-size:10pt}
+  .sigrow img{height:50px;border-bottom:1px solid #444}
+  .law{margin-top:16px;padding:8px 10px;border:1px solid #e0e0e0;border-radius:5px;background:#fafafa;font-size:7.5pt;color:#666;line-height:1.5}
+  .law b{color:#444}
+  .foot{text-align:center;font-size:8pt;color:#9aa0a6;margin-top:10px;padding-top:6px;border-top:1px solid #dadce0}
+  @media print{body{padding:10mm 12mm}@page{size:A4;margin:10mm}}
+</style></head><body>
+<div class="head">
+  <div class="htitle"><h1>안전 작업계획서</h1><div class="sub">SAMHWA SafeOn · 작성일 ${new Date().toLocaleDateString('ko-KR')}</div></div>
+  <table class="appr"><thead><tr><th>담당</th><th>검토</th><th>승인</th></tr></thead><tbody><tr><td></td><td></td><td></td></tr></tbody></table>
+</div>
+<hr>
+<div class="sec"><div class="sec-t">작업 개요</div>
+  <table><tbody>
+    <tr><th>작성일자</th><td>${dash(date)}</td><th>업체명</th><td>${dash(v('wp-company'))}</td></tr>
+    <tr><th>공종/작업명</th><td colspan="3">${dash(workName)}</td></tr>
+    <tr><th>작업장소</th><td>${dash(v('wp-location'))}</td><th>작업기간</th><td>${dash(v('wp-period'))}</td></tr>
+    <tr><th>작업인원</th><td>${dash(v('wp-workers'))}명</td><th>현장책임자</th><td>${dash(v('wp-supervisor'))}</td></tr>
+    <tr><th>투입장비</th><td colspan="3">${dash(v('wp-equipment'))}</td></tr>
+  </tbody></table>
+</div>
+${disasters.length ? `<div class="sec"><div class="sec-t">예상 재해유형</div><div class="chips">${disasters.map(d => `<span>${esc(d)}</span>`).join('')}</div></div>` : ''}
+<div class="sec"><div class="sec-t">작업 내용</div><div class="box">${nl2br(v('wp-content')) || '<span style="color:#bbb">-</span>'}</div></div>
+<div class="sec"><div class="sec-t">⚠️ 위험요인</div><div class="box">${nl2br(v('wp-hazards')) || '<span style="color:#bbb">-</span>'}</div></div>
+<div class="sec"><div class="sec-t">🛡️ 안전대책</div><div class="box">${nl2br(v('wp-measures')) || '<span style="color:#bbb">-</span>'}</div></div>
+${crewHtml}
+${photosHtml}
+${sig ? `<div class="sigrow">현장책임자 <img src="${sig}" alt="서명"> (서명)</div>` : ''}
+<div class="law">
+  <b>관련 법령 「산업안전보건법」</b><br>
+  · 제36조(위험성평가의 실시) — 유해·위험요인을 파악하고 위험성의 크기를 평가하여 필요한 조치, 그 결과와 조치사항을 기록·보존<br>
+  · 제38조(안전조치) — 기계·기구, 폭발·발화성 물질, 전기, 굴착·하역·중량물 취급 등 작업 및 추락·붕괴·낙하 위험장소에 필요한 안전조치<br>
+  · 작업계획서 작성 의무: 「산업안전보건기준에 관한 규칙」 제38조(사전조사 및 작업계획서의 작성 등)
+</div>
+<div class="foot">SAMHWA SafeOn 현장 안전보건 관리 시스템</div>
+</body></html>`);
   }
 };

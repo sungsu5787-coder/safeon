@@ -129,3 +129,13 @@
 - [x] sw v50→v51, package 1.7.6, changelog 추가
 - [x] 브라우저 검증(puppeteer+Chrome) PASS: 자동로그인 ON 재시작 무게이트·OFF 재시작 게이트, 인쇄 팝업無·iframe생성·앱내 유지. 게이트 2체크박스 스크린샷 확인
 - [ ] 라이브: 자동로그인·인쇄 실기기 확인(사용자)
+
+## 사고보고서·작업계획서 폼 인쇄(공문서형+법령) (2026-06-05, v1.7.7)
+- [x] index.html: accident-form/workplan-form 저장버튼 옆 인쇄 버튼(type=button)
+- [x] accident.js: printReport() — 현재값 수집·공문서형·법령각주(법 제57·73·54조)·printHtmlDoc
+- [x] workplan.js: printReport() — 동일 패턴, 법령각주(법 제36·38조 + 산안기준규칙 제38조)
+- [x] sw v51→v52, package 1.7.7, changelog 추가
+- [x] node --check 통과
+- [x] 브라우저 검증(puppeteer+Chrome): 두 폼 입력→인쇄 HTML 캡처, 결재란·법령·부상자·투입인원·재해유형칩 정상, JS에러 0. 스크린샷 2종 확인. 제목 가로정렬 버그 수정(htitle flex + nowrap)
+- [x] 임시파일(_pdf_text.txt 등) 커밋 제외
+- [ ] 라이브: 실기기 인쇄 출력 확인(사용자)
