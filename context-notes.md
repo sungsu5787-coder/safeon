@@ -99,3 +99,10 @@
   - App.maybeLoginPrompt(): init() 끝에서 호출. 가드 — guestMode·tbm-view·이미 로그인(Admin.token)·세션당1회(sessionStorage sfo_login_nudge)면 표시 안 함.
   - App.dismissLoginPrompt()/loginFromPrompt(): 닫기 / 닫고 admin 페이지로 이동(기존 로그인 위치 재사용).
 - **검증**: node --check (admin.js·app.js) 통과. 게이트 흔적 grep 0, 소프트 권유 배선 28곳 확인. 실서버 노출/닫힘 흐름은 사용자 확인 필요(정적 PWA라 로컬 라이브 구동 미실시).
+
+### 후속 수정 — 카드가 SW 자동 새로고침에 사라지던 문제 (2026-06-05)
+- **증상**: 브라우저(puppeteer-core+Chrome) 검증 결과, 카드 마크업·문구는 정상인데 최종 상태가 hidden이고 sessionStorage sfo_login_nudge=1로 이미 찍혀 있었음.
+- **원인**: maybeLoginPrompt가 '표시 시점'에 세션 플래그를 찍었는데, index.html SW 로직이 새 버전 활성화 시 controllerchange→location.reload() 함. 첫 로드에 카드 뜨고 플래그 찍힘→SW 재로드→재로드 후 플래그 때문에 권유 스킵→카드 사라짐(깜빡임).
+- **수정**: 플래그를 '표시 시점'이 아니라 '사용자 행동 시점'(dismissLoginPrompt/loginFromPrompt)에 찍도록 이동. SW 재로드를 거쳐도 카드가 남고, 닫거나 로그인해야 세션 동안 재노출 안 함.
+- **검증**: 로컬 3100 + puppeteer-core(시스템 Chrome) → SHOWN:true, class 'login-prompt show', opacity 1, cardVisible true, nudgeFlag null. 스크린샷으로 렌더 육안 확인.
+- SW 캐시 v48→v49만 상승(앱 버전 문구 1.7.4 유지 — 같은 기능 교정이라 changelog 중복 방지). 검증용 임시파일 _check_prompt.js·_prompt_shot.png는 커밋 제외.

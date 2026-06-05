@@ -356,21 +356,22 @@ const App = {
   },
 
   // ── 시작 시 로그인 권유(소프트) ───────────────────────────
-  // 잠금 없음. 비로그인·비게스트·일반 진입일 때 세션당 1회만 노출.
+  // 잠금 없음. 비로그인·비게스트·일반 진입일 때 노출, 사용자가 닫거나 로그인하면 세션 동안 재노출 안 함.
+  // (플래그는 '표시' 시점이 아니라 '사용자 행동' 시점에 찍는다 — SW 자동 새로고침에도 카드가 살아남도록)
   maybeLoginPrompt() {
     if (this.guestMode) return;                                  // 게스트 우회
     const mode = new URLSearchParams(location.search).get('mode');
     if (mode === 'tbm-view') return;                             // QR 공유 뷰어 우회
     if (window.Admin && Admin.token) return;                     // 이미 로그인됨
-    if (sessionStorage.getItem('sfo_login_nudge')) return;       // 세션당 1회
+    if (sessionStorage.getItem('sfo_login_nudge')) return;       // 이미 닫음/로그인함
     const el = document.getElementById('login-prompt');
     if (!el) return;
-    sessionStorage.setItem('sfo_login_nudge', '1');
     el.classList.remove('hidden');
     requestAnimationFrame(() => el.classList.add('show'));
   },
 
   dismissLoginPrompt() {
+    sessionStorage.setItem('sfo_login_nudge', '1');   // 사용자가 닫음 → 세션 동안 재노출 안 함
     const el = document.getElementById('login-prompt');
     if (!el) return;
     el.classList.remove('show');
