@@ -26,6 +26,7 @@ const App = {
     this._inited = true;
     this.initGuestMode();   // 가장 먼저 실행
     this.setupNavigation();
+    this.setupBackGuard();  // 안드로이드 뒤로가기 버튼 가로채기
     this.setupDate();
     this.updateDashboard();
     if (!this.guestMode) {
@@ -177,6 +178,52 @@ const App = {
     // Back button
     document.getElementById('btn-back').addEventListener('click', () => {
       this.goBack();
+    });
+  },
+
+  // ══════════════════════════════════════════════════════════
+  //  안드로이드 물리 뒤로가기 버튼 가드
+  //  - 부팅 시 가드 히스토리를 한 개 깔아 뒤로가기가 곧장
+  //    앱을 종료하지 못하게 버퍼를 확보한다.
+  //  - 하위 페이지: 앱 내부 이전 화면으로 이동.
+  //  - 홈 화면: "앱을 종료하시겠습니까?" 확인 후 종료.
+  // ══════════════════════════════════════════════════════════
+  setupBackGuard() {
+    // 가드 히스토리 적재
+    history.pushState({ __guard: true }, '');
+
+    window.addEventListener('popstate', async () => {
+      // 의도적 종료가 진행 중이면 그대로 통과시킨다.
+      if (this._allowExit) return;
+
+      // 하위 페이지면 앱 내부 뒤로가기로 처리하고 가드를 재충전.
+      if (this.currentPage !== 'home') {
+        history.pushState({ __guard: true }, '');
+        this.goBack();
+        return;
+      }
+
+      // 홈 화면 — 먼저 가드를 재충전해 앱이 닫히지 않게 막은 뒤 확인.
+      history.pushState({ __guard: true }, '');
+      if (this._exitAsking) return;   // 확인창 중복 방지
+      this._exitAsking = true;
+      const ok = await this.confirm('앱을 종료하시겠습니까?', {
+        title: '앱 종료',
+        type:  'warning',
+        icon:  '🚪'
+      });
+      this._exitAsking = false;
+
+      if (ok) {
+        // 가드 + 진입점을 함께 제거 → 대부분의 안드로이드 PWA에서 앱이 종료된다.
+        this._allowExit = true;
+        history.go(-2);
+        // 종료되지 않는 환경(데스크톱 탭 등) 대비 — 가드를 복구해 보호를 유지.
+        setTimeout(() => {
+          this._allowExit = false;
+          history.pushState({ __guard: true }, '');
+        }, 700);
+      }
     });
   },
 
