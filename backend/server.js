@@ -461,8 +461,9 @@ app.get('/api/alerts', async (req, res) => {
 
 // ── 제안 접수 ─────────────────────────────────────────────────
 app.post('/api/submit-proposal', async (req, res) => {
-  const { affiliation, department, name, phone, suggestion, imageData } = req.body || {};
-  if (!affiliation || !department || !name || !phone || !suggestion)
+  const { affiliation, department, name, phone, suggestion, imageData, source } = req.body || {};
+  // 담당자 직접 등록(source==='manager') 시 연락처·사진은 선택 항목
+  if (!affiliation || !department || !name || !suggestion)
     return res.status(400).json({ error: '필수 항목이 누락되었습니다.' });
 
   const recordId = 'proposal_' + Date.now();
@@ -473,10 +474,11 @@ app.post('/api/submit-proposal', async (req, res) => {
   await saveProposalRecord({
     id: recordId,
     createdAt: new Date().toISOString(),
-    affiliation, department, name, phone, suggestion,
+    affiliation, department, name, phone: phone || '', suggestion,
     imagePath,
     imageUrl,
     status: '접수',
+    source: source === 'manager' ? 'manager' : 'worker',
     clientIp: req.ip
   });
 

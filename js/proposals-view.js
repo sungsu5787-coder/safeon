@@ -81,6 +81,7 @@ const ProposalsView = {
         <div class="proposal-card-footer">
           <span>${date}</span>
           <div style="display:flex;gap:6px;align-items:center">
+            ${p.source === 'manager' ? '<span class="proposal-mgr-badge">📋 담당자 등록</span>' : ''}
             ${p.note ? '<span class="proposal-has-photo">📝 비고</span>' : ''}
             ${p.hasImage ? '<span class="proposal-has-photo">📷 사진</span>' : ''}
           </div>
@@ -116,6 +117,7 @@ const ProposalsView = {
         <div><strong>이름</strong>${App.escapeHtml(p.name)}</div>
         <div><strong>연락처</strong>${App.escapeHtml(p.phone)}</div>
         <div><strong>제출일</strong>${date}</div>
+        ${p.source === 'manager' ? '<div><strong>등록경로</strong><span class="proposal-mgr-badge">📋 담당자 직접 등록</span></div>' : ''}
       </div>
       <div class="proposal-detail-suggestion">
         <div class="proposal-detail-label">제안 내용</div>
@@ -163,6 +165,68 @@ const ProposalsView = {
       this._render();
     } catch {
       App.showToast('상태 변경에 실패했습니다.');
+    }
+  },
+
+  // ── 담당자 직접 작성 ─────────────────────────────────────────
+  _createPhotoData: null,
+
+  openCreate() {
+    this._createPhotoData = null;
+    ['affiliation', 'department', 'name', 'phone', 'suggestion'].forEach(f => {
+      const el = document.getElementById('create-' + f);
+      if (el) el.value = '';
+    });
+    const photo = document.getElementById('create-photo');
+    if (photo) photo.value = '';
+    const preview = document.getElementById('create-photo-preview');
+    if (preview) preview.innerHTML = '';
+    document.getElementById('proposal-create-modal').classList.remove('hidden');
+  },
+
+  closeCreate() {
+    document.getElementById('proposal-create-modal').classList.add('hidden');
+  },
+
+  async handleCreatePhoto(event) {
+    const file = event.target.files && event.target.files[0];
+    const preview = document.getElementById('create-photo-preview');
+    this._createPhotoData = null;
+    if (preview) preview.innerHTML = '';
+    if (!file || !file.type.startsWith('image/')) return;
+    const raw = await Proposal.readFileAsDataUrl(file);
+    this._createPhotoData = await Proposal.compressImage(raw);
+    if (preview) preview.innerHTML = `<img src="${this._createPhotoData}" alt="첨부 사진 미리보기">`;
+  },
+
+  async saveCreate() {
+    const v = f => (document.getElementById('create-' + f)?.value || '').trim();
+    const payload = {
+      affiliation: v('affiliation'),
+      department:  v('department'),
+      name:        v('name'),
+      phone:       v('phone'),
+      suggestion:  v('suggestion'),
+      imageData:   this._createPhotoData || undefined,
+      source:      'manager',
+    };
+    if (!payload.affiliation || !payload.department || !payload.name || !payload.suggestion) {
+      App.showToast('소속·부서·이름·제안 내용은 필수입니다.');
+      return;
+    }
+    try {
+      const apiBase = window.API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/submit-proposal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('fail');
+      App.showToast('✅ 제안이 등록되었습니다.');
+      this.closeCreate();
+      this.load();
+    } catch {
+      App.showToast('제안 등록에 실패했습니다.');
     }
   },
 

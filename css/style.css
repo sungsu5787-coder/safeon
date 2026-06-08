@@ -2488,6 +2488,38 @@ main {
 .proposal-has-photo { color: var(--primary); font-weight: 600; }
 .proposals-rank-tab { margin-left: auto; background: var(--gray-700) !important; color: #fff !important; border-radius: 20px; font-weight: 700; }
 .proposals-rank-tab.active { background: var(--primary) !important; }
+.proposals-create-btn {
+  flex-shrink: 0;
+  background: #1e8e3e;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.proposals-create-btn:hover { background: #19752f; }
+.proposal-mgr-badge {
+  display: inline-block;
+  background: #e6f4ea;
+  color: #1e8e3e;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 8px;
+}
+.proposal-create-hint {
+  font-size: 12.5px;
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.proposal-create-hint + .proposal-edit-row { margin-top: 0; }
+.proposal-edit-row .req { color: #d93025; }
+.proposal-create-preview { margin-top: 8px; }
+.proposal-create-preview img { max-width: 100%; max-height: 180px; border-radius: 6px; border: 1px solid var(--gray-200); }
 
 /* ── 제안자 순위 뷰 ────────────────────────────────────────── */
 .prop-rank-wrap { padding: 4px 0 16px; }

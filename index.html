@@ -1318,6 +1318,7 @@
             <button class="proposals-filter-tab" data-filter="완료" onclick="ProposalsView.setFilter('완료')">완료 <span class="tab-badge">0</span></button>
             <button class="proposals-filter-tab" data-filter="반려" onclick="ProposalsView.setFilter('반려')">반려 <span class="tab-badge">0</span></button>
             <button class="proposals-filter-tab proposals-rank-tab" data-filter="순위" onclick="ProposalsView.setFilter('순위')">📊 순위</button>
+            <button class="proposals-create-btn" onclick="ProposalsView.openCreate()">✏️ 직접 작성</button>
           </div>
           <div id="proposals-list" class="proposals-list"></div>
         </div>
@@ -1716,6 +1717,45 @@
   <script src="js/html2canvas.min.js"></script>
   <script src="js/qrcode.min.js"></script>
   <!-- 제안 수정 모달 -->
+  <!-- 담당자 직접 제안 작성 모달 -->
+  <div id="proposal-create-modal" class="proposal-detail-overlay hidden" onclick="if(event.target===this)ProposalsView.closeCreate()">
+    <div class="proposal-detail-sheet">
+      <div class="proposal-detail-header">
+        <span>✏️ 제안 직접 작성</span>
+        <button class="proposal-detail-close" onclick="ProposalsView.closeCreate()">✕</button>
+      </div>
+      <div class="proposal-detail-content">
+        <p class="proposal-create-hint">담당자가 구두·전화 등으로 받은 제안을 직접 등록합니다. 연락처와 사진은 선택 사항입니다.</p>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">소속 <span class="req">*</span></label>
+          <input type="text" id="create-affiliation" class="proposal-edit-input" placeholder="소속">
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">부서 <span class="req">*</span></label>
+          <input type="text" id="create-department" class="proposal-edit-input" placeholder="부서">
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">이름 <span class="req">*</span></label>
+          <input type="text" id="create-name" class="proposal-edit-input" placeholder="제안자 이름">
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">연락처</label>
+          <input type="text" id="create-phone" class="proposal-edit-input" placeholder="연락처 (선택)">
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">제안 내용 <span class="req">*</span></label>
+          <textarea id="create-suggestion" class="proposal-note-textarea" rows="5" placeholder="제안 내용"></textarea>
+        </div>
+        <div class="proposal-edit-row">
+          <label class="proposal-edit-label">사진</label>
+          <input type="file" id="create-photo" accept="image/*" class="proposal-edit-input" onchange="ProposalsView.handleCreatePhoto(event)">
+          <div id="create-photo-preview" class="proposal-create-preview"></div>
+        </div>
+        <button class="btn-primary" style="width:100%;margin-top:8px" onclick="ProposalsView.saveCreate()">등록</button>
+      </div>
+    </div>
+  </div>
+
   <div id="proposal-edit-modal" class="proposal-detail-overlay hidden" onclick="if(event.target===this)ProposalsView.closeEdit()">
     <div class="proposal-detail-sheet">
       <div class="proposal-detail-header">
