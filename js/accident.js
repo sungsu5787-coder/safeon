@@ -906,6 +906,7 @@ const Accident = {
     const nl2br = s => esc(s).replace(/\n/g, '<br>');
     const sig  = this.reporterSig && !this.reporterSig.isEmpty?.()
                  ? this.reporterSig.toDataURL() : '';
+    const type = this.getSelectedType();
 
     // 사업장 정보 (WorkplaceInfo 첫 번째 항목)
     const wp   = (typeof WorkplaceInfo !== 'undefined' && WorkplaceInfo._items?.length)
@@ -923,42 +924,10 @@ const Accident = {
     const chk = (label, active) =>
       `<span class="ci ${active ? 'ci-on' : ''}">${active ? '☑' : '☐'} ${label}</span>`;
 
-    // 부상부위 키워드 매칭
-    const partText = (v('accident-injured-part') + ' ' + v('accident-injured-info')).toLowerCase();
-    const matchPart = kw => kw.some(k => partText.includes(k));
-    const PARTS = [
-      { label:'머리',   kw:['머리','두부'] },
-      { label:'눈',     kw:['눈','안구'] },
-      { label:'귀',     kw:['귀'] },
-      { label:'코',     kw:['코'] },
-      { label:'목',     kw:['목','경추'] },
-      { label:'흉부',   kw:['흉부','가슴','갈비','늑골'] },
-      { label:'복부',   kw:['복부','배'] },
-      { label:'등·허리',kw:['등','허리','요추','척추'] },
-      { label:'어깨',   kw:['어깨'] },
-      { label:'팔',     kw:['팔','팔꿈치','상완','전완'] },
-      { label:'손·손가락', kw:['손','손가락','손목'] },
-      { label:'골반',   kw:['골반','엉덩이'] },
-      { label:'다리',   kw:['다리','무릎','종아리','허벅지'] },
-      { label:'발·발가락', kw:['발','발가락','발목'] },
-      { label:'전신',   kw:['전신'] },
-    ];
-
-    // 상해종류 키워드 매칭
-    const levelText = v('accident-injured-level').toLowerCase();
-    const TYPES_MAP = [
-      { label:'골절', kw:['골절'] }, { label:'절단', kw:['절단'] },
-      { label:'타박상', kw:['타박'] }, { label:'찰과상', kw:['찰과','긁'] },
-      { label:'창상(베임·찔림)', kw:['베임','찔림','열상','자상'] },
-      { label:'화상', kw:['화상'] }, { label:'뇌진탕', kw:['뇌진탕'] },
-      { label:'중독·질식', kw:['중독','질식'] }, { label:'감전', kw:['감전'] },
-      { label:'염좌', kw:['염좌','삠'] }, { label:'사망', kw:['사망'] },
-    ];
-
-    // 현장사진 HTML
+    // 현장사진 — 양식 하단 [첨부]로 분리
     const photosHtml = this.photos.length
       ? `<div style="margin-top:8px">
-           <div style="font-weight:700;font-size:8.5pt;background:#333;color:#fff;padding:3px 6px;margin-bottom:4px">현장사진 (${this.photos.length}매)</div>
+           <div style="font-weight:700;font-size:8.5pt;background:#333;color:#fff;padding:3px 6px;margin-bottom:4px">[첨부] 현장사진 (${this.photos.length}매)</div>
            <div style="display:flex;flex-wrap:wrap;gap:4px">
              ${this.photos.map(p => `<img src="${p.data}" style="width:31%;height:auto;border:1px solid #ccc">`).join('')}
            </div>
@@ -971,23 +940,29 @@ const Accident = {
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:8.5pt;color:#111;background:#fff;padding:10mm 12mm}
-  h1{font-size:16pt;font-weight:900;letter-spacing:3px;text-align:center;margin:0}
-  .top-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px}
+  h1{font-size:17pt;font-weight:900;letter-spacing:6px;text-align:center;margin:0}
+  .top-row{display:flex;justify-content:space-between;align-items:flex-start}
   .serial{font-size:7.5pt;color:#555}
-  .proc{font-size:7.5pt;text-align:right;line-height:1.8}
+  .proc{font-size:7.5pt;text-align:right;line-height:1.7}
+  .top-note{font-size:7pt;color:#444;margin:3px 0 4px}
   .top-hr{border:none;border-top:2px solid #111;margin:3px 0 5px}
-  table{width:100%;border-collapse:collapse}
+  table{width:100%;border-collapse:collapse;margin-top:-1px}
   td,th{border:1px solid #444;padding:3px 5px;font-size:8pt;vertical-align:middle}
   .sh{background:#333;color:#fff;font-weight:700;font-size:8pt;padding:2px 6px;letter-spacing:0.3px}
-  .tl{background:#f0f0f0;font-weight:700;white-space:nowrap;min-width:70px}
-  .ci{display:inline-block;margin-right:8px;white-space:nowrap;font-size:8pt}
+  .tl{background:#f0f0f0;font-weight:700;white-space:nowrap}
+  .ci{display:inline-block;margin-right:10px;white-space:nowrap;font-size:8pt}
   .ci-on{font-weight:700}
-  .tall{height:56px;vertical-align:top;padding-top:4px}
+  .tall{height:52px;vertical-align:top;padding-top:4px}
   .vtop{vertical-align:top;padding-top:3px}
-  .sig-img{height:36px;border-bottom:1px solid #444}
+  .sig-img{height:30px}
   .note{font-size:7pt;color:#666}
+  .submit-row{margin-top:10px;text-align:center;font-size:9pt}
+  .submit-date{text-align:center;font-size:8.5pt;margin:3px 0 5px}
+  .sign-line{display:flex;justify-content:flex-end;gap:8px;align-items:center;font-size:8.5pt;margin-top:4px}
+  .to-line{font-weight:700;font-size:9.5pt;margin-top:8px}
+  .classify{margin-top:10px;border:1px dashed #777}
+  .classify .sh{background:#666}
   .foot{text-align:center;font-size:7.5pt;color:#888;margin-top:8px;padding-top:5px;border-top:1px solid #ccc}
-  .info-box{margin-top:8px;border:1px solid #999;padding:5px 8px;font-size:7.5pt;color:#444;line-height:1.9;background:#fafafa}
   @media print{body{padding:8mm 10mm}@page{size:A4 portrait;margin:8mm}}
 </style></head><body>
 
@@ -996,165 +971,122 @@ const Accident = {
   <h1>산 업 재 해 조 사 표</h1>
   <div class="proc">처리기간: 즉시<br><span class="note">「산업안전보건법 시행규칙」 제73조</span></div>
 </div>
+<div class="top-note">※ 뒤쪽의 작성방법을 읽고 작성해 주시기 바라며, [ ]에는 해당하는 곳에 √ 표시를 합니다.</div>
 <div class="top-hr"></div>
 
 <!-- ① 사업장 정보 -->
-<table style="margin-bottom:0">
+<table>
   <tr><td colspan="4" class="sh">① 사업장 정보</td></tr>
   <tr>
+    <td class="tl">산재관리번호<br>(사업개시번호)</td><td></td>
+    <td class="tl">사업자등록번호</td><td></td>
+  </tr>
+  <tr>
     <td class="tl">사업장명</td><td>${wpName}</td>
-    <td class="tl">사업장 관리번호</td><td></td>
+    <td class="tl">근로자 수</td><td>${wpWorkers ? wpWorkers + '명' : ''}</td>
   </tr>
   <tr>
     <td class="tl">업종</td><td></td>
-    <td class="tl">상시근로자수</td><td>${wpWorkers ? wpWorkers + '명' : ''}</td>
+    <td class="tl">소재지</td><td>${wpAddr}</td>
   </tr>
-  <tr><td class="tl">소재지</td><td colspan="3">${wpAddr}</td></tr>
   <tr>
-    <td class="tl">대표자 성명</td><td>${wpCeo}</td>
-    <td class="tl">원수급인<br>사업장명</td><td><span class="note">(해당 시 기재)</span></td>
+    <td class="tl">원도급인<br>사업장명</td><td><span class="note">(사내 수급인 소속 재해 시)</span></td>
+    <td class="tl">파견사업주<br>사업장명</td><td><span class="note">(파견근로자 재해 시)</span></td>
   </tr>
 </table>
 
 <!-- ② 재해자 정보 -->
-<table style="margin-top:-1px">
+<table>
   <tr><td colspan="4" class="sh">② 재해자 정보</td></tr>
   <tr>
     <td class="tl">성명</td><td>${esc(v('accident-injured-name'))}</td>
-    <td class="tl">성별</td>
-    <td>${chk('남',false)}&nbsp;${chk('여',false)}</td>
+    <td class="tl">주민등록번호<br>(외국인등록번호)</td><td></td>
   </tr>
   <tr>
-    <td class="tl">나이</td><td></td>
-    <td class="tl">국적</td>
-    <td>${chk('내국인',true)}&nbsp;${chk('외국인',false)}</td>
+    <td class="tl">성별</td><td>${chk('남',false)}${chk('여',false)}</td>
+    <td class="tl">국적</td><td>${chk('내국인',true)}${chk('외국인',false)}</td>
+  </tr>
+  <tr>
+    <td class="tl">체류자격</td><td><span class="note">(외국인인 경우)</span></td>
+    <td class="tl">직업</td><td>${esc(v('accident-dept'))}</td>
   </tr>
   <tr>
     <td class="tl">입사일</td><td></td>
+    <td class="tl">같은 종류 업무<br>근속기간</td><td>　년　개월</td>
+  </tr>
+  <tr>
     <td class="tl">고용형태</td>
-    <td>${chk('상용',false)}&nbsp;${chk('임시·일용',false)}&nbsp;${chk('파견',false)}&nbsp;${chk('기타',false)}</td>
+    <td colspan="3">${chk('상용',false)}${chk('임시',false)}${chk('일용',false)}${chk('무급가족종사자',false)}${chk('자영업자',false)}${chk('그 밖의 사항',false)}</td>
   </tr>
   <tr>
-    <td class="tl">직종</td><td>${esc(v('accident-dept'))}</td>
-    <td class="tl">근속기간</td><td>　년　　개월</td>
+    <td class="tl">근무형태</td>
+    <td colspan="3">${chk('정상',false)}${chk('2교대',false)}${chk('3교대',false)}${chk('4교대',false)}${chk('시간제',false)}${chk('그 밖의 사항',false)}</td>
   </tr>
   <tr>
-    <td class="tl vtop">재해당시<br>작업내용</td>
-    <td colspan="3" class="tall">${nl2br(v('accident-content'))}</td>
+    <td class="tl">상해종류<br>(질병명)</td><td>${esc(v('accident-injured-level'))}</td>
+    <td class="tl">상해부위<br>(질병부위)</td><td>${esc(v('accident-injured-part'))}</td>
+  </tr>
+  <tr>
+    <td class="tl">휴업예상일수</td><td>　일 <span class="note">(의사소견 기준)</span></td>
+    <td class="tl">사망 여부</td><td>${chk('사망', type==='serious')}</td>
   </tr>
 </table>
 
-<!-- ③ 재해발생 개요 -->
-<table style="margin-top:-1px">
-  <tr><td colspan="4" class="sh">③ 재해발생 개요</td></tr>
+<!-- ③ 재해발생 개요 및 원인 -->
+<table>
+  <tr><td colspan="4" class="sh">③ 재해발생 개요 및 원인</td></tr>
   <tr>
     <td class="tl">발생일시</td>
-    <td>${esc(dateVal)} ${esc(v('accident-time'))}</td>
-    <td class="tl">발생요일</td>
-    <td>
-      ${['월','화','수','목','금','토','일'].map((d,i) => chk(d, dowIdx === (i+1)%7 || (i===6 && dowIdx===0))).join(' ')}
-    </td>
-  </tr>
-  <tr><td class="tl">발생장소</td><td colspan="3">${esc(v('accident-location'))}</td></tr>
-  <tr>
-    <td class="tl">목격자</td>
-    <td colspan="3">${chk('있음',false)}&nbsp;${chk('없음',false)}</td>
+    <td>${esc(dateVal)} ${esc(v('accident-time'))} ${dowIdx >= 0 ? '(' + DOW[dowIdx] + ')' : ''}</td>
+    <td class="tl">발생장소</td><td>${esc(v('accident-location'))}</td>
   </tr>
   <tr>
-    <td class="tl vtop">재해발생경위</td>
-    <td colspan="3" style="height:80px;vertical-align:top;padding-top:4px">${nl2br(v('accident-content'))}</td>
-  </tr>
-</table>
-
-<!-- ④ 재해발생 원인 -->
-<table style="margin-top:-1px">
-  <tr><td colspan="4" class="sh">④ 재해발생 원인</td></tr>
-  <tr>
-    <td class="tl" rowspan="2">기인물</td>
-    <td style="background:#f8f8f8;width:48px">1순위</td>
-    <td class="tl">분류번호</td><td></td>
+    <td class="tl">재해관련<br>작업유형</td><td colspan="3"></td>
   </tr>
   <tr>
-    <td style="background:#f8f8f8">2순위</td>
-    <td class="tl">분류번호</td><td></td>
+    <td class="tl vtop">재해발생<br>당시 상황</td>
+    <td colspan="3" class="tall">${nl2br(v('accident-content'))}</td>
   </tr>
   <tr>
-    <td class="tl">가해물</td><td></td>
-    <td class="tl">분류번호</td><td></td>
-  </tr>
-  <tr>
-    <td class="tl">사고성 재해</td>
-    <td colspan="3">${chk('해당', type === 'industrial' || type === 'serious')}&nbsp;${chk('비해당', false)}</td>
-  </tr>
-  <tr>
-    <td class="tl vtop">재해유형</td>
-    <td colspan="3" style="padding:4px 6px;line-height:1.9">
-      ${['떨어짐','넘어짐','깔림·뒤집힘','부딪힘','맞음','무너짐','끼임',
-         '절단·베임·찔림','감전','폭발·파열','화재','불균형 및 무리한 동작',
-         '이상온도 접촉','유해·위험물질 노출','산소결핍','빠짐·익사',
-         '교통사고(업무상)','폭력행위','동물상해','직업성질병','그 밖의 경우']
-        .map(d => chk(d, false)).join(' ')}
-    </td>
+    <td class="tl vtop">재해발생<br>원인</td>
+    <td colspan="3" class="tall">${nl2br(v('accident-cause'))}</td>
   </tr>
 </table>
 
-<!-- ⑤ 휴업 및 상해 정보 -->
-<table style="margin-top:-1px">
-  <tr><td colspan="4" class="sh">⑤ 휴업 및 상해 정보</td></tr>
-  <tr>
-    <td class="tl">휴업예정일수</td>
-    <td>　　일 <span class="note">(의사소견서 기준)</span></td>
-    <td class="tl">사망 여부</td>
-    <td>${chk('사망', type==='serious')}&nbsp;${chk('부상', type!=='serious')}&nbsp;${chk('직업병',false)}</td>
-  </tr>
-  <tr>
-    <td class="tl vtop">상해부위</td>
-    <td colspan="3" style="padding:4px 6px;line-height:1.9">
-      ${PARTS.map(p => chk(p.label, matchPart(p.kw))).join(' ')}
-      ${chk('그 밖의 부위', false)}
-    </td>
-  </tr>
-  <tr>
-    <td class="tl vtop">상해종류</td>
-    <td colspan="3" style="padding:4px 6px;line-height:1.9">
-      ${TYPES_MAP.map(t => chk(t.label, t.kw.some(k => levelText.includes(k)))).join(' ')}
-      ${chk('직업성질병',false)}&nbsp;${chk('그 밖의 경우',false)}
-    </td>
-  </tr>
+<!-- ④ 재발방지 계획 -->
+<table>
+  <tr><td colspan="4" class="sh">④ 재발방지 계획</td></tr>
+  <tr><td colspan="4" class="tall">${nl2br(v('accident-prevention'))}</td></tr>
 </table>
 
-<!-- ⑥ 재발방지계획 -->
-<table style="margin-top:-1px">
-  <tr><td colspan="2" class="sh">⑥ 재발방지계획</td></tr>
+<div class="submit-row">위와 같이 산업재해조사표를 제출합니다.</div>
+<div class="submit-date">${new Date().toLocaleDateString('ko-KR')}</div>
+<table>
   <tr>
-    <td class="tl vtop" style="width:80px">재발방지계획</td>
-    <td style="height:60px;vertical-align:top;padding-top:4px">${nl2br(v('accident-prevention'))}</td>
+    <td class="tl">작성자 성명</td><td>${esc(v('accident-reporter'))}</td>
+    <td class="tl">작성자 전화번호</td><td></td>
   </tr>
 </table>
+<div class="sign-line">사업주 ${wpCeo} (서명 또는 인)</div>
+<div class="sign-line">근로자대표(재해자) ${sig ? `<img src="${sig}" class="sig-img" alt="서명">` : ''} (서명 또는 인)</div>
+<div class="to-line">○○지방고용노동청장(지청장) 귀하</div>
 
-<!-- 작성자 -->
-<table style="margin-top:-1px">
+<!-- 재해 분류자 기입란 (사업장 미작성) -->
+<table class="classify">
+  <tr><td colspan="4" class="sh">재해 분류자 기입란 &nbsp;<span style="font-weight:400;font-size:7pt">※ 아래 사항은 사업장에서는 작성하지 않습니다.</span></td></tr>
   <tr>
-    <td class="tl">작성일</td>
-    <td>${new Date().toLocaleDateString('ko-KR').replace(/\s/g,'')}</td>
-    <td class="tl">소속·직위</td>
-    <td>${esc(v('accident-dept'))}</td>
+    <td class="tl">발생형태</td><td><span class="note">분류번호</span></td>
+    <td class="tl">기인물</td><td><span class="note">분류번호</span></td>
   </tr>
   <tr>
-    <td class="tl">작성자 성명</td>
-    <td>${esc(v('accident-reporter'))}</td>
-    <td class="tl">서명(인)</td>
-    <td style="height:42px">${sig ? `<img src="${sig}" class="sig-img" alt="서명">` : ''}</td>
+    <td class="tl">작업지역·공정</td><td><span class="note">분류번호</span></td>
+    <td class="tl">작업내용</td><td><span class="note">분류번호</span></td>
   </tr>
 </table>
 
 ${photosHtml}
 
-<div class="info-box">
-  <b>제출처:</b> 관할 지방고용노동관서<br>
-  <b>유의사항:</b> 사망자 발생 또는 3일 이상 휴업이 필요한 부상·질병 발생일로부터 1개월 이내 제출 (「산업안전보건법」 제57조, 시행규칙 제73조)
-</div>
-<div class="foot">SAMHWA SafeOn 현장 안전보건 관리 시스템 &nbsp;|&nbsp; [별지 제30호서식] 산업재해조사표</div>
+<div class="foot">SAMHWA SafeOn 현장 안전보건 관리 시스템 &nbsp;|&nbsp; [별지 제30호서식] 산업재해조사표 &nbsp;|&nbsp; 제출: 관할 지방고용노동관서 (「산업안전보건법」 제57조·시행규칙 제73조, 발생일로부터 1개월 이내)</div>
 </body></html>`);
   },
 
