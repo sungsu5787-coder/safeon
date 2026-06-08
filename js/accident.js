@@ -1190,7 +1190,7 @@ ${photosHtml}
   .head h1{font-size:21pt;font-weight:900;letter-spacing:2px;color:#202124;white-space:nowrap}
   .htitle{flex:1}
   .head .sub{font-size:10pt;color:#5f6368;margin-top:4px;white-space:nowrap}
-  .appr{border-collapse:collapse;flex-shrink:0}
+  .appr{border-collapse:collapse;flex-shrink:0;width:auto}
   .appr th{background:#f1f3f4;font-size:7.5pt;font-weight:700;text-align:center;padding:2px 0;border:1px solid #444;width:44px}
   .appr td{height:38px;border:1px solid #444;width:44px}
   hr{border:none;border-top:2px solid #202124;margin:8px 0 14px}
