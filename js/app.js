@@ -287,6 +287,9 @@ const App = {
     if (hour < 12) greeting = '좋은 아침입니다';
     else if (hour < 18) greeting = '안녕하세요';
     else greeting = '수고하셨습니다';
+    // 로그인 상태면 사용자 이름을 인사말 앞에 붙임 (게스트·미로그인은 기본 문구 유지)
+    const _u = window.Admin && Admin.currentUser;
+    if (_u && _u.name) greeting = `${_u.name}님, ${greeting}`;
     document.getElementById('greeting-text').textContent = greeting;
 
     const today = new Date().toISOString().split('T')[0];
