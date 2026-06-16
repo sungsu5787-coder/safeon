@@ -702,8 +702,16 @@ const TBM = {
     if (viewer) viewer.classList.remove('hidden');
     const body = document.getElementById('tbm-viewer-body');
 
-    // 익명 로그인 완료를 먼저 기다린다(인증 전에 읽기가 나가 permission-denied 나는 것 방지).
-    try { if (typeof authReadyPromise !== 'undefined') await authReadyPromise; } catch (_) {}
+    // 익명 로그인을 기다리되 최대 2.5초까지만(인증이 멈춰도 화면이 영원히 로딩되지 않게).
+    // 인증이 늦거나 실패해도 읽기는 진행한다(tbm 읽기는 규칙상 인증 불필요).
+    try {
+      if (typeof authReadyPromise !== 'undefined') {
+        await Promise.race([
+          authReadyPromise,
+          new Promise(resolve => setTimeout(resolve, 2500))
+        ]);
+      }
+    } catch (_) {}
 
     // 네트워크 일시 오류(unavailable)는 한 번 재시도한다.
     const fetchDoc = () => collections.tbm.doc(id).get();
