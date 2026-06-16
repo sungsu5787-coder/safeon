@@ -713,8 +713,15 @@ const TBM = {
       }
     } catch (_) {}
 
+    // 읽기가 8초 안에 안 끝나면 끊는다(연결이 막혀 무한 로딩 되는 것 방지).
+    const withTimeout = (p, ms) => Promise.race([
+      p,
+      new Promise((_, reject) => setTimeout(() => {
+        const e = new Error('timeout'); e.code = 'unavailable'; reject(e);
+      }, ms))
+    ]);
     // 네트워크 일시 오류(unavailable)는 한 번 재시도한다.
-    const fetchDoc = () => collections.tbm.doc(id).get();
+    const fetchDoc = () => withTimeout(collections.tbm.doc(id).get(), 8000);
     try {
       let doc;
       try {
