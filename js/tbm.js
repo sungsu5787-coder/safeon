@@ -700,20 +700,43 @@ const TBM = {
     this._viewId = id;
     const viewer = document.getElementById('tbm-shared-viewer');
     if (viewer) viewer.classList.remove('hidden');
+    const body = document.getElementById('tbm-viewer-body');
 
+    // 익명 로그인 완료를 먼저 기다린다(인증 전에 읽기가 나가 permission-denied 나는 것 방지).
+    try { if (typeof authReadyPromise !== 'undefined') await authReadyPromise; } catch (_) {}
+
+    // 네트워크 일시 오류(unavailable)는 한 번 재시도한다.
+    const fetchDoc = () => collections.tbm.doc(id).get();
     try {
-      const doc = await collections.tbm.doc(id).get();
+      let doc;
+      try {
+        doc = await fetchDoc();
+      } catch (e) {
+        if (e && e.code === 'unavailable') {
+          await new Promise(r => setTimeout(r, 800));
+          doc = await fetchDoc();
+        } else {
+          throw e;
+        }
+      }
+
       if (!doc.exists) {
-        document.getElementById('tbm-viewer-body').innerHTML =
+        body.innerHTML =
           '<p style="padding:40px;text-align:center;color:#999">TBM 데이터를 찾을 수 없습니다.</p>';
         return;
       }
       this._viewData = doc.data();
       this._renderSharedView(lang);
     } catch (err) {
-      document.getElementById('tbm-viewer-body').innerHTML =
-        '<p style="padding:40px;text-align:center;color:#999">데이터를 불러오는 중 오류가 발생했습니다.</p>';
       console.error(err);
+      const msg =
+        err && err.code === 'permission-denied'
+          ? '접근 권한이 없습니다. 링크를 다시 확인해 주세요.'
+          : err && err.code === 'unavailable'
+          ? '네트워크 연결을 확인한 뒤 새로고침해 주세요.'
+          : `데이터를 불러오는 중 오류가 발생했습니다. (${(err && err.code) || 'unknown'})`;
+      body.innerHTML =
+        `<p style="padding:40px;text-align:center;color:#999">${msg}</p>`;
     }
   },
 
