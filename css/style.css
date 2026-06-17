@@ -6,32 +6,39 @@
 }
 
 :root {
-  --primary: #1a73e8;
-  --primary-dark: #1557b0;
-  --primary-light: #e8f0fe;
-  --danger: #d93025;
-  --danger-light: #fce8e6;
-  --warning: #f9ab00;
-  --warning-light: #fef7e0;
-  --success: #1e8e3e;
-  --success-light: #e6f4ea;
-  --gray-50: #f8f9fa;
-  --gray-100: #f1f3f4;
-  --gray-200: #e8eaed;
-  --gray-300: #dadce0;
-  --gray-400: #bdc1c6;
-  --gray-500: #9aa0a6;
-  --gray-600: #80868b;
-  --gray-700: #5f6368;
-  --gray-800: #3c4043;
-  --gray-900: #202124;
+  /* 토스 블루 — 일상 사용성의 골격 컬러 */
+  --primary: #3182F6;
+  --primary-dark: #1B64DA;
+  --primary-light: #EBF2FF;
+  --danger: #F04452;
+  --danger-light: #FEECEE;
+  --warning: #FF9500;
+  --warning-light: #FFF3E0;
+  --success: #15A86B;
+  --success-light: #E6F7EF;
+  /* 쿨 슬레이트 그레이 스케일 (토스 톤) */
+  --gray-50: #F7F8FA;
+  --gray-100: #F1F3F5;
+  --gray-200: #E8EBEE;
+  --gray-300: #D1D6DB;
+  --gray-400: #B0B8C1;
+  --gray-500: #8B95A1;
+  --gray-600: #6B7684;
+  --gray-700: #4E5968;
+  --gray-800: #333D4B;
+  --gray-900: #191F28;
   --white: #ffffff;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.12);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.15);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* 테슬라 잉크 — 위험·긴급 영역의 긴장감 */
+  --ink: #17171C;
+  --ink-soft: #2A2A30;
+  /* 토스식 소프트·대형 블러 섀도 */
+  --shadow-sm: 0 1px 3px rgba(17,31,44,0.05);
+  --shadow-md: 0 6px 16px rgba(17,31,44,0.08);
+  --shadow-lg: 0 12px 28px rgba(17,31,44,0.10);
+  /* 토스식 넉넉한 라운드 */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
   --header-height: 56px;
   --nav-height: 64px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -46,10 +53,11 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
   background: var(--gray-50);
   color: var(--gray-900);
   line-height: 1.5;
+  letter-spacing: -0.01em;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -71,14 +79,14 @@ body {
   width: 100%;
   max-width: 480px;
   height: var(--header-total);
-  background: linear-gradient(135deg, #0d47a1 0%, #1a73e8 60%, #1e88e5 100%);
+  background: linear-gradient(135deg, #1B64DA 0%, #3182F6 100%);
   color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--safe-top) 16px 0;
   z-index: 100;
-  box-shadow: 0 2px 12px rgba(13,71,161,0.4);
+  box-shadow: 0 2px 12px rgba(49,130,246,0.22);
 }
 
 /* 브랜드 헤더 (홈 전용) */
@@ -2068,20 +2076,22 @@ main {
 /* ===== Buttons ===== */
 .btn-primary {
   width: 100%;
-  padding: 14px;
+  padding: 15px;
   background: var(--primary);
   color: var(--white);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.12s;
   -webkit-tap-highlight-color: transparent;
 }
 
 .btn-primary:active {
   background: var(--primary-dark);
+  transform: scale(0.98);
 }
 
 .btn-secondary {
@@ -2333,10 +2343,10 @@ main {
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  background: linear-gradient(145deg, #1e88e5, #0d47a1);
+  background: linear-gradient(145deg, #3182F6, #1B64DA);
   color: #fff;
   border: 3px solid var(--white);
-  box-shadow: 0 6px 20px rgba(26,115,232,0.50), 0 2px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 20px rgba(49,130,246,0.45), 0 2px 6px rgba(0,0,0,0.12);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.15s, box-shadow 0.15s;
@@ -2352,8 +2362,8 @@ main {
 }
 
 .nav-fab.active {
-  background: linear-gradient(145deg, #42a5f5, #1565c0);
-  box-shadow: 0 6px 20px rgba(26,115,232,0.6);
+  background: linear-gradient(145deg, #5A9BFF, #1B64DA);
+  box-shadow: 0 6px 20px rgba(49,130,246,0.55);
 }
 
 /* ===== Toast ===== */
@@ -2866,15 +2876,16 @@ main {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px 18px;
+  padding: 18px 18px;
   background: var(--white);
   border: 1px solid var(--gray-200);
   border-left-width: 4px;
-  border-radius: var(--radius-md);
-  margin-bottom: 10px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 12px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
   transition: transform 0.15s, box-shadow 0.15s;
   -webkit-tap-highlight-color: transparent;
   text-align: left;
@@ -2884,6 +2895,7 @@ main {
 .menu-card-featured:active {
   transform: scale(0.98);
   background: var(--gray-50);
+  box-shadow: var(--shadow-md);
 }
 
 /* 안전사고 — 위험: Red-600 포인트 */
@@ -2954,6 +2966,28 @@ main {
 .featured-arrow {
   color: #94A3B8;
   flex-shrink: 0;
+}
+
+/* 안전사고 — 흰 카드 + 강한 레드 강조 (긴급 진입점, 밝되 구분되는 시그니처) */
+.menu-card-accident {
+  background: var(--white);
+  border-color: #FECACA;
+  border-left-color: var(--danger);
+  border-left-width: 5px;
+  box-shadow: 0 4px 14px rgba(240,68,82,0.14);
+}
+.menu-card-accident .featured-label { color: var(--danger); }
+.menu-card-accident .featured-icon-wrap {
+  background: var(--danger-light);
+  color: var(--danger);
+  border-color: #FECACA;
+}
+.menu-card-accident:hover {
+  box-shadow: 0 6px 18px rgba(240,68,82,0.20);
+}
+.menu-card-accident:active {
+  background: var(--danger-light);
+  box-shadow: 0 2px 8px rgba(240,68,82,0.16);
 }
 
 /* ===== New Menu Icon Colors — HMI 팔레트 ===== */
@@ -6247,15 +6281,30 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
 
 /* ===== 홈 가독성 리디자인 (v1.5.0) ===== */
 
-/* KPI 카드 강화 — 더 시원한 숫자·여백 */
-.home-kpi { gap: 10px; margin-bottom: 22px; }
+/* KPI 카드 — 애플식 큰 숫자 + 넉넉한 여백 + 경량 라벨 */
+.home-kpi { gap: 10px; margin-bottom: 24px; }
 .home-kpi-card {
-  padding: 16px 8px 13px;
-  gap: 4px;
+  padding: 20px 8px 16px;
+  gap: 5px;
+  border: 1px solid var(--gray-200);
+  border-top-width: 1px;
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
-.home-kpi-value { font-size: 1.55rem; }
-.home-kpi-label { font-size: 0.74rem; }
+/* 상단 컬러 보더 대신 값 색상으로 의미 전달 (애플식 절제) */
+.home-kpi-card.kpi-safe,
+.home-kpi-card.kpi-risk,
+.home-kpi-card.kpi-ptw { border-top-color: var(--gray-200); }
+.home-kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.home-kpi-label {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--gray-500);
+}
 
 /* 섹션 구분 타이틀 — 좌측 컬러 액센트 + 굵은 라벨 */
 .home-section-title {
@@ -6549,3 +6598,24 @@ body.guest-mode .tbm-lang-switcher { opacity: 1; }
   flex-shrink: 0;
 }
 .home-login-chip.on .hlc-act { color: #64748B; }
+
+/* ===== 홈 진입 모션 — staggered reveal (로드 1회, 토스 마이크로인터랙션) ===== */
+/* fill: backwards 사용 — 종료 후 카드 자체 transform(press scale)을 덮어쓰지 않게 함 */
+@keyframes sfo-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#page-home.active .dashboard > * {
+  animation: sfo-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+#page-home.active .dashboard > *:nth-child(1) { animation-delay: 0.02s; }
+#page-home.active .dashboard > *:nth-child(2) { animation-delay: 0.06s; }
+#page-home.active .dashboard > *:nth-child(3) { animation-delay: 0.10s; }
+#page-home.active .dashboard > *:nth-child(4) { animation-delay: 0.14s; }
+#page-home.active .dashboard > *:nth-child(5) { animation-delay: 0.18s; }
+#page-home.active .dashboard > *:nth-child(6) { animation-delay: 0.22s; }
+#page-home.active .dashboard > *:nth-child(7) { animation-delay: 0.26s; }
+#page-home.active .dashboard > *:nth-child(n+8) { animation-delay: 0.30s; }
+@media (prefers-reduced-motion: reduce) {
+  #page-home.active .dashboard > * { animation: none; }
+}

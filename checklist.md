@@ -140,6 +140,33 @@
 - [x] 임시파일(_pdf_text.txt 등) 커밋 제외
 - [ ] 라이브: 실기기 인쇄 출력 확인(사용자)
 
+## 토스·애플·테슬라 리디자인 (2026-06-18, v1.9.0)
+조합: 토스60(골격)·애플25(여백/타이포)·테슬라15(위험·긴급 긴장감). 토큰 중심 surgical.
+### 토큰 레이어
+- [x] Pretendard 폰트 추가 (index.html head, preconnect + 동적 서브셋, system-font fallback 유지)
+- [x] body font-family Pretendard 우선
+- [x] :root --primary 토스 블루(#3182F6) 계열 교체
+- [x] danger/warning/success 팔레트 미세 조정
+- [x] radius 토큰 상향(토스), shadow 소프트화(토스)
+- [x] 테슬라 ink 토큰 추가(--ink 위험·긴급용)
+### 시그니처 컴포넌트
+- [x] 헤더 토스 클린 블루로 flatten + 소프트 섀도
+- [x] KPI 카드 애플식 큰 숫자·여백
+- [x] Featured 카드 토스 화이트(radius·shadow·여백)
+- [x] btn-primary 토스 블루 라운드 + press scale
+- [x] 안전사고 카드 테슬라 ink 긴장감 (브라우저 렌더 확인)
+- [x] 하단 네비 + FAB 토스 블루 동기화
+### 모션
+- [x] 홈 대시보드 staggered fadeInUp(로드 1회, fill:backwards로 press scale 보존)
+### 검증
+- [x] §18 DON'T grep(순흑 텍스트 0, 안전사고=ink 다크 / 순백 아님)
+- [x] 콘텐츠 보존(텍스트/링크/기능 0 누락 — Featured 4·KPI 3·핵심텍스트 확인)
+- [x] CSS 중괄호 균형(1256/1256), changelog JSON 유효
+- [x] 캐시 버전 bump (index.html V v60·SW_URL, sw.js v60, package 1.9.0, changelog)
+- [x] 브라우저(375px 모바일) 렌더 육안 확인 (게이트·홈 대시보드)
+- [ ] 라이브 배포 후 실기기 확인 (사용자)
+
+---
 ## 산업재해조사표(별지30호) 버그수정 + 공식양식 보완 (2026-06-08, v1.8.0)
 - [x] 치명버그: _printOfficialForm()이 미선언 `type` 참조 → ReferenceError로 산업재해·중대재해 인쇄 무출력. `const type = this.getSelectedType()` 추가로 수정
 - [x] 공식 별지30호서식 항목 검색 교차확인(law.go.kr/moel)
