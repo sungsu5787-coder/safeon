@@ -135,6 +135,7 @@
 - **이전 v1.5.0 경고 반영**: 그때 "팔레트 전면 교체=통일성/회귀 위험"으로 색 유지했음. 이번엔 사용자가 명시적으로 리디자인 요청이라 팔레트 변경 sanctioned. 단 경고대로 ① 토큰 중심 일관 변경 ② 하드코딩 rgba 잔여 틴트는 surgical 원칙상 유지(다수·저영향) ③ **PWA stale-SW 함정**(문서화됨) 회피 위해 캐시 버전 4곳 동기화 bump.
 - **결정**: 폰트=Pretendard(CDN 동적 서브셋 + 기존 system fallback 유지, 오프라인 graceful). primary #1a73e8→#3182F6, 헤더/FAB 하드코딩 블루 동기화. btn-danger outline은 다용도라 유지(테슬라 ink는 안전사고 영역 한정, 시맨틱 파손 방지). 모션=홈 staggered fadeInUp 로드 1회(안전 앱이라 과한 연출 배제).
 - **롤백**: `git restore index.html css/style.css`.
+- **KPI 미표시 버그 수정 (v1.9.1, 배포 후 사용자 "kpi 안보여")**: 원인 — `.home-kpi`는 `hidden`으로 시작하고 `loadHomeMetrics()`가 **모든 Firebase `.get()` 쿼리 후 맨 끝**(app.js)에서만 `hidden` 제거. 쿼리에 타임아웃이 없어 기업망 Firestore 무한 로딩(f960997이 다룬 이슈)에 걸리면 KPI만 영구 숨김(나머지는 항상 보여 "KPI만 안 보임"과 일치). 내 리디자인 CSS는 무관(프리뷰에서 hidden 풀자 정상 렌더 확인). 수정 — `widget.classList.remove('hidden')`을 함수 **맨 앞**으로 이동(첫 await 이전, 동기), 끝의 중복 제거. 카드를 `—` 플레이스홀더로 먼저 노출하고 값은 쿼리 끝나는 대로 채움. 프리뷰 eval로 호출 즉시 hidden 제거·display:grid·3카드 검증. 캐시 v60→v61 / 1.9.0→1.9.1.
 - **안전사고 카드 — 다크→흰색 전환 (manager 피드백)**: 처음엔 테슬라 잉크 다크 카드(시그니처)로 구현했으나 사용자가 "너무 어둡다, 흰색으로" 피드백. 디자이너 판단도 동의 — 옥외 현장·토스 베이스 우선이라 큰 검정 블록은 무겁고 가독성 불리(내 "토스60 골격" 논리와도 어긋났음). 단 밋밋한 흰색 환원은 거부하고 **흰 카드 + 강한 레드 강조**(좌측 보더 5px·레드 라벨·레드 아이콘 칩·hover/active 레드 섀도·active 시 danger-light 배경)로 절충. 밝되 긴급 진입점 구분은 유지. computed style로 검증(배경 #fff·gradient none·보더 5px #F04452·라벨 레드). 프리뷰 screenshot 도구가 반복 타임아웃이라 시각 캡처는 미수행, 색은 computed로 확인.
 
 ## 산업재해조사표(별지30호) 버그수정 + 공식양식 보완 (2026-06-08, v1.8.0)

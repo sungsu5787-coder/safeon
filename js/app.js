@@ -481,6 +481,8 @@ const App = {
   async loadHomeMetrics() {
     const widget = document.getElementById('home-kpi');
     if (!widget || typeof collections === 'undefined') return;
+    // 카드를 먼저 노출(값은 — 플레이스홀더) — 쿼리가 멈춰도 KPI가 보이도록. 값은 아래서 채움
+    widget.classList.remove('hidden');
     try {
       await Promise.race([authReadyPromise, new Promise(r => setTimeout(r, 6000))]);
     } catch (e) { /* 공개 규칙이면 진행 */ }
@@ -523,8 +525,6 @@ const App = {
       setText('kpi-ptw-pending', `${snap.size}건`);
       setText('kpi-ptw-sub', snap.size ? '승인 처리 필요' : '대기 없음');
     } catch (e) { console.warn('[KPI] PTW 집계 실패', e); }
-
-    widget.classList.remove('hidden');
   },
 
   // ── PTW 네비 배지 업데이트 ────────────────────────────────
