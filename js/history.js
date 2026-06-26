@@ -197,8 +197,8 @@ const History = {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div style="flex:1">
-            <div style="font-size:18px;font-weight:800;color:#0d47a1">SAMHWA SafeOn</div>
-            <div style="font-size:11px;color:#5f6368;margin-top:2px">삼화 세이프온 — 현장 안전보건 관리 시스템</div>
+            <div style="font-size:18px;font-weight:800;color:#0d47a1">SafeOn-M</div>
+            <div style="font-size:11px;color:#5f6368;margin-top:2px">세이프온-M — 현장 안전보건 관리 시스템</div>
           </div>
           <div style="text-align:right;font-size:11px;color:#5f6368;line-height:1.7">
             구분: ${typeLabels[typeVal] || typeVal}<br>
@@ -221,7 +221,7 @@ const History = {
           <tbody>${rows}</tbody>
         </table>
         <div style="margin-top:20px;text-align:right;font-size:10px;color:#9aa0a6;border-top:1px solid #e8eaed;padding-top:8px">
-          SAMHWA SafeOn · 현장 안전보건 관리 시스템 · ${new Date().toLocaleDateString('ko-KR')} 출력
+          SafeOn-M · 현장 안전보건 관리 시스템 · ${new Date().toLocaleDateString('ko-KR')} 출력
         </div>
       </div>`;
 
@@ -517,7 +517,7 @@ const History = {
         if (!blob) { App.showToast('이미지 생성 실패'); return; }
         const file = new File([blob], 'safeon-record.png', { type: 'image/png' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'SafeOn 기록' });
+          await navigator.share({ files: [file], title: 'SafeOn-M 기록' });
         } else {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -547,7 +547,7 @@ const History = {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div>
-            <div style="font-size:16px;font-weight:800;color:#0d47a1">SAMHWA SafeOn</div>
+            <div style="font-size:16px;font-weight:800;color:#0d47a1">SafeOn-M</div>
             <div style="font-size:11px;color:#5f6368">${typeLabels[dType] || dType} 기록</div>
           </div>
           <div style="margin-left:auto;font-size:11px;color:#5f6368;text-align:right">
@@ -562,7 +562,7 @@ const History = {
           ${item.status ? `<tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">상태</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${this._statusText(item.status)}</td></tr>` : ''}
         </table>
         <div style="margin-top:20px;text-align:right;font-size:10px;color:#9aa0a6;border-top:1px solid #e8eaed;padding-top:8px">
-          SAMHWA SafeOn · 현장 안전보건 관리 시스템
+          SafeOn-M · 현장 안전보건 관리 시스템
         </div>
       </div>`;
     App._setPrintOrientation(false);

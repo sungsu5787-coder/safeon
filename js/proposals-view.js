@@ -440,7 +440,7 @@ const ProposalsView = {
               </tr>`).join('')}
           </tbody>
         </table>
-        <div class="pv-footer-note">본 보고서는 SafeOn 현장 안전보건 관리 시스템에서 자동 생성되었습니다.</div>
+        <div class="pv-footer-note">본 보고서는 SafeOn-M 현장 안전보건 관리 시스템에서 자동 생성되었습니다.</div>
       </div>`;
     modal.classList.remove('hidden');
   },

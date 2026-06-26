@@ -677,7 +677,7 @@ const TBM = {
     const names = { ko:'한국어', zh:'中文', vi:'Tiếng Việt', en:'English' };
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'TBM 공유', text: `SafeOn TBM (${names[this._shareLang]})`, url: this._shareUrl });
+        await navigator.share({ title: 'TBM 공유', text: `SafeOn-M TBM (${names[this._shareLang]})`, url: this._shareUrl });
         return;
       } catch {}
     }

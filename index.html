@@ -9,12 +9,12 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <title>SafeOn - 현장 안전보건 관리</title>
+  <title>SafeOn-M - 현장 안전보건 관리</title>
 
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v64';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v65';                              // 이 값(V) 수정 시 처리됩니다
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -1456,7 +1456,7 @@
         <div class="login-gate-icon">
           <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         </div>
-        <h2 class="login-gate-title">SafeOn 로그인</h2>
+        <h2 class="login-gate-title">SafeOn-M 로그인</h2>
         <p class="login-gate-desc">로그인 후 이용할 수 있습니다.</p>
         <input type="text" id="gate-username" class="login-gate-input" placeholder="아이디" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('gate-password').focus()">
         <input type="password" id="gate-password" class="login-gate-input" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.gateLogin()">
@@ -1495,7 +1495,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div>
-            <div class="qr-modal-title">SAMHWA SafeOn</div>
+            <div class="qr-modal-title">SafeOn-M</div>
             <div class="qr-modal-subtitle" id="qr-modal-subtitle">QR 코드 스캔</div>
           </div>
           <button class="qr-close-btn" onclick="QRModal.close()">
@@ -1700,7 +1700,7 @@
   <!-- TBM 공유 뷰어 (QR 스캔 시 표시) -->
   <div id="tbm-shared-viewer" class="tbm-shared-viewer hidden">
     <div class="tbm-viewer-top">
-      <div class="tbm-viewer-brand">🦺 SafeOn TBM</div>
+      <div class="tbm-viewer-brand">🦺 SafeOn-M TBM</div>
       <div class="tbm-viewer-lang-row">
         <button class="tbm-viewer-lang-btn active" data-lang="ko" onclick="TBM.switchViewerLang('ko')">🇰🇷 한국어</button>
         <button class="tbm-viewer-lang-btn" data-lang="zh" onclick="TBM.switchViewerLang('zh')">🇨🇳 中文</button>

@@ -277,7 +277,7 @@ const App = {
     } else {
       brandEl && brandEl.classList.add('hidden');
       titleEl && titleEl.classList.remove('hidden');
-      titleEl.textContent = titles[page] || 'SAMHWA SafeOn';
+      titleEl.textContent = titles[page] || 'SafeOn-M';
     }
 
     // Back button visibility
@@ -1895,7 +1895,7 @@ const App = {
       nc.fillStyle = '#ffffff';
       nc.font = `bold ${barH * 0.55}px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
       nc.textBaseline = 'middle';
-      nc.fillText('🛡 SAMHWA SafeOn', 16 * 2, barH);
+      nc.fillText('🛡 SafeOn-M', 16 * 2, barH);
       // 날짜
       nc.font = `${barH * 0.38}px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
       nc.fillStyle = 'rgba(255,255,255,0.8)';
@@ -1921,7 +1921,7 @@ const App = {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `SAMHWA SafeOn — ${title}`,
+          title: `SafeOn-M — ${title}`,
           text: title
         });
         this.showToast('📸 캡처 이미지 공유 완료 ✓');
@@ -2046,7 +2046,7 @@ const App = {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div>
-            <div style="font-size:16px;font-weight:800;color:#0d47a1">SAMHWA SafeOn</div>
+            <div style="font-size:16px;font-weight:800;color:#0d47a1">SafeOn-M</div>
             <div style="font-size:11px;color:#5f6368">[${typeLabel[this._detailType]||this._detailType}] ${title}</div>
           </div>
           <div style="margin-left:auto;font-size:11px;color:#5f6368;text-align:right">
@@ -2055,7 +2055,7 @@ const App = {
         </div>
         ${bodyHtml}
         <div style="margin-top:20px;padding-top:8px;border-top:1px solid #e8eaed;font-size:10px;color:#9aa0a6;text-align:right">
-          SAMHWA SafeOn 현장 안전보건 관리 시스템
+          SafeOn-M 현장 안전보건 관리 시스템
         </div>
       </div>`;
 
@@ -2124,7 +2124,7 @@ const App = {
     const TYPE_ICON = {tbm:'🦺',risk:'⚠️',checklist:'✅',workplan:'📋',ptw:'🔑',accident:'🚨',nearmiss:'⚡'};
     const TYPE_KO   = {tbm:'TBM',risk:'위험성평가',checklist:'안전점검',workplan:'작업계획서',ptw:'작업허가서',accident:'사고보고서',nearmiss:'아차사고'};
     const dispType  = (type === 'accident' && d.accidentType === 'nearmiss') ? 'nearmiss' : type;
-    const HDR = `${TYPE_ICON[dispType]||'📋'} SAMHWA SafeOn — ${TYPE_KO[dispType]||type}`;
+    const HDR = `${TYPE_ICON[dispType]||'📋'} SafeOn-M — ${TYPE_KO[dispType]||type}`;
     const DIV = '─'.repeat(34);
     const tbl = (rows) => this._textTable(['항목','내용'], rows);
     const tr  = (s) => this._trunc(s, 24);

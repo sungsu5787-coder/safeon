@@ -233,7 +233,7 @@ const WorkplaceInfo = {
 <div class="doc-header">
   <div class="doc-title-block">
     <h1>사업장현황</h1>
-    <div class="sub">SAMHWA SafeOn &nbsp;·&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')} &nbsp;·&nbsp; 총 ${this._items.length}개소</div>
+    <div class="sub">SafeOn-M &nbsp;·&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')} &nbsp;·&nbsp; 총 ${this._items.length}개소</div>
   </div>
   <div class="approval-wrap">
     <table class="approval-table">
@@ -271,7 +271,7 @@ const WorkplaceInfo = {
     </tr>
   </tfoot>
 </table>
-<div class="footer">SAMHWA SafeOn &nbsp;|&nbsp; 사업장현황 &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</div>
+<div class="footer">SafeOn-M &nbsp;|&nbsp; 사업장현황 &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</div>
 </body></html>`);
   },
 

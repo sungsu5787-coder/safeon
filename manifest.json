@@ -1,7 +1,7 @@
 {
-  "name": "SAMHWA SafeOn — 삼화 세이프온",
-  "short_name": "SafeOn",
-  "description": "삼화 세이프온 현장 안전보건 관리 시스템 — TBM, 위험성평가, 작업허가서",
+  "name": "SafeOn-M — 세이프온-M",
+  "short_name": "SafeOn-M",
+  "description": "세이프온-M 현장 안전보건 관리 시스템 — TBM, 위험성평가, 작업허가서",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

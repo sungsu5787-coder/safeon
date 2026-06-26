@@ -294,7 +294,7 @@ const SafetyReport = {
         <div class="sr-report-header">
           <div class="sr-report-title">안전점검현황</div>
           <div class="sr-report-period">${monthLabel} 종합 보고${pd ? ` (전년대비: ${prevLabel})` : ''}</div>
-          <div class="sr-report-meta">SAMHWA SafeOn · 작성일: ${new Date().toLocaleDateString('ko-KR')}</div>
+          <div class="sr-report-meta">SafeOn-M · 작성일: ${new Date().toLocaleDateString('ko-KR')}</div>
         </div>
 
         <!-- ① 종합 실적 카드 -->
@@ -417,7 +417,7 @@ const SafetyReport = {
 
         <!-- 리포트 푸터 -->
         <div class="sr-report-footer">
-          SAMHWA SafeOn · ${monthLabel} 안전점검현황 · 출력일: ${new Date().toLocaleDateString('ko-KR')}
+          SafeOn-M · ${monthLabel} 안전점검현황 · 출력일: ${new Date().toLocaleDateString('ko-KR')}
         </div>
       </div>`;
   },
@@ -487,7 +487,7 @@ const SafetyReport = {
   <div class="doc-title-block">
     <h1>안전점검현황</h1>
     <div class="subtitle">${monthLabel} 종합 보고서</div>
-    <div class="meta">SAMHWA SafeOn &nbsp;·&nbsp; 작성일: ${new Date().toLocaleDateString('ko-KR')}</div>
+    <div class="meta">SafeOn-M &nbsp;·&nbsp; 작성일: ${new Date().toLocaleDateString('ko-KR')}</div>
   </div>
   <div class="approval-wrap">
     <table class="approval-table">
@@ -660,7 +660,7 @@ ${d.workplan.length ? `
   </table>
 </div>` : ''}
 
-<div class="footer">SAMHWA SafeOn &nbsp;|&nbsp; ${monthLabel} 안전점검현황 &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</div>
+<div class="footer">SafeOn-M &nbsp;|&nbsp; ${monthLabel} 안전점검현황 &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</div>
 </body></html>`);
   },
 

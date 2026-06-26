@@ -153,12 +153,12 @@ const QRModal = {
         return raw.split(',').map(p => PERM_KO[p] || p).join(', ');
       } catch { return ''; }
     })();
-    const shareText = `🔒 SAMHWA SafeOn 게스트 접속\n\n${url}\n\n허용 메뉴: ${permsText}\n(읽기 전용)`;
+    const shareText = `🔒 SafeOn-M 게스트 접속\n\n${url}\n\n허용 메뉴: ${permsText}\n(읽기 전용)`;
 
     // 1순위: Web Share API (모바일 카카오·문자·메일 등)
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'SafeOn 게스트 접속', text: shareText, url });
+        await navigator.share({ title: 'SafeOn-M 게스트 접속', text: shareText, url });
         return;
       } catch (e) {
         if (e.name === 'AbortError') return; // 사용자가 직접 취소
@@ -484,11 +484,11 @@ const QRModal = {
     const url = this._appUrl;
     if (!url) { App.showToast('주소를 불러오는 중입니다'); return; }
     const shareText =
-      `📱 SAMHWA SafeOn 안전관리 앱\n\n` +
+      `📱 SafeOn-M 안전관리 앱\n\n` +
       `아래 주소로 접속하세요:\n${url}\n\n` +
       `※ QR코드 스캔 또는 주소 직접 입력`;
     if (navigator.share) {
-      try { await navigator.share({ title: 'SAMHWA SafeOn', text: shareText, url }); return; }
+      try { await navigator.share({ title: 'SafeOn-M', text: shareText, url }); return; }
       catch (e) { if (e.name === 'AbortError') return; }
     }
     try {

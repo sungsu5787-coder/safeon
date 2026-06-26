@@ -1086,7 +1086,7 @@ const Accident = {
 
 ${photosHtml}
 
-<div class="foot">SAMHWA SafeOn 현장 안전보건 관리 시스템 &nbsp;|&nbsp; [별지 제30호서식] 산업재해조사표 &nbsp;|&nbsp; 제출: 관할 지방고용노동관서 (「산업안전보건법」 제57조·시행규칙 제73조, 발생일로부터 1개월 이내)</div>
+<div class="foot">SafeOn-M 현장 안전보건 관리 시스템 &nbsp;|&nbsp; [별지 제30호서식] 산업재해조사표 &nbsp;|&nbsp; 제출: 관할 지방고용노동관서 (「산업안전보건법」 제57조·시행규칙 제73조, 발생일로부터 1개월 이내)</div>
 </body></html>`);
   },
 
@@ -1143,7 +1143,7 @@ ${photosHtml}
   @media print{body{padding:10mm 12mm}@page{size:A4;margin:10mm}}
 </style></head><body>
 <div class="head">
-  <div class="htitle"><h1>안전사고 발생보고서</h1><div class="sub">SAMHWA SafeOn · 작성일 ${new Date().toLocaleDateString('ko-KR')}</div></div>
+  <div class="htitle"><h1>안전사고 발생보고서</h1><div class="sub">SafeOn-M · 작성일 ${new Date().toLocaleDateString('ko-KR')}</div></div>
   <table class="appr"><thead><tr><th>담당</th><th>검토</th><th>승인</th></tr></thead><tbody><tr><td></td><td></td><td></td></tr></tbody></table>
 </div>
 <hr>
@@ -1167,7 +1167,7 @@ ${sig ? `<div class="sigrow">보고자 <img src="${sig}" alt="서명"> (서명)<
   · 시행규칙 제73조(산업재해 발생 보고 등) — 사망자 또는 3일 이상 휴업 시 1개월 이내 산업재해조사표 제출<br>
   · 제54조(중대재해 발생 시) — 즉시 작업중지·대피 후 고용노동부장관에게 보고
 </div>
-<div class="foot">SAMHWA SafeOn 현장 안전보건 관리 시스템</div>
+<div class="foot">SafeOn-M 현장 안전보건 관리 시스템</div>
 </body></html>`);
   }
 };
