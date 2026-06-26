@@ -11,7 +11,7 @@ const WorkplaceInfo = {
     const form = document.getElementById('wi-form');
     if (!form || form._bound) return;
     form._bound = true;
-    form.addEventListener('submit', e => { e.preventDefault(); this.save(); });
+    form.addEventListener('submit', e => { e.preventDefault(); if (form._editId) return; this.save(); });
 
     // 사업자등록번호 자동 하이픈
     const bizno = document.getElementById('wi-bizno');

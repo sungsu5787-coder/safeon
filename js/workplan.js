@@ -240,6 +240,7 @@ const WorkPlan = {
         cv.getContext('2d').drawImage(img, 0, 0, w, h);
         resolve(cv.toDataURL('image/jpeg', quality));
       };
+      img.onerror = () => resolve(dataUrl);
       img.src = dataUrl;
     });
   },

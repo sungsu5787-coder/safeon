@@ -17,7 +17,7 @@ const db = firebase.firestore();
 
 // 기업망·프록시가 Firestore 실시간 연결(WebChannel)을 막는 환경에서도 통하도록
 // long polling 자동 감지. (무한 로딩 방지)
-try { db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); } catch (e) {}
+try { db.settings({ experimentalAutoDetectLongPolling: true }); } catch (e) { console.warn('[Firebase] settings 적용 실패:', e); }
 
 // 익명 로그인 완료를 기다릴 수 있는 Promise — history.js 등에서 await authReady() 로 사용
 var authReadyPromise = firebase.auth().signInAnonymously()

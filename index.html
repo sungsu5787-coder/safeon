@@ -14,7 +14,8 @@
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v66';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v67';                              // 이 값(V) 수정 시 처리됩니다
+    window.__APP_VER = V;                        // SW 등록 URL과 버전 동기화용
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -1880,8 +1881,8 @@
   (function() {
     if (!('serviceWorker' in navigator)) return;
 
-    // SW 등록 (sw.js?v=61 - 브라우저의 HTTP 캐시 강제 무효화)
-    const SW_URL = 'sw.js?v=61';
+    // SW 등록 — 앱 버전(V)과 동기화해 브라우저 HTTP 캐시를 강제 무효화
+    const SW_URL = 'sw.js?' + (window.__APP_VER || 'v66');
 
     window.addEventListener('load', function() {
       navigator.serviceWorker.register(SW_URL, { updateViaCache: 'none' })

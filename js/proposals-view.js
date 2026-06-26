@@ -32,6 +32,12 @@ const ProposalsView = {
     else this._render();
   },
 
+  // 현재 필터(순위/일반)에 맞는 뷰를 다시 그린다 — mutation 후 뷰 유지용.
+  _refreshView() {
+    if (this._filter === '순위') this._renderRank();
+    else this._render();
+  },
+
   _filtered() {
     if (this._filter === '전체') return this._proposals;
     return this._proposals.filter(p => (p.status || '접수') === this._filter);
@@ -74,10 +80,10 @@ const ProposalsView = {
       <div class="proposal-card" onclick="ProposalsView.showDetail('${p.id}')">
         <div class="proposal-card-header">
           <span class="proposal-card-who">${App.escapeHtml(p.affiliation)} · ${App.escapeHtml(p.department)} · ${App.escapeHtml(p.name)}</span>
-          <span class="proposal-status-badge" style="background:${this._statusColor(status)}">${status}</span>
+          <span class="proposal-status-badge" style="background:${this._statusColor(status)}">${App.escapeHtml(status)}</span>
         </div>
         <div class="proposal-card-body">${App.escapeHtml(preview)}</div>
-        ${p.hasImage && p.imageUrl ? `<div class="proposal-card-thumb"><img src="${apiBase}${p.imageUrl}" alt="첨부 사진" loading="lazy"></div>` : ''}
+        ${p.hasImage && p.imageUrl ? `<div class="proposal-card-thumb"><img src="${App.escapeHtml(apiBase + p.imageUrl)}" alt="첨부 사진" loading="lazy"></div>` : ''}
         <div class="proposal-card-footer">
           <span>${date}</span>
           <div style="display:flex;gap:6px;align-items:center">
@@ -100,7 +106,7 @@ const ProposalsView = {
   },
 
   showDetail(id) {
-    const p = this._proposals.find(x => x.id === id);
+    const p = this._proposals.find(x => String(x.id) === String(id));
     if (!p) return;
     const modal = document.getElementById('proposal-detail-modal');
     const content = document.getElementById('proposal-detail-content');
@@ -123,7 +129,7 @@ const ProposalsView = {
         <div class="proposal-detail-label">제안 내용</div>
         <p>${App.escapeHtml(p.suggestion || '').replace(/\n/g, '<br>')}</p>
       </div>
-      ${p.hasImage ? `<div class="proposal-detail-photo"><img src="${apiBase}${p.imageUrl}" alt="첨부 사진" onclick="App._viewPhoto(this.src)" loading="lazy"></div>` : ''}
+      ${p.hasImage ? `<div class="proposal-detail-photo"><img src="${App.escapeHtml(apiBase + p.imageUrl)}" alt="첨부 사진" onclick="App._viewPhoto(this.src)" loading="lazy"></div>` : ''}
       <div class="proposal-detail-status">
         <div class="proposal-detail-label">처리 상태 변경</div>
         <div class="proposal-status-btns">
@@ -162,7 +168,7 @@ const ProposalsView = {
       if (p) p.status = status;
       App.showToast(`✅ "${status}"(으)로 변경되었습니다.`);
       this.closeDetail();
-      this._render();
+      this._refreshView();
     } catch {
       App.showToast('상태 변경에 실패했습니다.');
     }
@@ -268,7 +274,7 @@ const ProposalsView = {
       if (p) Object.assign(p, body);
       App.showToast('✅ 수정되었습니다.');
       this.closeEdit();
-      this._render();
+      this._refreshView();
     } catch {
       App.showToast('수정에 실패했습니다.');
     }
@@ -287,7 +293,7 @@ const ProposalsView = {
       if (!res.ok) throw new Error('fail');
       this._proposals = this._proposals.filter(x => x.id !== id);
       App.showToast('삭제되었습니다.');
-      this._render();
+      this._refreshView();
     } catch {
       App.showToast('삭제에 실패했습니다.');
     }
@@ -308,7 +314,7 @@ const ProposalsView = {
       const p = this._proposals.find(x => x.id === id);
       if (p) p.note = note;
       App.showToast('✅ 비고가 저장되었습니다.');
-      this._render();
+      this._refreshView();
     } catch {
       App.showToast('비고 저장에 실패했습니다.');
     }

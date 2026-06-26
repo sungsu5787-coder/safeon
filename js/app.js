@@ -358,7 +358,8 @@ const App = {
 
       const latest = list[0];
       const ver = latest.version;
-      document.getElementById('home-version-badge').textContent = `v${ver}`;
+      const badge = document.getElementById('home-version-badge');
+      if (badge) badge.textContent = `v${ver}`;
 
       const note = document.getElementById('home-version-note');
       const changes = latest.changes || [];
@@ -368,8 +369,7 @@ const App = {
       const KEY = 'sfo_app_ver';
       const prev = localStorage.getItem(KEY);
       const newTag = document.getElementById('home-version-new');
-      if (prev && prev !== ver) newTag.classList.remove('hidden');
-      else newTag.classList.add('hidden');
+      if (newTag) newTag.classList.toggle('hidden', !(prev && prev !== ver));
       localStorage.setItem(KEY, ver);
 
       bar.classList.remove('hidden');

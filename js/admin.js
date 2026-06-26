@@ -130,10 +130,11 @@ const Admin = {
       accident: '🚨', workplan: '📋', proposals: '💡'
     };
     const grid = document.getElementById('admin-stats');
+    const totals = (data && data.totals) || {};
     grid.innerHTML = Object.keys(LABELS).map(k => `
       <div class="admin-stat-card">
         <span class="admin-stat-icon">${ICONS[k]}</span>
-        <span class="admin-stat-num">${data.totals[k] ?? 0}</span>
+        <span class="admin-stat-num">${totals[k] ?? 0}</span>
         <span class="admin-stat-label">${LABELS[k]}</span>
       </div>`).join('');
 
@@ -267,8 +268,8 @@ const Admin = {
       return `
         <div class="admin-user-row ${u.active ? '' : 'inactive'}">
           <div class="admin-user-main" onclick="Admin.viewUserHistory('${u.uid}','${safeName}')">
-            <span class="admin-user-name">${u.name}${isMe ? ' <span class="admin-user-me">나</span>' : ''}</span>
-            <span class="admin-user-id">@${u.username} · 작업내역 보기</span>
+            <span class="admin-user-name">${App.escapeHtml(u.name || '')}${isMe ? ' <span class="admin-user-me">나</span>' : ''}</span>
+            <span class="admin-user-id">@${App.escapeHtml(u.username || '')} · 작업내역 보기</span>
           </div>
           <span class="admin-user-role role-${u.role}">${roleLabel}</span>
           <div class="admin-user-acts">
@@ -310,7 +311,7 @@ const Admin = {
     const counts = Object.entries(LABELS).map(([k, label]) =>
       `<div class="admin-hist-stat"><span class="admin-hist-num">${data.counts[k] || 0}</span><span class="admin-hist-label">${label}</span></div>`).join('');
     const recent = (data.recent || []).map(r =>
-      `<div class="admin-hist-row"><span class="admin-hist-type">${LABELS[r.type] || r.type}</span><span class="admin-hist-date">${r.date || '-'}</span></div>`).join('');
+      `<div class="admin-hist-row"><span class="admin-hist-type">${App.escapeHtml(LABELS[r.type] || r.type || '')}</span><span class="admin-hist-date">${App.escapeHtml(r.date || '-')}</span></div>`).join('');
     body.innerHTML = `
       <div class="admin-hist-total">총 <b>${data.total}</b>건</div>
       <div class="admin-hist-stats">${counts}</div>

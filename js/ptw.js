@@ -1,6 +1,12 @@
 // ===== PTW Module (작업허가서 / Permit To Work) =====
 const PTW = {
 
+  // 작업계획서 연동 대기 목록을 안전하게 읽는다 (손상된 로컬스토리지 방어).
+  _getWPPending() {
+    try { return JSON.parse(localStorage.getItem('wp_ptw_pending') || '[]') || []; }
+    catch { return []; }
+  },
+
   // 작업별 사전 체크항목 (안전작업허가서 양식 기준)
   checklists: {
     fire: {
@@ -128,7 +134,7 @@ const PTW = {
   _renderWPNotifications() {
     const panel   = document.getElementById('ptw-wp-notifications');
     if (!panel) return;
-    const pending = JSON.parse(localStorage.getItem('wp_ptw_pending') || '[]');
+    const pending = this._getWPPending();
 
     if (!pending.length) {
       panel.classList.add('hidden');
@@ -173,7 +179,7 @@ const PTW = {
 
   // 작업계획서 → PTW 양식 자동 연동
   _linkFromWP(idx) {
-    const pending = JSON.parse(localStorage.getItem('wp_ptw_pending') || '[]');
+    const pending = this._getWPPending();
     const wp = pending[idx];
     if (!wp) return;
 
@@ -226,7 +232,7 @@ const PTW = {
   },
 
   _dismissWP(idx) {
-    const pending = JSON.parse(localStorage.getItem('wp_ptw_pending') || '[]');
+    const pending = this._getWPPending();
     pending.splice(idx, 1);
     localStorage.setItem('wp_ptw_pending', JSON.stringify(pending));
     App.updatePTWBadge();

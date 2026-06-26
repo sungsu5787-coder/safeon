@@ -190,8 +190,9 @@ const SafetyReport = {
     } catch (err) {
       console.error('[SafetyReport] load 오류:', err);
       // Firebase 연결 불가 시 빈 데이터로 화면 표시
-      const isTimeout = err.message.includes('시간 초과');
-      const isPermission = err.code === 'permission-denied' || (err.message || '').includes('permission');
+      const errMsg = (err && err.message) || '';
+      const isTimeout = errMsg.includes('시간 초과');
+      const isPermission = (err && err.code === 'permission-denied') || errMsg.includes('permission');
       if (isTimeout || isPermission) {
         const proposalData = await proposalPromise;
         this._data = { ..._empty(), proposals: _filterProposals(proposalData) };
@@ -202,7 +203,7 @@ const SafetyReport = {
           </div>
           ${this._buildHTML()}`;
       } else {
-        container.innerHTML = `<div class="sr-error">⚠️ 데이터 조회 오류: ${App.escapeHtml(err.message)}</div>`;
+        container.innerHTML = `<div class="sr-error">⚠️ 데이터 조회 오류: ${App.escapeHtml(errMsg)}</div>`;
       }
     }
   },
@@ -238,9 +239,10 @@ const SafetyReport = {
 
     // 위험성평가 위험도 분포
     const riskItems = d.risk.flatMap(r => r.items || []);
-    const riskHigh  = riskItems.filter(i => i.riskLevel === '상' || (i.frequency * i.severity) >= 15).length;
-    const riskMid   = riskItems.filter(i => i.riskLevel === '중' || ((i.frequency * i.severity) >= 8 && (i.frequency * i.severity) < 15)).length;
-    const riskLow   = riskItems.filter(i => i.riskLevel === '하' || (i.frequency * i.severity) < 8).length;
+    const riskScore = i => (+i.frequency || 0) * (+i.severity || 0);
+    const riskHigh  = riskItems.filter(i => i.riskLevel === '상' || riskScore(i) >= 15).length;
+    const riskMid   = riskItems.filter(i => i.riskLevel === '중' || (riskScore(i) >= 8 && riskScore(i) < 15)).length;
+    const riskLow   = riskItems.filter(i => i.riskLevel === '하' || (i.riskLevel !== '상' && i.riskLevel !== '중' && riskScore(i) < 8)).length;
 
     return { tbmWorkers, pass, fail, na, total, passRate, acc, ptw, riskItems, riskHigh, riskMid, riskLow };
   },
@@ -633,10 +635,10 @@ ${d.ptw.length ? `
       ${d.ptw.map(p => {
         const stMap = { approved:'✅ 승인', submitted:'📤 신청', rejected:'❌ 반려' };
         return `<tr>
-          <td>${p.date || '-'}</td>
+          <td>${this._esc(p.date || '-')}</td>
           <td>${this._esc(p.workName || '-')}</td>
           <td>${this._esc(p.company || '-')}</td>
-          <td class="center ${p.status === 'approved' ? 'safe' : p.status === 'rejected' ? 'danger' : ''}">${stMap[p.status || 'submitted'] || p.status}</td>
+          <td class="center ${p.status === 'approved' ? 'safe' : p.status === 'rejected' ? 'danger' : ''}">${this._esc(stMap[p.status || 'submitted'] || p.status || '')}</td>
         </tr>`;
       }).join('')}
     </tbody>
