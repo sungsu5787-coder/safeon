@@ -616,10 +616,10 @@ const Risk = {
     }
 
     const cfg = {
-      본질적:{ icon:'🚫', color:'#c62828', bg:'#ffebee', title:'본질적 안전화 — 제거·대체' },
-      공학적:{ icon:'⚙️', color:'#1565c0', bg:'#e3f2fd', title:'공학적 대책 — 격리·방호' },
-      행정적:{ icon:'📋', color:'#e65100', bg:'#fff3e0', title:'행정적 대책 — 절차·교육' },
-      보호구:{ icon:'🦺', color:'#2e7d32', bg:'#e8f5e9', title:'보호구 착용 (PPE)' }
+      본질적:{ icon:'🚫', color:'#F04452', bg:'#FEECEE', title:'본질적 안전화 — 제거·대체' },
+      공학적:{ icon:'⚙️', color:'#1B64DA', bg:'#EBF2FF', title:'공학적 대책 — 격리·방호' },
+      행정적:{ icon:'📋', color:'#FF9500', bg:'#FFF3E0', title:'행정적 대책 — 절차·교육' },
+      보호구:{ icon:'🦺', color:'#15A86B', bg:'#E6F7EF', title:'보호구 착용 (PPE)' }
     };
 
     const html = ['본질적','공학적','행정적','보호구'].map(lv => {

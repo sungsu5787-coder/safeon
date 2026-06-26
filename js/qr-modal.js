@@ -105,14 +105,14 @@ const QRModal = {
       for (let r = 0; r < count; r++) {
         for (let c = 0; c < count; c++) {
           if (qr.isDark(r, c))
-            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#6a1b9a"/>`;
+            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#1B64DA"/>`;
         }
       }
       qrWrap.innerHTML =
         `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="border-radius:10px;display:block">` +
         `<rect width="${size}" height="${size}" fill="#fff" rx="10"/>${rects}</svg>`;
     } catch {
-      qrWrap.innerHTML = '<p style="color:#d93025;font-size:12px;padding:16px">QR 생성 실패</p>';
+      qrWrap.innerHTML = '<p style="color:#F04452;font-size:12px;padding:16px">QR 생성 실패</p>';
     }
 
     document.getElementById('guest-qr-url-text').textContent = guestUrl;
@@ -279,14 +279,14 @@ const QRModal = {
       for (let r = 0; r < count; r++) {
         for (let c = 0; c < count; c++) {
           if (qr.isDark(r, c))
-            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#0d47a1"/>`;
+            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#1B64DA"/>`;
         }
       }
       qrWrap.innerHTML =
         `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="border-radius:10px;display:block">` +
         `<rect width="${size}" height="${size}" fill="#fff" rx="10"/>${rects}</svg>`;
     } catch {
-      qrWrap.innerHTML = '<p style="color:#d93025;font-size:12px;padding:20px">QR 생성 실패</p>';
+      qrWrap.innerHTML = '<p style="color:#F04452;font-size:12px;padding:20px">QR 생성 실패</p>';
     }
 
     document.getElementById('qr-url-text').textContent = displayUrl;
@@ -306,7 +306,7 @@ const QRModal = {
       hintEl.style.color = '';
       hintEl.textContent = '📶 같은 Wi-Fi에서 스캔하세요 (두 기기 동일 와이파이 필수)';
     } else {
-      hintEl.style.color = '#d93025';
+      hintEl.style.color = '#F04452';
       hintEl.textContent = '⚠️ start.ps1을 실행해야 다른 기기에서 접속 가능합니다';
     }
 
@@ -367,7 +367,7 @@ const QRModal = {
       for (let r = 0; r < count; r++) {
         for (let c = 0; c < count; c++) {
           if (qr.isDark(r, c))
-            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#1e8e3e"/>`;
+            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#15A86B"/>`;
         }
       }
       qrWrap.innerHTML =
@@ -434,7 +434,7 @@ const QRModal = {
       html += `
         <div class="qr-ip-item qr-ip-warn">
           <span class="qr-ip-label">⚠️ 외부망(모바일 데이터) 접속 불가</span>
-          <span class="qr-ip-value" style="font-weight:400;color:#e65100">
+          <span class="qr-ip-value" style="font-weight:400;color:#FF9500">
             PC에서 start.ps1 실행 시 외부 주소가 자동 생성됩니다
           </span>
         </div>`;

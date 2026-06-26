@@ -670,14 +670,14 @@ const App = {
       for (let r = 0; r < count; r++) {
         for (let c = 0; c < count; c++) {
           if (qr.isDark(r, c)) {
-            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#0d47a1"/>`;
+            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#1B64DA"/>`;
           }
         }
       }
       qrWrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="border-radius:14px;display:block">` +
         `<rect width="${size}" height="${size}" fill="#fff" rx="14"/>${rects}</svg>`;
     } catch (err) {
-      qrWrap.innerHTML = '<p style="color:#d93025;font-size:13px;margin:0">QR 생성 실패</p>';
+      qrWrap.innerHTML = '<p style="color:#F04452;font-size:13px;margin:0">QR 생성 실패</p>';
     }
   },
 
@@ -1462,7 +1462,7 @@ const App = {
           const arrow = item.afterRiskLevel !== item.riskLevel ? ' ↓' : ' →';
           afterBadge = `
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-              <span style="font-size:11px;color:#2e7d32;font-weight:600">✅ 개선 후</span>
+              <span style="font-size:11px;color:#15A86B;font-weight:600">✅ 개선 후</span>
               <span style="display:inline-block;padding:2px 10px;border-radius:6px;font-size:12px;font-weight:700" class="${lvCls(item.afterRiskLevel)}">
                 ${item.afterRiskLevel}${arrow} (${lvDesc(item.afterRiskLevel)})
               </span>
@@ -1492,9 +1492,9 @@ const App = {
         </div>`;
       };
       const beforePhotosHtml = makePhotosHtml(item.beforePhotos, '📷 개선 전 사진', '#888');
-      const afterPhotosHtml  = makePhotosHtml(item.afterPhotos,  '✅ 개선 후 사진', '#2e7d32');
+      const afterPhotosHtml  = makePhotosHtml(item.afterPhotos,  '✅ 개선 후 사진', '#15A86B');
 
-      return `<div style="background:var(--gray-50);padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid ${item.afterRiskLevel && item.afterRiskLevel !== item.riskLevel ? '#66bb6a' : '#e0e0e0'}">
+      return `<div style="background:var(--gray-50);padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid ${item.afterRiskLevel && item.afterRiskLevel !== item.riskLevel ? '#15A86B' : '#E8EBEE'}">
         <p style="font-weight:600;margin-bottom:8px">#${i+1}. ${this.escapeHtml(item.hazard)}</p>
         ${riskBadge}${beforePhotosHtml}${afterBadge}${afterPhotosHtml}
         <p style="font-size:13px;color:var(--gray-700);margin-top:6px">📌 대책: ${this.escapeHtml(item.countermeasure)}</p>
@@ -1502,7 +1502,7 @@ const App = {
     }).join('');
 
     const methodBadge = d.method === '상중하'
-      ? `<span style="font-size:11px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:8px;font-weight:600">상중하 평가법</span>`
+      ? `<span style="font-size:11px;background:#EBF2FF;color:#1B64DA;padding:2px 8px;border-radius:8px;font-weight:600">상중하 평가법</span>`
       : '';
 
     // ── 개선 일정 섹션 ──
@@ -1524,7 +1524,7 @@ const App = {
         const diffMs = new Date(d.planDate) - new Date(today);
         const diff   = Math.round(diffMs / 86400000);
         const ddayStr = diff === 0 ? 'D-Day' : diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
-        const ddayCls = diff < 0 ? 'color:#c62828' : diff <= 3 ? 'color:#e65100' : 'color:#1a73e8';
+        const ddayCls = diff < 0 ? 'color:#F04452' : diff <= 3 ? 'color:#FF9500' : 'color:#3182F6';
         ddayHtml = `<span style="font-size:12px;font-weight:700;${ddayCls};margin-left:8px">${ddayStr}</span>`;
       }
 
@@ -1724,8 +1724,8 @@ const App = {
 
   renderAccidentDetail(d) {
     const typeColors = {
-      nearmiss:   '#f9ab00', safety:    '#e65100',
-      industrial: '#d93025', serious:   '#6a1b9a'
+      nearmiss:   '#FF9500', safety:    '#FF9500',
+      industrial: '#F04452', serious:   '#1B64DA'
     };
     const color = typeColors[d.accidentType] || 'var(--danger)';
     const isInjury = d.accidentType !== 'nearmiss';
@@ -1752,7 +1752,7 @@ const App = {
       <div class="detail-section"><h3>📝 사고경위</h3><p style="white-space:pre-wrap">${this.escapeHtml(d.content)}</p></div>
       ${d.cause ? `<div class="detail-section"><h3>🔍 추정원인</h3><p style="white-space:pre-wrap">${this.escapeHtml(d.cause)}</p></div>` : ''}
       ${isInjury && (d.injuredName||d.injuredPart) ? `
-        <div class="detail-section" style="background:#fce8e6;padding:12px;border-radius:8px">
+        <div class="detail-section" style="background:#FEECEE;padding:12px;border-radius:8px">
           <h3>🤕 부상자 정보</h3>
           ${d.injuredName ? `<p><strong>${this.escapeHtml(d.injuredName)}</strong> (${this.escapeHtml(d.injuredInfo)})</p>` : ''}
           ${d.injuredPart ? `<p style="font-size:13px;margin-top:4px">부상부위: ${this.escapeHtml(d.injuredPart)} / 정도: ${this.escapeHtml(d.injuredLevel)}</p>` : ''}
@@ -1866,7 +1866,7 @@ const App = {
         scale: 2,                        // 고해상도 (Retina / Android 고밀도)
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#F7F8FA',
         logging: false,
         windowWidth: target.scrollWidth,
         windowHeight: target.scrollHeight,
@@ -1889,7 +1889,7 @@ const App = {
       const nc = newCanvas.getContext('2d');
 
       // 워터마크 상단 바
-      nc.fillStyle = '#1a73e8';
+      nc.fillStyle = '#3182F6';
       nc.fillRect(0, 0, newCanvas.width, barH * 2);
       // 로고 텍스트
       nc.fillStyle = '#ffffff';
@@ -2040,21 +2040,21 @@ const App = {
     this._setPrintOrientation(false);
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = `
-      <div class="print-inner" style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;color:#202124;padding:20px;max-width:800px;margin:0 auto">
-        <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #1a73e8;padding-bottom:10px;margin-bottom:16px">
-          <div style="width:36px;height:36px;background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <div class="print-inner" style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;color:#191F28;padding:20px;max-width:800px;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #3182F6;padding-bottom:10px;margin-bottom:16px">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#3182F6,#1B64DA);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div>
-            <div style="font-size:16px;font-weight:800;color:#0d47a1">SafeOn-M</div>
-            <div style="font-size:11px;color:#5f6368">[${typeLabel[this._detailType]||this._detailType}] ${title}</div>
+            <div style="font-size:16px;font-weight:800;color:#1B64DA">SafeOn-M</div>
+            <div style="font-size:11px;color:#6B7684">[${typeLabel[this._detailType]||this._detailType}] ${title}</div>
           </div>
-          <div style="margin-left:auto;font-size:11px;color:#5f6368;text-align:right">
+          <div style="margin-left:auto;font-size:11px;color:#6B7684;text-align:right">
             출력: ${new Date().toLocaleString('ko-KR')}
           </div>
         </div>
         ${bodyHtml}
-        <div style="margin-top:20px;padding-top:8px;border-top:1px solid #e8eaed;font-size:10px;color:#9aa0a6;text-align:right">
+        <div style="margin-top:20px;padding-top:8px;border-top:1px solid #E8EBEE;font-size:10px;color:#8B95A1;text-align:right">
           SafeOn-M 현장 안전보건 관리 시스템
         </div>
       </div>`;

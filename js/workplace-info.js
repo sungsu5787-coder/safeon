@@ -160,7 +160,7 @@ const WorkplaceInfo = {
     const form   = document.getElementById('wi-form');
     const btnEl  = form.querySelector('button[type="submit"]');
     btnEl.textContent = '✏️ 수정 저장';
-    btnEl.style.background = '#D97706';
+    btnEl.style.background = '#FF9500';
 
     form._editId = id;
     form.onsubmit = async e => {
@@ -169,7 +169,7 @@ const WorkplaceInfo = {
       form._editId = null;
       form.onsubmit = null;
       btnEl.textContent = '🏢 사업장 등록';
-      btnEl.style.background = '#0d9488';
+      btnEl.style.background = '#1B64DA';
     };
 
     // 폼 상단으로 스크롤
@@ -210,18 +210,18 @@ const WorkplaceInfo = {
 <title>사업장현황</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:10.5pt; color:#202124; background:#fff; padding:18mm 16mm; }
+  body { font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:10.5pt; color:#191F28; background:#fff; padding:18mm 16mm; }
   .doc-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:0; }
   .doc-title-block h1 { font-size:19pt; font-weight:900; letter-spacing:1.5px; margin-bottom:4px; }
   .doc-title-block .sub { font-size:9.5pt; color:#666; }
   .approval-table { border-collapse:collapse; }
-  .approval-table th { background:#f1f3f4; font-size:8pt; font-weight:700; text-align:center; padding:4px 0; border:1px solid #444; width:62px; }
+  .approval-table th { background:#F1F3F5; font-size:8pt; font-weight:700; text-align:center; padding:4px 0; border:1px solid #444; width:62px; }
   .approval-table td { height:52px; border:1px solid #444; width:62px; vertical-align:top; padding:3px; }
-  hr { border:none; border-top:2px solid #202124; margin:10px 0 16px; }
+  hr { border:none; border-top:2px solid #191F28; margin:10px 0 16px; }
   table.main { width:100%; border-collapse:collapse; font-size:9.5pt; }
-  table.main th { background:#f1f3f4; font-weight:700; text-align:center; padding:6px 6px; border:1px solid #aaa; white-space:nowrap; }
+  table.main th { background:#F1F3F5; font-weight:700; text-align:center; padding:6px 6px; border:1px solid #aaa; white-space:nowrap; }
   table.main td { padding:6px 6px; border:1px solid #bbb; vertical-align:middle; }
-  table.main tfoot td { background:#f8f8f8; font-weight:700; }
+  table.main tfoot td { background:#F7F8FA; font-weight:700; }
   .center { text-align:center; }
   .bold   { font-weight:700; }
   .mono   { font-family:ui-monospace,monospace; font-size:9pt; letter-spacing:0.3px; }

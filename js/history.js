@@ -90,7 +90,7 @@ const History = {
       this._renderPage(1);
     } catch (err) {
       console.error('[History] load error:', err);
-      this.listContainer.innerHTML = `<p class="empty-state" style="color:#c5221f">⚠️ 데이터 조회 오류: ${err.message}</p>`;
+      this.listContainer.innerHTML = `<p class="empty-state" style="color:#F04452">⚠️ 데이터 조회 오류: ${err.message}</p>`;
       if (this.countLabel) this.countLabel.textContent = '0건';
       if (this.pagerContainer) this.pagerContainer.innerHTML = '';
     }
@@ -164,13 +164,13 @@ const History = {
     const typeLabels = { all:'전체', tbm:'TBM', risk:'위험성평가', checklist:'안전점검', workplan:'작업계획서', ptw:'작업허가서', nearmiss:'아차사고', accident:'사고보고서', proposal:'안전제안' };
 
     const badgeStyle = {
-      tbm:       'background:#e8f0fe;color:#1557b0',
-      risk:      'background:#fce8e6;color:#c5221f',
-      checklist: 'background:#e6f4ea;color:#137333',
-      workplan:  'background:#e8f5e9;color:#2e7d32',
-      ptw:       'background:#fff3e0;color:#e65100',
-      nearmiss:  'background:#fff9c4;color:#f57f17',
-      accident:  'background:#fce4ec;color:#880e4f'
+      tbm:       'background:#EBF2FF;color:#1B64DA',
+      risk:      'background:#FEECEE;color:#F04452',
+      checklist: 'background:#E6F7EF;color:#15A86B',
+      workplan:  'background:#E6F7EF;color:#15A86B',
+      ptw:       'background:#FFF3E0;color:#FF9500',
+      nearmiss:  'background:#FFF3E0;color:#FF9500',
+      accident:  'background:#FEECEE;color:#F04452'
     };
 
     const rows = this._results.map((item, i) => {
@@ -179,28 +179,28 @@ const History = {
       const dType = (item._collType === 'accident' && item.accidentType === 'nearmiss') ? 'nearmiss' : item._collType;
       const bs = badgeStyle[dType] || '';
       return `<tr>
-        <td style="width:28px;text-align:center;color:#9aa0a6;font-size:11px">${i + 1}</td>
+        <td style="width:28px;text-align:center;color:#8B95A1;font-size:11px">${i + 1}</td>
         <td><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;${bs}">${typeLabels[dType] || dType}</span></td>
-        <td style="width:88px;white-space:nowrap;color:#5f6368;font-size:11px">${App.formatDate(item.date)}</td>
+        <td style="width:88px;white-space:nowrap;color:#6B7684;font-size:11px">${App.formatDate(item.date)}</td>
         <td style="font-weight:600">${App.escapeHtml(info.title)}</td>
-        <td style="color:#5f6368;font-size:11px">${App.escapeHtml(info.sub)}</td>
-        <td style="width:46px;text-align:center;font-size:11px;font-weight:600;color:#1a73e8">${statusText}</td>
+        <td style="color:#6B7684;font-size:11px">${App.escapeHtml(info.sub)}</td>
+        <td style="width:46px;text-align:center;font-size:11px;font-weight:600;color:#3182F6">${statusText}</td>
       </tr>`;
     }).join('');
 
     // print-area에 내용 주입 후 window.print() 호출
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = `
-      <div class="print-inner" style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;color:#202124;padding:20px">
-        <div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #1a73e8;padding-bottom:12px;margin-bottom:16px">
-          <div style="width:40px;height:40px;background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <div class="print-inner" style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;color:#191F28;padding:20px">
+        <div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #3182F6;padding-bottom:12px;margin-bottom:16px">
+          <div style="width:40px;height:40px;background:linear-gradient(135deg,#3182F6,#1B64DA);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div style="flex:1">
-            <div style="font-size:18px;font-weight:800;color:#0d47a1">SafeOn-M</div>
-            <div style="font-size:11px;color:#5f6368;margin-top:2px">세이프온-M — 현장 안전보건 관리 시스템</div>
+            <div style="font-size:18px;font-weight:800;color:#1B64DA">SafeOn-M</div>
+            <div style="font-size:11px;color:#6B7684;margin-top:2px">세이프온-M — 현장 안전보건 관리 시스템</div>
           </div>
-          <div style="text-align:right;font-size:11px;color:#5f6368;line-height:1.7">
+          <div style="text-align:right;font-size:11px;color:#6B7684;line-height:1.7">
             구분: ${typeLabels[typeVal] || typeVal}<br>
             기간: ${dateFrom} ~ ${dateTo}<br>
             총 <strong>${this._results.length}건</strong><br>
@@ -209,18 +209,18 @@ const History = {
         </div>
         <table style="width:100%;border-collapse:collapse">
           <thead>
-            <tr style="background:#e8f0fe">
-              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1557b0;border-bottom:1px solid #c5d5f7">No</th>
-              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1557b0;border-bottom:1px solid #c5d5f7">구분</th>
-              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1557b0;border-bottom:1px solid #c5d5f7">일자</th>
-              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1557b0;border-bottom:1px solid #c5d5f7">제목</th>
-              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1557b0;border-bottom:1px solid #c5d5f7">세부내용</th>
-              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1557b0;border-bottom:1px solid #c5d5f7">상태</th>
+            <tr style="background:#EBF2FF">
+              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1B64DA;border-bottom:1px solid #EBF2FF">No</th>
+              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1B64DA;border-bottom:1px solid #EBF2FF">구분</th>
+              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1B64DA;border-bottom:1px solid #EBF2FF">일자</th>
+              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1B64DA;border-bottom:1px solid #EBF2FF">제목</th>
+              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1B64DA;border-bottom:1px solid #EBF2FF">세부내용</th>
+              <th style="padding:8px 10px;text-align:left;font-weight:700;font-size:11px;color:#1B64DA;border-bottom:1px solid #EBF2FF">상태</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
-        <div style="margin-top:20px;text-align:right;font-size:10px;color:#9aa0a6;border-top:1px solid #e8eaed;padding-top:8px">
+        <div style="margin-top:20px;text-align:right;font-size:10px;color:#8B95A1;border-top:1px solid #E8EBEE;padding-top:8px">
           SafeOn-M · 현장 안전보건 관리 시스템 · ${new Date().toLocaleDateString('ko-KR')} 출력
         </div>
       </div>`;
@@ -541,27 +541,27 @@ const History = {
     const dType = (collType === 'accident' && item.accidentType === 'nearmiss') ? 'nearmiss' : collType;
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = `
-      <div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;color:#202124;padding:24px;max-width:600px;margin:0 auto">
-        <div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #1a73e8;padding-bottom:12px;margin-bottom:20px">
-          <div style="width:36px;height:36px;background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:9px;display:flex;align-items:center;justify-content:center">
+      <div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;color:#191F28;padding:24px;max-width:600px;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #3182F6;padding-bottom:12px;margin-bottom:20px">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#3182F6,#1B64DA);border-radius:9px;display:flex;align-items:center;justify-content:center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div>
-            <div style="font-size:16px;font-weight:800;color:#0d47a1">SafeOn-M</div>
-            <div style="font-size:11px;color:#5f6368">${typeLabels[dType] || dType} 기록</div>
+            <div style="font-size:16px;font-weight:800;color:#1B64DA">SafeOn-M</div>
+            <div style="font-size:11px;color:#6B7684">${typeLabels[dType] || dType} 기록</div>
           </div>
-          <div style="margin-left:auto;font-size:11px;color:#5f6368;text-align:right">
+          <div style="margin-left:auto;font-size:11px;color:#6B7684;text-align:right">
             출력: ${new Date().toLocaleString('ko-KR')}
           </div>
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;width:100px;border:1px solid #e0e0e0">구분</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${typeLabels[dType] || dType}</td></tr>
-          <tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">일자</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${App.formatDate(item.date)}</td></tr>
-          <tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">제목</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${App.escapeHtml(info.title)}</td></tr>
-          <tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">세부내용</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${App.escapeHtml(info.sub)}</td></tr>
-          ${item.status ? `<tr><td style="padding:8px 12px;font-weight:700;background:#f8f9fa;border:1px solid #e0e0e0">상태</td><td style="padding:8px 12px;border:1px solid #e0e0e0">${this._statusText(item.status)}</td></tr>` : ''}
+          <tr><td style="padding:8px 12px;font-weight:700;background:#F7F8FA;width:100px;border:1px solid #E8EBEE">구분</td><td style="padding:8px 12px;border:1px solid #E8EBEE">${typeLabels[dType] || dType}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:700;background:#F7F8FA;border:1px solid #E8EBEE">일자</td><td style="padding:8px 12px;border:1px solid #E8EBEE">${App.formatDate(item.date)}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:700;background:#F7F8FA;border:1px solid #E8EBEE">제목</td><td style="padding:8px 12px;border:1px solid #E8EBEE">${App.escapeHtml(info.title)}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:700;background:#F7F8FA;border:1px solid #E8EBEE">세부내용</td><td style="padding:8px 12px;border:1px solid #E8EBEE">${App.escapeHtml(info.sub)}</td></tr>
+          ${item.status ? `<tr><td style="padding:8px 12px;font-weight:700;background:#F7F8FA;border:1px solid #E8EBEE">상태</td><td style="padding:8px 12px;border:1px solid #E8EBEE">${this._statusText(item.status)}</td></tr>` : ''}
         </table>
-        <div style="margin-top:20px;text-align:right;font-size:10px;color:#9aa0a6;border-top:1px solid #e8eaed;padding-top:8px">
+        <div style="margin-top:20px;text-align:right;font-size:10px;color:#8B95A1;border-top:1px solid #E8EBEE;padding-top:8px">
           SafeOn-M · 현장 안전보건 관리 시스템
         </div>
       </div>`;

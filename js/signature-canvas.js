@@ -9,7 +9,7 @@ function SignatureCanvas(canvas, clearBtn) {
     var w = (parent && parent.clientWidth > 0) ? parent.clientWidth : 320;
     canvas.width = w;
     canvas.height = 120;
-    ctx.strokeStyle = '#1a1a1a';
+    ctx.strokeStyle = '#191F28';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';

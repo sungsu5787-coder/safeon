@@ -300,12 +300,12 @@ const SafetyReport = {
         <!-- ① 종합 실적 카드 -->
         <div class="sr-section-title">📊 ${monthLabel} 종합 실적</div>
         <div class="sr-stat-grid">
-          ${card('🦺', 'TBM 실시', `${d.tbm.length}회`, `참석인원 ${st.tbmWorkers}명`, '#1a73e8', pd ? `${pd.tbm.length}회` : undefined)}
-          ${card('⚠️', '위험성평가', `${d.risk.length}건`, `위험요인 ${st.riskItems.length}건`, '#f9ab00', pd ? `${pd.risk.length}건` : undefined)}
-          ${card('✅', '안전점검', `${d.checklist.length}건`, st.passRate !== null ? `양호율 ${st.passRate}%` : '', '#1e8e3e', pd ? `${pd.checklist.length}건` : undefined)}
-          ${card('📋', '작업계획서', `${wpTotal}건`, '', '#0288d1', pd ? `${pd.workplan.length}건` : undefined)}
-          ${card('🔑', '작업허가서', `${d.ptw.length}건`, `승인 ${st.ptw.approved}건`, '#7b1fa2', pd ? `${pd.ptw.length}건` : undefined)}
-          ${card('🚨', '사고 보고', `${accTotal}건`, accTotal === 0 ? '무사고' : `중대 ${st.acc.serious}건`, accTotal === 0 ? '#1e8e3e' : '#d93025', pd ? `${pd.accident.length}건` : undefined, true)}
+          ${card('🦺', 'TBM 실시', `${d.tbm.length}회`, `참석인원 ${st.tbmWorkers}명`, '#3182F6', pd ? `${pd.tbm.length}회` : undefined)}
+          ${card('⚠️', '위험성평가', `${d.risk.length}건`, `위험요인 ${st.riskItems.length}건`, '#FF9500', pd ? `${pd.risk.length}건` : undefined)}
+          ${card('✅', '안전점검', `${d.checklist.length}건`, st.passRate !== null ? `양호율 ${st.passRate}%` : '', '#15A86B', pd ? `${pd.checklist.length}건` : undefined)}
+          ${card('📋', '작업계획서', `${wpTotal}건`, '', '#3182F6', pd ? `${pd.workplan.length}건` : undefined)}
+          ${card('🔑', '작업허가서', `${d.ptw.length}건`, `승인 ${st.ptw.approved}건`, '#1B64DA', pd ? `${pd.ptw.length}건` : undefined)}
+          ${card('🚨', '사고 보고', `${accTotal}건`, accTotal === 0 ? '무사고' : `중대 ${st.acc.serious}건`, accTotal === 0 ? '#15A86B' : '#F04452', pd ? `${pd.accident.length}건` : undefined, true)}
         </div>
 
         <!-- 전년 동기 비교 -->
@@ -350,8 +350,8 @@ const SafetyReport = {
               <div class="sr-check-rate-wrap">
                 <div class="sr-check-rate-circle">
                   <svg viewBox="0 0 36 36" class="sr-donut">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e8eaed" stroke-width="3"/>
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e8e3e" stroke-width="3"
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E8EBEE" stroke-width="3"/>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#15A86B" stroke-width="3"
                       stroke-dasharray="${st.passRate || 0} ${100 - (st.passRate || 0)}"
                       stroke-dashoffset="25" stroke-linecap="round"/>
                   </svg>
@@ -359,9 +359,9 @@ const SafetyReport = {
                 </div>
                 <div class="sr-check-rate-info">
                   <div class="sr-check-rate-title">양호율</div>
-                  <div class="sr-check-legend"><span class="sr-dot" style="background:#1e8e3e"></span>양호 ${st.pass}건</div>
-                  <div class="sr-check-legend"><span class="sr-dot" style="background:#d93025"></span>불량 ${st.fail}건</div>
-                  <div class="sr-check-legend"><span class="sr-dot" style="background:#9aa0a6"></span>해당없음 ${st.na}건</div>
+                  <div class="sr-check-legend"><span class="sr-dot" style="background:#15A86B"></span>양호 ${st.pass}건</div>
+                  <div class="sr-check-legend"><span class="sr-dot" style="background:#F04452"></span>불량 ${st.fail}건</div>
+                  <div class="sr-check-legend"><span class="sr-dot" style="background:#8B95A1"></span>해당없음 ${st.na}건</div>
                 </div>
               </div>
               <div class="sr-check-type-list">
@@ -437,45 +437,45 @@ const SafetyReport = {
 <title>안전점검현황 — ${monthLabel}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:11pt; color:#202124; background:#fff; padding:20mm 18mm; }
+  body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:11pt; color:#191F28; background:#fff; padding:20mm 18mm; }
   h1 { font-size:18pt; font-weight:800; text-align:center; letter-spacing:1px; margin-bottom:4px; }
-  .subtitle { text-align:center; font-size:12pt; color:#5f6368; margin-bottom:2px; }
-  .meta { text-align:center; font-size:9pt; color:#9aa0a6; margin-bottom:18px; }
-  hr { border:none; border-top:2px solid #202124; margin:8px 0 16px; }
+  .subtitle { text-align:center; font-size:12pt; color:#6B7684; margin-bottom:2px; }
+  .meta { text-align:center; font-size:9pt; color:#8B95A1; margin-bottom:18px; }
+  hr { border:none; border-top:2px solid #191F28; margin:8px 0 16px; }
   .section { margin-bottom:18px; }
-  .sec-title { font-size:12pt; font-weight:700; border-left:4px solid #1a73e8; padding-left:8px; margin-bottom:8px; color:#1a73e8; }
+  .sec-title { font-size:12pt; font-weight:700; border-left:4px solid #3182F6; padding-left:8px; margin-bottom:8px; color:#3182F6; }
   table { width:100%; border-collapse:collapse; font-size:9.5pt; margin-bottom:6px; }
-  th { background:#f1f3f4; font-weight:700; padding:5px 8px; border:1px solid #dadce0; text-align:center; }
-  td { padding:5px 8px; border:1px solid #dadce0; vertical-align:middle; }
+  th { background:#F1F3F5; font-weight:700; padding:5px 8px; border:1px solid #D1D6DB; text-align:center; }
+  td { padding:5px 8px; border:1px solid #D1D6DB; vertical-align:middle; }
   td.center { text-align:center; }
-  td.label { font-weight:600; background:#f8f9fa; }
-  td.danger { color:#d93025; font-weight:700; }
-  td.warn { color:#f9ab00; font-weight:600; }
-  td.safe { color:#1e8e3e; font-weight:700; }
-  td.serious { color:#d93025; font-weight:900; background:#fce8e6; }
-  tfoot td { font-weight:700; background:#f1f3f4; }
+  td.label { font-weight:600; background:#F7F8FA; }
+  td.danger { color:#F04452; font-weight:700; }
+  td.warn { color:#FF9500; font-weight:600; }
+  td.safe { color:#15A86B; font-weight:700; }
+  td.serious { color:#F04452; font-weight:900; background:#FEECEE; }
+  tfoot td { font-weight:700; background:#F1F3F5; }
   .stat-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-bottom:8px; }
-  .stat-card { border:1px solid #dadce0; border-radius:6px; padding:8px 6px; text-align:center; }
+  .stat-card { border:1px solid #D1D6DB; border-radius:6px; padding:8px 6px; text-align:center; }
   .stat-card .val { font-size:16pt; font-weight:800; line-height:1.2; }
-  .stat-card .lbl { font-size:8pt; color:#5f6368; margin-top:2px; }
-  .stat-card .sub { font-size:8pt; color:#9aa0a6; }
+  .stat-card .lbl { font-size:8pt; color:#6B7684; margin-top:2px; }
+  .stat-card .sub { font-size:8pt; color:#8B95A1; }
   .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:9pt; font-weight:700; margin:4px 0; }
-  .badge-safe { background:#e6f4ea; color:#1e8e3e; }
-  .badge-danger { background:#fce8e6; color:#d93025; }
+  .badge-safe { background:#E6F7EF; color:#15A86B; }
+  .badge-danger { background:#FEECEE; color:#F04452; }
   .risk-chip { display:inline-block; padding:2px 6px; border-radius:4px; font-size:8pt; font-weight:600; margin:1px; }
-  .risk-h { background:#fce8e6; color:#d93025; }
-  .risk-m { background:#fef7e0; color:#f9ab00; }
-  .risk-l { background:#e6f4ea; color:#1e8e3e; }
+  .risk-h { background:#FEECEE; color:#F04452; }
+  .risk-m { background:#FFF3E0; color:#FF9500; }
+  .risk-l { background:#E6F7EF; color:#15A86B; }
   .doc-header { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:0; }
   .doc-title-block { flex:1; }
-  .doc-title-block h1 { font-size:20pt; font-weight:900; letter-spacing:1.5px; color:#202124; margin-bottom:5px; line-height:1.1; }
+  .doc-title-block h1 { font-size:20pt; font-weight:900; letter-spacing:1.5px; color:#191F28; margin-bottom:5px; line-height:1.1; }
   .doc-title-block .subtitle { font-size:11pt; color:#444; font-weight:600; margin-bottom:3px; }
   .doc-title-block .meta { font-size:9pt; color:#888; }
   .approval-wrap { flex-shrink:0; }
   .approval-table { border-collapse:collapse; }
-  .approval-table th { background:#f1f3f4; font-size:7.5pt; font-weight:700; text-align:center; padding:2px 0; border:1px solid #444; width:46px; letter-spacing:0.5px; }
+  .approval-table th { background:#F1F3F5; font-size:7.5pt; font-weight:700; text-align:center; padding:2px 0; border:1px solid #444; width:46px; letter-spacing:0.5px; }
   .approval-table td { height:40px; border:1px solid #444; width:46px; vertical-align:top; padding:2px; }
-  .footer { text-align:center; font-size:8pt; color:#9aa0a6; margin-top:8px; padding-top:8px; border-top:1px solid #dadce0; }
+  .footer { text-align:center; font-size:8pt; color:#8B95A1; margin-top:8px; padding-top:8px; border-top:1px solid #D1D6DB; }
   @media print {
     body { padding:10mm 12mm; }
     @page { size: A4; margin:10mm; }
@@ -501,32 +501,32 @@ const SafetyReport = {
 <div class="section">
   <div class="sec-title">${monthLabel} 종합 실적</div>
   <div class="stat-grid">
-    <div class="stat-card" style="border-top:3px solid #1a73e8">
-      <div class="val" style="color:#1a73e8">${d.tbm.length}</div>
+    <div class="stat-card" style="border-top:3px solid #3182F6">
+      <div class="val" style="color:#3182F6">${d.tbm.length}</div>
       <div class="lbl">TBM 실시</div>
       <div class="sub">참석 ${st.tbmWorkers}명</div>
     </div>
-    <div class="stat-card" style="border-top:3px solid #f9ab00">
-      <div class="val" style="color:#f9ab00">${d.risk.length}</div>
+    <div class="stat-card" style="border-top:3px solid #FF9500">
+      <div class="val" style="color:#FF9500">${d.risk.length}</div>
       <div class="lbl">위험성평가</div>
       <div class="sub">위험요인 ${st.riskItems.length}건</div>
     </div>
-    <div class="stat-card" style="border-top:3px solid #1e8e3e">
-      <div class="val" style="color:#1e8e3e">${d.checklist.length}</div>
+    <div class="stat-card" style="border-top:3px solid #15A86B">
+      <div class="val" style="color:#15A86B">${d.checklist.length}</div>
       <div class="lbl">안전점검</div>
       <div class="sub">${st.passRate !== null ? `양호율 ${st.passRate}%` : ''}</div>
     </div>
-    <div class="stat-card" style="border-top:3px solid #0288d1">
-      <div class="val" style="color:#0288d1">${d.workplan.length}</div>
+    <div class="stat-card" style="border-top:3px solid #3182F6">
+      <div class="val" style="color:#3182F6">${d.workplan.length}</div>
       <div class="lbl">작업계획서</div>
     </div>
-    <div class="stat-card" style="border-top:3px solid #7b1fa2">
-      <div class="val" style="color:#7b1fa2">${d.ptw.length}</div>
+    <div class="stat-card" style="border-top:3px solid #1B64DA">
+      <div class="val" style="color:#1B64DA">${d.ptw.length}</div>
       <div class="lbl">작업허가서</div>
       <div class="sub">승인 ${st.ptw.approved}건</div>
     </div>
-    <div class="stat-card" style="border-top:3px solid ${d.accident.length ? '#d93025' : '#1e8e3e'}">
-      <div class="val" style="color:${d.accident.length ? '#d93025' : '#1e8e3e'}">${d.accident.length}</div>
+    <div class="stat-card" style="border-top:3px solid ${d.accident.length ? '#F04452' : '#15A86B'}">
+      <div class="val" style="color:${d.accident.length ? '#F04452' : '#15A86B'}">${d.accident.length}</div>
       <div class="lbl">사고 보고</div>
       <div class="sub">${d.accident.length === 0 ? '무사고' : `중대 ${st.acc.serious}건`}</div>
     </div>
@@ -735,7 +735,7 @@ ${d.workplan.length ? `
           <span class="sr-check-type">${App.escapeHtml(c.type || '안전점검')}</span>
           <span class="sr-check-loc">${App.escapeHtml(c.location || '')}</span>
           <span class="sr-check-date">${c.date || ''}</span>
-          <div class="sr-mini-bar"><div class="sr-mini-fill" style="width:${r}%;background:#1e8e3e"></div></div>
+          <div class="sr-mini-bar"><div class="sr-mini-fill" style="width:${r}%;background:#15A86B"></div></div>
           <span class="sr-check-pct ${f ? 'sr-pct-bad' : 'sr-pct-good'}">${r}%</span>
         </div>`;
       }).join('');
@@ -765,7 +765,7 @@ ${d.workplan.length ? `
         <span class="sr-check-type">${y}년 ${parseInt(m)}월</span>
         <span class="sr-check-loc">${g.count}건 실시</span>
         <span class="sr-check-date">불량 ${g.fail}건</span>
-        <div class="sr-mini-bar"><div class="sr-mini-fill" style="width:${r}%;background:#1e8e3e"></div></div>
+        <div class="sr-mini-bar"><div class="sr-mini-fill" style="width:${r}%;background:#15A86B"></div></div>
         <span class="sr-check-pct ${g.fail ? 'sr-pct-bad' : 'sr-pct-good'}">${r}%</span>
       </div>`;
     }).join('');
@@ -792,9 +792,9 @@ ${d.workplan.length ? `
         </tbody>
       </table>
       <div class="sr-risk-total">전체 위험요인 ${st.riskItems.length}건 &nbsp;|&nbsp;
-        <span style="color:#d93025">위험 ${st.riskHigh}건</span> ·
-        <span style="color:#f9ab00">주의 ${st.riskMid}건</span> ·
-        <span style="color:#1e8e3e">양호 ${st.riskLow}건</span>
+        <span style="color:#F04452">위험 ${st.riskHigh}건</span> ·
+        <span style="color:#FF9500">주의 ${st.riskMid}건</span> ·
+        <span style="color:#15A86B">양호 ${st.riskLow}건</span>
       </div>`;
     }
 
@@ -829,9 +829,9 @@ ${d.workplan.length ? `
       </tbody>
     </table>
     <div class="sr-risk-total">전체 위험요인 ${st.riskItems.length}건 &nbsp;|&nbsp;
-      <span style="color:#d93025">위험 ${st.riskHigh}건</span> ·
-      <span style="color:#f9ab00">주의 ${st.riskMid}건</span> ·
-      <span style="color:#1e8e3e">양호 ${st.riskLow}건</span>
+      <span style="color:#F04452">위험 ${st.riskHigh}건</span> ·
+      <span style="color:#FF9500">주의 ${st.riskMid}건</span> ·
+      <span style="color:#15A86B">양호 ${st.riskLow}건</span>
     </div>`;
   },
 
@@ -957,16 +957,16 @@ ${d.workplan.length ? `
 
     return `
       <div class="sr-proposal-grid">
-        ${chip('전체', total, '#5f6368')}
-        ${chip('접수', 접수, '#64b5f6')}
-        ${chip('검토중', 검토중, '#ffb74d')}
-        ${chip('완료', 완료, '#4caf50')}
-        ${chip('반려', 반려, '#ef5350')}
+        ${chip('전체', total, '#6B7684')}
+        ${chip('접수', 접수, '#3182F6')}
+        ${chip('검토중', 검토중, '#FF9500')}
+        ${chip('완료', 완료, '#15A86B')}
+        ${chip('반려', 반려, '#F04452')}
       </div>
       <div class="sr-proposal-rate">
         처리율 <strong>${처리율}%</strong>
-        ${완료 > 0 ? `&nbsp;·&nbsp; <span style="color:#4caf50">완료 ${완료}건</span>` : ''}
-        ${접수 + 검토중 > 0 ? `&nbsp;·&nbsp; <span style="color:#ff9800">처리 대기 ${접수 + 검토중}건</span>` : ''}
+        ${완료 > 0 ? `&nbsp;·&nbsp; <span style="color:#15A86B">완료 ${완료}건</span>` : ''}
+        ${접수 + 검토중 > 0 ? `&nbsp;·&nbsp; <span style="color:#FF9500">처리 대기 ${접수 + 검토중}건</span>` : ''}
       </div>`;
   },
 

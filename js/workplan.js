@@ -1022,30 +1022,30 @@ const WorkPlan = {
 <html lang="ko"><head><meta charset="UTF-8"><title>안전 작업계획서</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:10.5pt;color:#202124;background:#fff;padding:18mm 16mm}
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:10.5pt;color:#191F28;background:#fff;padding:18mm 16mm}
   .head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
-  .head h1{font-size:21pt;font-weight:900;letter-spacing:2px;color:#202124;white-space:nowrap}
+  .head h1{font-size:21pt;font-weight:900;letter-spacing:2px;color:#191F28;white-space:nowrap}
   .htitle{flex:1}
-  .head .sub{font-size:10pt;color:#5f6368;margin-top:4px;white-space:nowrap}
+  .head .sub{font-size:10pt;color:#6B7684;margin-top:4px;white-space:nowrap}
   .appr{border-collapse:collapse;flex-shrink:0}
-  .appr th{background:#f1f3f4;font-size:7.5pt;font-weight:700;text-align:center;padding:2px 0;border:1px solid #444;width:44px}
+  .appr th{background:#F1F3F5;font-size:7.5pt;font-weight:700;text-align:center;padding:2px 0;border:1px solid #444;width:44px}
   .appr td{height:38px;border:1px solid #444;width:44px}
-  hr{border:none;border-top:2px solid #202124;margin:8px 0 14px}
+  hr{border:none;border-top:2px solid #191F28;margin:8px 0 14px}
   .sec{margin-bottom:12px}
-  .sec-t{font-size:11pt;font-weight:700;border-left:4px solid #0288d1;padding-left:8px;margin-bottom:6px;color:#0277bd}
+  .sec-t{font-size:11pt;font-weight:700;border-left:4px solid #3182F6;padding-left:8px;margin-bottom:6px;color:#3182F6}
   table{width:100%;border-collapse:collapse;font-size:10pt}
-  th{background:#f8f9fa;font-weight:700;padding:6px 8px;border:1px solid #dadce0;text-align:left;width:90px;white-space:nowrap}
-  td{padding:6px 8px;border:1px solid #dadce0;vertical-align:top}
+  th{background:#F7F8FA;font-weight:700;padding:6px 8px;border:1px solid #D1D6DB;text-align:left;width:90px;white-space:nowrap}
+  td{padding:6px 8px;border:1px solid #D1D6DB;vertical-align:top}
   thead th{text-align:center}
-  .box{border:1px solid #dadce0;border-radius:4px;padding:8px 10px;min-height:42px;line-height:1.6}
-  .chips span{display:inline-block;padding:3px 10px;margin:2px;border-radius:14px;background:#e1f5fe;color:#0277bd;font-size:9pt;font-weight:600}
+  .box{border:1px solid #D1D6DB;border-radius:4px;padding:8px 10px;min-height:42px;line-height:1.6}
+  .chips span{display:inline-block;padding:3px 10px;margin:2px;border-radius:14px;background:#EBF2FF;color:#3182F6;font-size:9pt;font-weight:600}
   .photos{display:flex;flex-wrap:wrap;gap:6px}
-  .photos img{width:31%;height:auto;border:1px solid #dadce0;border-radius:4px}
+  .photos img{width:31%;height:auto;border:1px solid #D1D6DB;border-radius:4px}
   .sigrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:6px;font-size:10pt}
   .sigrow img{height:40px;border-bottom:1px solid #444}
-  .law{margin-top:16px;padding:8px 10px;border:1px solid #e0e0e0;border-radius:5px;background:#fafafa;font-size:7.5pt;color:#666;line-height:1.5}
+  .law{margin-top:16px;padding:8px 10px;border:1px solid #E8EBEE;border-radius:5px;background:#F7F8FA;font-size:7.5pt;color:#666;line-height:1.5}
   .law b{color:#444}
-  .foot{text-align:center;font-size:8pt;color:#9aa0a6;margin-top:10px;padding-top:6px;border-top:1px solid #dadce0}
+  .foot{text-align:center;font-size:8pt;color:#8B95A1;margin-top:10px;padding-top:6px;border-top:1px solid #D1D6DB}
   @media print{body{padding:10mm 12mm}@page{size:A4;margin:10mm}}
 </style></head><body>
 <div class="head">

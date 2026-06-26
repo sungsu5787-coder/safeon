@@ -629,10 +629,10 @@ const TBM = {
       for (let r = 0; r < count; r++)
         for (let c = 0; c < count; c++)
           if (qr.isDark(r, c))
-            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#1a237e"/>`;
+            rects += `<rect x="${c*cell+margin}" y="${r*cell+margin}" width="${cell}" height="${cell}" fill="#1B64DA"/>`;
       wrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="border-radius:12px;display:block;margin:0 auto"><rect width="${size}" height="${size}" fill="#fff" rx="12"/>${rects}</svg>`;
     } catch {
-      wrap.innerHTML = '<p style="color:#d93025;text-align:center;padding:16px">QR 생성 실패</p>';
+      wrap.innerHTML = '<p style="color:#F04452;text-align:center;padding:16px">QR 생성 실패</p>';
     }
 
     const urlEl = document.getElementById('tbm-share-url-text');

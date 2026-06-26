@@ -58,7 +58,7 @@ const ProposalsView = {
   },
 
   _statusColor(status) {
-    return { '접수': '#64b5f6', '검토중': '#ffb74d', '완료': '#81c784', '반려': '#e57373' }[status] || '#64b5f6';
+    return { '접수': '#3182F6', '검토중': '#FF9500', '완료': '#E6F7EF', '반려': '#F04452' }[status] || '#3182F6';
   },
 
   _cardHtml(p) {
@@ -431,11 +431,11 @@ const ProposalsView = {
                 <td>${App.escapeHtml(r.affiliation)}</td>
                 <td>${App.escapeHtml(r.department)}</td>
                 <td><b>${App.escapeHtml(r.name)}</b></td>
-                <td style="text-align:center;font-weight:700;color:#1a237e">${r.total}</td>
-                <td style="text-align:center;color:#2e7d32">${r.완료}</td>
-                <td style="text-align:center;color:#e65100">${r.검토중}</td>
-                <td style="text-align:center;color:#1565c0">${r.접수}</td>
-                <td style="text-align:center;color:#c62828">${r.반려}</td>
+                <td style="text-align:center;font-weight:700;color:#1B64DA">${r.total}</td>
+                <td style="text-align:center;color:#15A86B">${r.완료}</td>
+                <td style="text-align:center;color:#FF9500">${r.검토중}</td>
+                <td style="text-align:center;color:#1B64DA">${r.접수}</td>
+                <td style="text-align:center;color:#F04452">${r.반려}</td>
                 <td style="text-align:center">${r.lastDate ? new Date(r.lastDate).toLocaleDateString('ko-KR') : '-'}</td>
               </tr>`).join('')}
           </tbody>
@@ -464,15 +464,15 @@ body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:12px
 .pv-approval-wrap{display:flex;justify-content:flex-end;margin-bottom:16px}
 .pv-approval-table{border-collapse:collapse}
 .pv-approval-table td{border:1px solid #333;width:80px;text-align:center;vertical-align:middle;font-size:11px}
-.pv-appr-label{background:#f5f5f5;font-weight:600;height:22px;padding:2px 0}
+.pv-appr-label{background:#F7F8FA;font-weight:600;height:22px;padding:2px 0}
 .pv-appr-sign{height:50px}
 .pv-meta-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;font-size:13px;border-bottom:1px solid #bbb;padding-bottom:10px}
 .pv-section-title{font-size:14px;font-weight:700;margin:14px 0 8px}
 .pv-rank-table{width:100%;border-collapse:collapse;font-size:12px}
-.pv-rank-table th{background:#263238;color:#fff;padding:7px 5px;border:1px solid #455a64;text-align:center}
-.pv-rank-table td{padding:6px 5px;border:1px solid #cfd8dc;vertical-align:middle}
-.pv-rank-table tr:nth-child(even) td{background:#f8f9fa}
-.pv-top-row td{background:#fffde7!important}
+.pv-rank-table th{background:#191F28;color:#fff;padding:7px 5px;border:1px solid #4E5968;text-align:center}
+.pv-rank-table td{padding:6px 5px;border:1px solid #D1D6DB;vertical-align:middle}
+.pv-rank-table tr:nth-child(even) td{background:#F7F8FA}
+.pv-top-row td{background:#FFF3E0!important}
 .pv-footer-note{margin-top:20px;font-size:10px;color:#888;text-align:right}
 @media print{body{padding:10px}}
 </style>
