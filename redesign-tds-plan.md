@@ -47,7 +47,7 @@
 - [x] Phase 2. 시맨틱 상태색 + 뉴트럴 통일 (278건) — 검증 완료
 - [x] Phase 3. 카테고리 액센트 → primary 평탄화 (121건, 중대재해는 danger 보정) — 검증 완료
 - [x] 결과: style.css/index.html/manifest 비토큰 hex **0개**, 중괄호 균형 유지, 캐시 v62
-- [ ] Phase 4. 타이포 스케일 토큰(--text-*) 도입 + 11px↓ 가독성 정리
+- [x] Phase 4. 타입 스케일 토큰(--text-micro~display) 도입 + 9·10px 24곳을 11px 플로어로 상향 — 캐시 v64
 - [ ] Phase 5. ListRow·카드·버튼 TDS 컴포넌트화 + 모션 정리
 - [ ] 배포 후 실제 화면 회귀 확인 (보라/틸 평탄화로 인한 단조로움 점검)
 
