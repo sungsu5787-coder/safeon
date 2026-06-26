@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#1a73e8">
+  <meta name="theme-color" content="var(--primary)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
@@ -14,7 +14,7 @@
   <!-- 버전 체크 - 구버전 캐시 자동 알림 (모든 스크립트보다 먼저 실행) -->
   <script>
   (function(){
-    var V = 'v61';                              // 이 값(V) 수정 시 처리됩니다
+    var V = 'v62';                              // 이 값(V) 수정 시 처리됩니다
     var KEY = 'sfo_ver';
     var prev = localStorage.getItem(KEY);
     localStorage.setItem(KEY, V);
@@ -285,7 +285,7 @@
             </button>
 
             <button class="menu-card" data-page="proposals">
-              <div class="menu-icon" style="background:#EFF6FF;color:#2563EB">
+              <div class="menu-icon" style="background:var(--primary-light);color:var(--primary)">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                   <line x1="9" y1="9" x2="15" y2="9"/>
@@ -297,7 +297,7 @@
             </button>
 
             <button class="menu-card" data-page="safetyreport">
-              <div class="menu-icon" style="background:#FFF7ED;color:#C2410C">
+              <div class="menu-icon" style="background:var(--warning-light);color:var(--warning)">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2"/>
                   <line x1="3" y1="9" x2="21" y2="9"/>
@@ -337,19 +337,19 @@
             </div>
             <div class="summary-cards-2">
               <div class="summary-item">
-                <span class="summary-value" id="today-wp-count" style="color:#16A34A">0</span>
+                <span class="summary-value" id="today-wp-count" style="color:var(--success)">0</span>
                 <span class="summary-label">작업계획서</span>
               </div>
               <div class="summary-item">
-                <span class="summary-value" id="today-ptw-count" style="color:#D97706">0</span>
+                <span class="summary-value" id="today-ptw-count" style="color:var(--warning)">0</span>
                 <span class="summary-label">작업허가서</span>
               </div>
               <div class="summary-item">
-                <span class="summary-value" id="today-accident-count" style="color:#DC2626">0</span>
+                <span class="summary-value" id="today-accident-count" style="color:var(--danger)">0</span>
                 <span class="summary-label">사고보고</span>
               </div>
               <div class="summary-item">
-                <span class="summary-value" id="today-proposal-count" style="color:#2563EB">0</span>
+                <span class="summary-value" id="today-proposal-count" style="color:var(--primary)">0</span>
                 <span class="summary-label">제안 건수</span>
               </div>
             </div>
@@ -539,7 +539,7 @@
             </div>
 
             <button type="submit" class="btn-primary" style="background:var(--danger)">📋 사고보고서 저장</button>
-            <button type="button" class="btn-primary" style="background:#37474f;margin-top:8px" onclick="Accident.printReport()">🖨️ 보고서 인쇄</button>
+            <button type="button" class="btn-primary" style="background:var(--gray-800);margin-top:8px" onclick="Accident.printReport()">🖨️ 보고서 인쇄</button>
             <div id="accident-offline-status" class="accident-offline-status hidden"></div>
           </form>
         </div>
@@ -919,7 +919,7 @@
             </div>
 
             <button type="submit" class="btn-primary">작업계획서 저장</button>
-            <button type="button" class="btn-primary" style="background:#37474f;margin-top:8px" onclick="WorkPlan.printReport()">🖨️ 보고서 인쇄</button>
+            <button type="button" class="btn-primary" style="background:var(--gray-800);margin-top:8px" onclick="WorkPlan.printReport()">🖨️ 보고서 인쇄</button>
           </form>
         </div>
       </section>
@@ -1195,7 +1195,7 @@
                 <label>📝 비고</label>
                 <textarea id="wi-note" rows="2" placeholder="기타 사항"></textarea>
               </div>
-              <button type="submit" class="btn-primary" style="background:#0d9488">🏢 사업장 등록</button>
+              <button type="submit" class="btn-primary" style="background:var(--primary)">🏢 사업장 등록</button>
             </form>
           </div>
 
@@ -1709,7 +1709,7 @@
       </div>
     </div>
     <div id="tbm-viewer-body" class="tbm-viewer-body">
-      <p style="padding:40px;text-align:center;color:#aaa">로딩 중...</p>
+      <p style="padding:40px;text-align:center;color:var(--gray-400)">로딩 중...</p>
     </div>
   </div>
 
